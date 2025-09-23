@@ -105,10 +105,23 @@ def admin_user_management():
 
 # ---------------- MODULE ROUTES ----------------
 modules = [
-    'asset_master', 'asset_running_status', 'hsd_issued', 'breakdown',
-    'daywise_works', 'spares_requirements', 'asset_documents', 'maintenance_schedule',
-    'digital_status', 'asset_fit_unfit', 'uauc_status', 'hire_billing',
-    'concrete_production', 'workmen_status'
+    'asset_master',
+    'asset_running_status',
+    'HSD_Issued',              # matches /admin_HSD_Issued
+    'break_down_report',       # matches /admin_break_down_report
+    'day_wise_works',          # matches /admin_day_wise_works
+    'spares_requirements',       # matches /admin.spares.requirment
+    'docments_status',         # matches /admin_docments_status
+    'maintenance_schedule',
+    'breakdown_report',            # matches /admin_maintances_shedule
+    'digital_status',
+    'asset_fit_unfit_status', 
+    'asset_documents_status', 
+    'daywise_works',   # matches /admin_asset_fit_unfit_status
+    'uauc_status',
+    'hire_billing_status',     # matches /admin_hire_billing_status
+    'concrete_production',
+    'workmen_status'
 ]
 
 
