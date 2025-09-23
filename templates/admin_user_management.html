@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">User Management</h1>
+
+<!-- Small dashboard -->
+<div class="grid grid-cols-3 gap-4 mb-4">
+    <div class="bg-blue-200 p-2 rounded text-center">Total Users: {{ counts.users }}</div>
+    <div class="bg-green-200 p-2 rounded text-center">Admins: {{ counts.admins }}</div>
+    <div class="bg-yellow-200 p-2 rounded text-center">Active Users: {{ counts.active }}</div>
+</div>
+
+<!-- Inline Create User Form -->
+<button id="showCreateUserForm" class="bg-blue-500 text-white px-4 py-2 rounded mb-4">Create User</button>
+<div id="createUserForm" class="hidden mb-4 p-4 bg-white shadow rounded">
+    <form action="/create_users" method="POST">
+        <div class="grid grid-cols-3 gap-4">
+            <input type="text" name="user_id" placeholder="User ID" class="border p-2">
+            <input type="text" name="full_name" placeholder="Full Name" class="border p-2">
+            
+            <!-- Designation Dropdown -->
+            <select name="designation" class="border p-2">
+                <option value="">Select Designation</option>
+                <option value="P&M Incharge">P&M Incharge</option>
+                <option value="Section-Incharge">Section-Incharge</option>
+                <option value="Engineer">Engineer</option>
+                <option value="Technician">Technician</option>
+                <option value="System Operations">System Operations</option>
+            </select>
+
+            <input type="email" name="email" placeholder="Email" class="border p-2">
+            <input type="text" name="phone" placeholder="Phone" class="border p-2">
+
+            <!-- Role Dropdown -->
+            <select name="role" class="border p-2">
+                <option value="">Select Role</option>
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+            </select>
+
+            <input type="password" name="password" placeholder="Password" class="border p-2">
+        </div>
+        <button type="submit" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Create User</button>
+    </form>
+</div>
+
+<!-- CSV Upload -->
+<form action="/create_users" method="POST" enctype="multipart/form-data" class="mb-4 p-4 bg-white shadow rounded">
+    <input type="file" name="csv_file" required class="border p-2">
+    <button type="submit" class="mt-2 bg-green-500 text-white px-4 py-2 rounded">Upload CSV</button>
+</form>
+
+<!-- Users Table -->
+<table class="w-full border-collapse bg-white shadow rounded">
+    <thead>
+        <tr class="bg-gray-200">
+            <th></th>
+            {% for col in default_columns %}
+                <th class="border px-2 py-1">{{ col }}</th>
+            {% endfor %}
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr class="text-center">
+            <td><input type="checkbox" class="deleteCheckbox" data-userid="{{ user.user_id }}"></td>
+            {% for col in default_columns %}
+            <td class="border px-2 py-1">{{ user.get(col,'') }}</td>
+            {% endfor %}
+            <td>
+                <button class="editBtn bg-yellow-500 text-white px-2 py-1 rounded" 
+                        data-user='{{ user|tojson }}'>Edit</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<button id="deleteSelectedBtn" class="mt-4 bg-red-500 text-white px-4 py-2 rounded">Delete Selected</button>
+
+<!-- Download CSV -->
+<a href="/download_users_csv" class="mt-4 inline-block bg-yellow-500 text-white px-4 py-2 rounded">Download CSV</a>
+
+<!-- Edit Modal -->
+<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white p-4 rounded w-1/2">
+        <h2 class="text-xl font-bold mb-2">Edit User</h2>
+        <form id="editForm" method="POST">
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" name="full_name" placeholder="Full Name" class="border p-2">
+                
+                <!-- Edit Designation Dropdown -->
+                <select name="designation" class="border p-2">
+                    <option value="P&M Incharge">P&M Incharge</option>
+                    <option value="Section-Incharge">Section-Incharge</option>
+                    <option value="Engineer">Engineer</option>
+                    <option value="Technician">Technician</option>
+                    <option value="System Operations">System Operations</option>
+                </select>
+
+                <input type="email" name="email" placeholder="Email" class="border p-2">
+                <input type="text" name="phone" placeholder="Phone" class="border p-2">
+
+                <!-- Edit Role Dropdown -->
+                <select name="role" class="border p-2">
+                    <option value="admin">Admin</option>
+                    <option value="user">User</option>
+                </select>
+
+                <input type="password" name="password" placeholder="Password (leave blank to keep)" class="border p-2">
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" id="closeModal" class="bg-gray-400 px-4 py-2 rounded">Cancel</button>
+                <button type="submit" class="bg-blue-500 px-4 py-2 rounded">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Show create form
+    document.getElementById('showCreateUserForm').addEventListener('click', () => {
+        document.getElementById('createUserForm').classList.toggle('hidden');
+    });
+
+    // Edit modal logic
+    const editModal = document.getElementById('editModal');
+    const editForm = document.getElementById('editForm');
+    document.querySelectorAll('.editBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const user = JSON.parse(btn.dataset.user);
+            editForm.action = '/edit_user/' + user.user_id;
+            editForm.full_name.value = user.full_name;
+            editForm.designation.value = user.designation;
+            editForm.email.value = user.email;
+            editForm.phone.value = user.phone;
+            editForm.role.value = user.role;
+            editModal.classList.remove('hidden');
+        });
+    });
+    document.getElementById('closeModal').addEventListener('click', () => {
+        editModal.classList.add('hidden');
+    });
+
+    // Delete logic
+    document.getElementById('deleteSelectedBtn').addEventListener('click', () => {
+        const selected = Array.from(document.querySelectorAll('.deleteCheckbox:checked'));
+        if(selected.length === 0) { alert('Select at least one user'); return; }
+        if(!confirm(`Are you sure to delete ${selected.length} user(s)?`)) return;
+        selected.forEach(cb => {
+            fetch('/delete_user/' + cb.dataset.userid, { method: 'POST' })
+            .then(res => { if(res.ok) location.reload(); });
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MABP - P&M Welcome, {{ user }}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'yellow-custom': '#FFD700',
+                        'yellow-light': '#FFF8DC',
+                        'black-custom': '#1a1a1a',
+                        'gray-custom': '#2d2d2d'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Styles */
+        .gradient-bg { 
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); 
+        }
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+        }
+        .header-gradient {
+            background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 40;
+            transform: translateX(0);
+            transition: transform 0.3s ease-in-out;
+            box-shadow: 4px 0 15px rgba(255, 215, 0, 0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        .sidebar.hidden {
+            transform: translateX(-280px);
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            color: #e5e7eb;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            margin: 2px 0;
+        }
+        
+        .sidebar-link:hover {
+            background: rgba(255, 215, 0, 0.1);
+            color: #FFD700;
+            border-left-color: #FFD700;
+            transform: translateX(8px);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+        }
+        
+        .sidebar-link.active {
+            background: rgba(255, 215, 0, 0.15);
+            color: #FFD700;
+            border-left-color: #FFD700;
+        }
+        
+        /* Content Styles */
+        .main-content {
+            margin-left: 280px;
+            padding: 130px 60px 50px 60px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease-in-out;
+            position: relative;
+            width: calc(100% - 280px);
+            box-sizing: border-box;
+        }
+        
+        .main-content.sidebar-hidden {
+            margin-left: 0;
+            width: 100%;
+        }
+        
+        /* Resize Handles for Content Spacing */
+        .resize-handle-left {
+            position: fixed;
+            left: 280px;
+            top: 80px;
+            width: 6px;
+            height: calc(100vh - 80px);
+            background: rgba(255, 215, 0, 0.3);
+            cursor: col-resize;
+            z-index: 25;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+        
+        .resize-handle-left:hover {
+            background: rgba(255, 215, 0, 0.6);
+            opacity: 1;
+            width: 8px;
+        }
+        
+        .resize-handle-left.dragging {
+            background: #FFD700;
+            opacity: 1;
+            width: 8px;
+        }
+        
+        .resize-handle-left.sidebar-hidden {
+            left: 0;
+        }
+        
+        .resize-handle-right {
+            position: fixed;
+            right: 60px;
+            top: 80px;
+            width: 6px;
+            height: calc(100vh - 80px);
+            background: rgba(255, 215, 0, 0.3);
+            cursor: col-resize;
+            z-index: 25;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+        
+        .resize-handle-right:hover {
+            background: rgba(255, 215, 0, 0.6);
+            opacity: 1;
+            width: 8px;
+        }
+        
+        .resize-handle-right.dragging {
+            background: #FFD700;
+            opacity: 1;
+            width: 8px;
+        }
+        
+
+        
+        /* Header Styles */
+        .header {
+            height: 80px;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.1);
+            margin-bottom: 20px;
+            position: fixed;
+            top: 0;
+            left: 280px;
+            right: 0;
+            z-index: 30;
+            transition: left 0.3s ease-in-out;
+        }
+        
+        .header.sidebar-hidden {
+            left: 0;
+        }
+        
+        /* Mobile Menu Button */
+        .menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 50;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .menu-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+        }
+        
+        .menu-btn span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: #1a1a1a;
+            margin: 5px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+        
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(-45deg) translate(-5px, 6px);
+        }
+        
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(45deg) translate(-5px, -6px);
+        }
+        
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 280px;
+                transform: translateX(-280px);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 130px 30px 50px 30px;
+                width: 100%;
+            }
+            
+            .header {
+                left: 0;
+                right: 0;
+            }
+            
+            .menu-btn {
+                display: block;
+            }
+            
+            .resize-handle-left,
+            .resize-handle-right {
+                display: none;
+            }
+        }
+        
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+        }
+        
+        /* Scrollbar Styles */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #FFD700;
+            border-radius: 3px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #FFA500;
+        }
+        
+        /* Overlay for mobile */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 35;
+        }
+        
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    
+    <!-- Mobile Menu Button -->
+    <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    
+    <!-- Overlay for mobile -->
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+    
+    <!-- Resize Handles for Content Spacing -->
+    <div class="resize-handle-left" id="resizeHandleLeft"></div>
+    <div class="resize-handle-right" id="resizeHandleRight"></div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar sidebar-gradient flex flex-col" id="sidebar">
+        <!-- Sidebar Header -->
+        <div class="p-6 border-b border-gray-600">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center pulse-glow">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                        <!-- Construction Crane Icon -->
+                        <rect x="11" y="2" width="2" height="18" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+                        <rect x="4" y="5" width="16" height="1.5" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+                        <rect x="2" y="5" width="4" height="1" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+                        <rect x="1" y="4" width="2" height="3" fill="#2a2a2a" stroke="#444" stroke-width="0.5"/>
+                        <rect x="10" y="6" width="4" height="2" fill="#2a2a2a" stroke="#444" stroke-width="0.5" rx="0.5"/>
+                        <rect x="10.5" y="6.3" width="1" height="1" fill="#444" stroke="#666" stroke-width="0.2"/>
+                        <rect x="12.5" y="6.3" width="1" height="1" fill="#444" stroke="#666" stroke-width="0.2"/>
+                        <line x1="18" y1="6.5" x2="18" y2="15" stroke="#333" stroke-width="0.8" stroke-dasharray="0.5,0.5"/>
+                        <path d="M17.5 15 Q18 15.5 18.5 15 Q18.5 15.5 18 16 Q17.5 15.5 17.5 15" fill="#1a1a1a" stroke="#333" stroke-width="0.3"/>
+                        <rect x="16.5" y="16" width="3" height="2" fill="#444" stroke="#666" stroke-width="0.4" rx="0.3"/>
+                        <rect x="8" y="20" width="8" height="2" fill="#2a2a2a" stroke="#444" stroke-width="0.5"/>
+                        <line x="9" y="20" x2="11" y2="18" stroke="#333" stroke-width="0.5"/>
+                        <line x="15" y="20" x2="13" y2="18" stroke="#333" stroke-width="0.5"/>
+                        <line x="12" y="3" x2="20" y2="5.5" stroke="#333" stroke-width="0.3"/>
+                        <line x="12" y="3" x2="4" y2="5.5" stroke="#333" stroke-width="0.3"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-yellow-custom">MABP</h2>
+                    <p class="text-xs text-gray-400">P&M Welcome, {{ user }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <nav class="mt-4 px-2">
+            <a href="/admin_dashboard" class="sidebar-link" data-page="dashboard">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"/>
+                </svg>
+                <span class="text-sm font-medium">Dashboard</span>
+            </a>
+            
+            <a href="/HIDE_USER_MANAGEMENT" class="sidebar-link" data-page="users">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                </svg>
+                <span class="text-sm font-medium">User Management</span>
+            </a>
+            
+            <a href="/admin_asset_master" class="sidebar-link" data-page="assets">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                <span class="text-sm font-medium">Asset Master</span>
+            </a>
+            
+            <a href="/admin_HSD_Issued" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 1L5 3l4 2 4-2-4-2z"/>
+                </svg>
+                <span class="text-sm font-medium">HSD Issued</span>
+            </a>
+            
+            <a href="/admin_asset_running_status.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <span class="text-sm font-medium">Asset Running Status</span>
+            </a>
+            
+            <a href="/admin.spares.requirment.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span class="text-sm font-medium">Spares Requirement</span>
+            </a>
+
+            <a href="/admin_maintances_shedule.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span class="text-sm font-medium">Maintances Shedule</span>
+            </a>            
+            
+            <a href="/admin_workmen_status.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span class="text-sm font-medium">Workmen Status</span>
+            </a>
+
+            <a href="/admin_concrete_production.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                <span class="text-sm font-medium">Concrete Production</span>
+            </a>
+            
+            <a href="/admin_break_down_report.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <span class="text-sm font-medium">Break Down Report</span>
+            </a>
+            
+            <a href="/admin_asset_fit_unfit_status.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="text-sm font-medium">Asset Fit/Un-Fit Status</span>
+            </a>
+            
+            <a href="/admin_uauc_status.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <span class="text-sm font-medium">UA/UC Status</span>
+            </a>
+            
+            <a href="/admin_docments_status.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span class="text-sm font-medium">Documents Status</span>
+            </a>
+            
+            <a href="admin_day_wise_works.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span class="text-sm font-medium">Daywise Works</span>
+            </a>
+            
+            <a href="/admin_hire_billing_status.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="text-sm font-medium">Hire Billing Status</span>
+            </a>
+            
+            <a href="/admin_digital_status.html" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <span class="text-sm font-medium">Digital Status</span>
+            </a>
+        </nav>
+        
+        <!-- Logout Button -->
+        <div class="mt-auto px-2 pb-6">
+            <a href="/logout" class="sidebar-link bg-red-600 hover:bg-red-700 rounded-lg mx-2">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span class="text-sm font-medium">Logout</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <header class="header header-gradient" id="header">
+        <div class="flex items-center justify-between h-full px-6">
+            <!-- Left: Title -->
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:block">
+                    <h1 class="text-xl font-bold text-yellow-custom">MABP - P&M</h1>
+                    <p class="text-sm text-gray-300">(Plant & Machinery) Data Management System</p>
+                </div>
+                <div class="sm:hidden">
+                    <h1 class="text-lg font-bold text-yellow-custom">MABP</h1>
+                </div>
+            </div>
+            
+            <!-- Center: Welcome Message -->
+            <div class="text-center hidden md:block">
+                <p class="text-yellow-custom font-semibold">Welcome, <span id="userName">Admin User</span></p>
+                <p class="text-xs text-gray-400">Have a productive day!</p>
+            </div>
+            
+            <!-- Right: User Info -->
+            <div class="flex items-center space-x-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm text-yellow-custom font-medium">Welcome, {{ user }}</p>
+                    <p class="text-xs text-gray-400">Online</p>
+                </div>
+                <div class="w-8 h-8 bg-yellow-custom rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="main-content bg-gray-50" id="mainContent">
+        <div class="fade-in">
+            {% block content %}
+            <div class="bg-white rounded-lg shadow-lg p-12 mx-auto max-w-4xl">
+                <div class="text-center py-16">
+                    <div class="w-20 h-20 gradient-bg rounded-full flex items-center justify-center mx-auto mb-8 pulse-glow">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                            <rect x="11" y="2" width="2" height="18" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+                            <rect x="4" y="5" width="16" height="1.5" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+                            <rect x="2" y="5" width="4" height="1" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+                            <rect x="1" y="4" width="2" height="3" fill="#2a2a2a" stroke="#444" stroke-width="0.5"/>
+                            <rect x="10" y="6" width="4" height="2" fill="#2a2a2a" stroke="#444" stroke-width="0.5" rx="0.5"/>
+                            <rect x="10.5" y="6.3" width="1" height="1" fill="#444" stroke="#666" stroke-width="0.2"/>
+                            <rect x="12.5" y="6.3" width="1" height="1" fill="#444" stroke="#666" stroke-width="0.2"/>
+                            <line x1="18" y1="6.5" x2="18" y2="15" stroke="#333" stroke-width="0.8" stroke-dasharray="0.5,0.5"/>
+                            <path d="M17.5 15 Q18 15.5 18.5 15 Q18.5 15.5 18 16 Q17.5 15.5 17.5 15" fill="#1a1a1a" stroke="#333" stroke-width="0.3"/>
+                            <rect x="16.5" y="16" width="3" height="2" fill="#444" stroke="#666" stroke-width="0.4" rx="0.3"/>
+                            <rect x="8" y="20" width="8" height="2" fill="#2a2a2a" stroke="#444" stroke-width="0.5"/>
+                            <line x="9" y="20" x2="11" y2="18" stroke="#333" stroke-width="0.5"/>
+                            <line x="15" y="20" x2="13" y2="18" stroke="#333" stroke-width="0.5"/>
+                            <line x="12" y="3" x2="20" y2="5.5" stroke="#333" stroke-width="0.3"/>
+                            <line x="12" y="3" x2="4" y2="5.5" stroke="#333" stroke-width="0.3"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Welcome to MABP Welcome, {{ user }}</h2>
+                    <p class="text-xl text-gray-600 mb-8">Plant & Machinery Data Management System</p>
+                    <p class="text-lg text-gray-500 leading-relaxed max-w-2xl mx-auto">Select a menu item from the sidebar to get started with managing your assets and operations.</p>
+                </div>
+            </div>
+            {% endblock %}
+        </div>
+    </main>
+    
+    <script>
+        let leftPadding = 60;
+        let rightPadding = 60;
+        let isResizingLeft = false;
+        let isResizingRight = false;
+        
+        // Sidebar toggle functionality
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const header = document.getElementById('header');
+            const menuBtn = document.getElementById('menuBtn');
+            const overlay = document.getElementById('overlay');
+            const resizeHandleLeft = document.getElementById('resizeHandleLeft');
+            
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('open');
+                menuBtn.classList.toggle('active');
+                overlay.classList.toggle('active');
+            } else {
+                // Desktop toggle
+                sidebar.classList.toggle('hidden');
+                mainContent.classList.toggle('sidebar-hidden');
+                header.classList.toggle('sidebar-hidden');
+                resizeHandleLeft.classList.toggle('sidebar-hidden');
+            }
+        }
+        
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.getElementById('menuBtn');
+            const overlay = document.getElementById('overlay');
+            
+            sidebar.classList.remove('open');
+            menuBtn.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+        
+        // Initialize resize functionality for content spacing
+        function initContentResize() {
+            const resizeHandleLeft = document.getElementById('resizeHandleLeft');
+            const resizeHandleRight = document.getElementById('resizeHandleRight');
+            const mainContent = document.getElementById('mainContent');
+            
+            // Left handle (controls left padding)
+            resizeHandleLeft.addEventListener('mousedown', (e) => {
+                if (window.innerWidth <= 768) return;
+                isResizingLeft = true;
+                resizeHandleLeft.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+            
+            // Right handle (controls right padding)
+            resizeHandleRight.addEventListener('mousedown', (e) => {
+                if (window.innerWidth <= 768) return;
+                isResizingRight = true;
+                resizeHandleRight.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (window.innerWidth <= 768) return;
+                
+                if (isResizingLeft) {
+                    const sidebar = document.getElementById('sidebar');
+                    const sidebarWidth = sidebar.classList.contains('hidden') ? 0 : 280;
+                    const newLeftPadding = Math.max(20, Math.min(150, e.clientX - sidebarWidth));
+                    leftPadding = newLeftPadding;
+                    
+                    mainContent.style.paddingLeft = leftPadding + 'px';
+                    resizeHandleLeft.style.left = (sidebarWidth + leftPadding) + 'px';
+                }
+                
+                if (isResizingRight) {
+                    const newRightPadding = Math.max(20, Math.min(150, window.innerWidth - e.clientX));
+                    rightPadding = newRightPadding;
+                    
+                    mainContent.style.paddingRight = rightPadding + 'px';
+                    resizeHandleRight.style.right = rightPadding + 'px';
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isResizingLeft || isResizingRight) {
+                    isResizingLeft = false;
+                    isResizingRight = false;
+                    resizeHandleLeft.classList.remove('dragging');
+                    resizeHandleRight.classList.remove('dragging');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+        
+
+        
+        // Active link highlighting
+        const currentPath = window.location.pathname;
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        
+        sidebarLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            }
+        });
+        
+        // Close sidebar when clicking on links (mobile)
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            });
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                const overlay = document.getElementById('overlay');
+                const sidebar = document.getElementById('sidebar');
+                
+                overlay.classList.remove('active');
+                sidebar.classList.remove('open');
+            }
+        });
+        
+        // Initialize content resize functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            initContentResize();
+        });
+        
+        // Set user name (you can replace this with dynamic data)
+        // document.getElementById('userName').textContent = 'John Doe'; // Replace with actual user name
+    </script>
+{% if not config['DEBUG'] %}
+
+{% endif %}
+</html>
