@@ -107,7 +107,7 @@ def admin_user_management():
 modules = [
     'asset_master',
     'asset_running_status',
-    'HSD_Issued',              # matches /admin_HSD_Issued
+    'fuel_consumption_analysis',              # matches /admin_HSD_Issued
     'break_down_report',       # matches /admin_break_down_report
     'day_wise_works',          # matches /admin_day_wise_works
     'spares_requirements',       # matches /admin.spares.requirment
@@ -115,14 +115,16 @@ modules = [
     'maintenance_schedule',
     'breakdown_report',            # matches /admin_maintances_shedule
     'digital_status',
-    'asset_fit_unfit_status', 
+    'asset_green_card_status', 
     'asset_documents_status', 
     'daywise_works',   # matches /admin_asset_fit_unfit_status
     'uauc_status',
     'hire_billing_status',     # matches /admin_hire_billing_status
     'concrete_production',
+    'solar_report',
     'workmen_status'
 ]
+
 
 
 def make_routes():
@@ -141,6 +143,46 @@ def make_routes():
 make_routes()
 
 
+
+
+# ---------------- view profile ----------------
+@app.route('/user_profile')
+@require_role('user')
+def user_profile():
+    user_email = session.get('user')
+    user_role = session.get('role')
+    return render_template('user_profile.html', user_email=user_email, user_role=user_role)
+
+# ---------------- Change Password ----------------
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@require_role('user')
+def change_password():
+    if request.method == 'POST':
+        old_password = request.form.get('old_password')
+        new_password = request.form.get('new_password')
+        user_email = session.get('user')
+
+        try:
+            # Step 1: Re-authenticate user with old password 
+            auth = supabase.auth.sign_in_with_password({ 
+                'email': user_email,
+                'password': old_password
+            })
+
+            if not auth.user:
+                return render_template('change_password.html', error="Incorrect current password")
+
+            # Step 2: Update password for logged-in user
+            supabase.auth.update_user({"password": new_password})
+
+            return redirect('/user_dashboard')
+
+        except Exception as e:
+            return render_template('change_password.html', error=str(e))
+
+    return render_template('change_password.html')
+
 # ---------------- MAIN ----------------
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)

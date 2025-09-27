@@ -367,11 +367,11 @@
                 <span class="text-sm font-medium">Asset Master</span>
             </a>
             
-            <a href="/admin_HSD_Issued" class="sidebar-link">
+            <a href="/admin_fuel_consumption_analysis" class="sidebar-link">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 1L5 3l4 2 4-2-4-2z"/>
                 </svg>
-                <span class="text-sm font-medium">HSD Issued</span>
+                <span class="text-sm font-medium">Fuel consumption Analysis</span>
             </a>
             
             <a href="/admin_asset_running_status" class="sidebar-link">
@@ -419,11 +419,11 @@
                 <span class="text-sm font-medium">Break Down Report</span>
             </a>
             
-            <a href="/admin_asset_fit_unfit_status" class="sidebar-link">
+            <a href="/admin_asset_green_card_status" class="sidebar-link">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <span class="text-sm font-medium">Asset Fit/Un-Fit Status</span>
+                <span class="text-sm font-medium">Asset Green Card Status</span>
             </a>
             
             <a href="/admin_uauc_status" class="sidebar-link">
@@ -437,7 +437,7 @@
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
-                <span class="text-sm font-medium">Documents Status</span>
+                <span class="text-sm font-medium">RTO/TPI Docments</span>
             </a>
             
             <a href="admin_daywise_works" class="sidebar-link">
@@ -453,6 +453,13 @@
                 </svg>
                 <span class="text-sm font-medium">Hire Billing Status</span>
             </a>
+
+            <a href="/admin_solar_report" class="sidebar-link">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="text-sm font-medium">Solar Report</span>
+            </a>            
             
             <a href="/admin_digital_status" class="sidebar-link">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -483,7 +490,7 @@
                     <p class="text-sm text-gray-300">(Plant & Machinery) Data Management System</p>
                 </div>
                 <div class="sm:hidden">
-                    <h1 class="text-lg font-bold text-yellow-custom">MABP</h1>
+                    <p class="text-yellow-custom font-semibold">Admin: <span id="userName">{{ session['user'] }}</span></p>
                 </div>
             </div>
             
@@ -507,10 +514,12 @@
             </div>
         </div>
     </header>
-    
+
+
     <!-- Main Content -->
     <main class="main-content bg-gray-50" id="mainContent">
         <div class="fade-in">
+        
             {% block content %}
             <div class="bg-white rounded-lg shadow-lg p-12 mx-auto max-w-4xl">
                 <div class="text-center py-16">
