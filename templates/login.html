@@ -28,11 +28,10 @@
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      background-attachment: fixed; /* fixed background */
+      background-attachment: fixed;
       background-image: url("https://bbfeqsakiboaslohymte.supabase.co/storage/v1/object/public/Login%20Page%20Images/Login%20Page%20Images/heavy-machinery-used-construction-industry-engineering.jpg");
     }
 
-    /* Overlay */
     .background-overlay {
       position: fixed;
       top: 0;
@@ -138,7 +137,6 @@
       50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
     }
 
-    /* Responsive adjustments */
     @media (max-width: 768px) {
       .construction-title {
         font-size: 1.8rem;
@@ -188,10 +186,18 @@
       <div class="text-center mb-4">
         <h2 class="text-xl md:text-2xl font-bold text-yellow-custom">Login</h2>
       </div>
+
+      <!-- Error Message -->
+      {% if error %}
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm">
+        {{ error }}
+      </div>
+      {% endif %}
+
       <form method="POST" action="/login" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-yellow-custom mb-1">Email</label>
-          <input type="email" name="email" id="email" class="input-field w-full" placeholder="Enter email" required>
+          <label class="block text-sm font-medium text-yellow-custom mb-1">Email or Mobile</label>
+          <input type="text" name="email" id="email" class="input-field w-full" placeholder="Enter email or mobile" required>
         </div>
         <div>
           <label class="block text-sm font-medium text-yellow-custom mb-1">Password</label>
@@ -199,8 +205,8 @@
         </div>
         <div class="flex items-center justify-between text-sm">
           <label class="flex items-center">
-            <input type="checkbox" class="mr-1 accent-yellow-custom">
-            <span class="text-gray-400">Remember</span>
+            <input type="checkbox" name="remember" class="mr-1 accent-yellow-custom">
+            <span class="text-gray-400">Remember me</span>
           </label>
         </div>
         <button type="submit" class="login-btn w-full">Sign In</button>
