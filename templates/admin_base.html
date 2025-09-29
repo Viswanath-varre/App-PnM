@@ -148,6 +148,7 @@
         }
         
 
+
         
         /* Header Styles */
         .header {
@@ -338,7 +339,7 @@
                 </div>
                 <div>
                     <h2 class="text-xl font-bold text-yellow-custom">MABP</h2>
-                    <p class="text-xs text-gray-400">P&M Admin Panel</p>
+                    <p class="text-xs text-gray-400">Admin Panel</p>
                 </div>
             </div>
         </div>
@@ -480,38 +481,41 @@
         </div>
     </div>
     
-    <!-- Header -->
     <header class="header header-gradient" id="header">
-        <div class="flex items-center justify-between h-full px-6">
-            <!-- Left: Title -->
-            <div class="flex items-center space-x-4">
-                <div class="hidden sm:block">
-                    <h1 class="text-xl font-bold text-yellow-custom">MABP - P&M</h1>
-                    <p class="text-sm text-gray-300">(Plant & Machinery) Data Management System</p>
-                </div>
-                <div class="sm:hidden">
-                    <p class="text-yellow-custom font-semibold">Admin: <span id="userName">{{ session['user'] }}</span></p>
-                </div>
+        <div class="flex items-center h-full px-6">
+
+            <!-- Left: Title (hidden on mobile) -->
+            <div class="hidden sm:block">
+                <h1 class="text-xl font-bold text-yellow-custom">MABP - P&M</h1>
+                <p class="text-sm text-gray-300">(Plant & Machinery) Data Management System</p>
             </div>
-            
+
             <!-- Center: Welcome Message -->
-            <div class="text-center hidden md:block">
-                <p class="text-yellow-custom font-semibold">Welcome, <span id="userName">Admin User</span></p>
-                <p class="text-xs text-gray-400">Have a productive day!</p>
+            <div class="flex-1 text-center">
+                <p class="text-yellow-custom font-semibold">
+                    Welcome, <span id="userName">Admin</span>
+                </p>
+                <p class="text-white text-xs sm:text-sm truncate max-w-[160px] sm:max-w-none mx-auto">
+                    {{ session['name'] }}
+                </p>
             </div>
-            
-            <!-- Right: User Info -->
+
+            <!-- Right: Profile Dropdown -->
             <div class="flex items-center space-x-4">
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm text-yellow-custom font-medium">Admin Panel</p>
-                    <p class="text-xs text-gray-400">Online</p>
-                </div>
-                <div class="w-8 h-8 bg-yellow-custom rounded-full flex items-center justify-center">
-                    <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                    </svg>
+                <div class="relative">
+                    <button id="userMenuBtn" class="w-8 h-8 bg-yellow-custom rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+                        </svg>
+                    </button>
+                    <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
+                        <a href="/admin_profile" class="block px-4 py-2 text-sm hover:bg-gray-100">View Profile</a>
+                        <a href="/admin_change_password" class="block px-4 py-2 text-sm hover:bg-gray-100">Change Password</a>
+                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+                    </div>
                 </div>
             </div>
+
         </div>
     </header>
 
@@ -648,6 +652,7 @@
         }
         
 
+
         
         // Active link highlighting
         const currentPath = window.location.pathname;
@@ -683,7 +688,25 @@
         document.addEventListener('DOMContentLoaded', () => {
             initContentResize();
         });
-        
+
+        // ---------- ADDED: dropdown toggle logic (admin profile button) ----------
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('userMenuBtn');
+            const dropdown = document.getElementById('userDropdown');
+            if (btn && dropdown) {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('hidden');
+                });
+                document.addEventListener('click', e => {
+                    if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
+            }
+        });
+        // -----------------------------------------------------------------------
+
         // Set user name (you can replace this with dynamic data)
         // document.getElementById('userName').textContent = 'John Doe'; // Replace with actual user name
     </script>

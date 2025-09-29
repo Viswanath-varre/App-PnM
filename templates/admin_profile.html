@@ -1,0 +1,12 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin Profile{% endblock %}
+{% block content %}
+<div class="bg-white p-6 rounded-lg shadow max-w-xl mx-auto mt-6">
+    <h2 class="text-2xl font-bold mb-4 text-yellow-custom">Admin Profile</h2>
+    <div class="space-y-2">
+        <p><strong>Email:</strong> {{ user_email }}</p>
+        <p><strong>Role:</strong> {{ user_role }}</p>
+    </div>
+</div>
+{% endblock %}
+

@@ -125,7 +125,6 @@
         </div>
         <div>
           <h2 class="text-xl font-bold text-yellow-custom">MABP</h2>
-          <p class="text-xs text-gray-400">P&M {{ session['name'] }}</p>
         </div>
       </div>
     </div>
@@ -139,9 +138,9 @@
         {% elif m == 'break_down_report' %}
           <a href="/user_breakdown_report" class="sidebar-link">Break Down Report</a>
         {% elif m == 'docments_status' %}
-          <a href="/user_asset_documents_status" class="sidebar-link">Documents Status</a>
+          <a href="/user_asset_documents_status" class="sidebar-link">RTO/TPI Docments</a>
         {% elif m == 'fuel_consumption_analysis' %}
-          <a href="/user_fuel_consumption_analysis" class="sidebar-link">Fuel Consumption</a>
+          <a href="/user_fuel_consumption_analysis" class="sidebar-link">Fuel Consumption Analysis/a>
         {% elif m == 'asset_running_status' %}
           <a href="/user_asset_running_status" class="sidebar-link">Asset Running</a>
         {% elif m == 'spares_requirements' %}
@@ -187,7 +186,7 @@
 
       <!-- Left: Title -->
       <div class="hidden sm:block">
-        <h1 class="text-xl font-bold text-yellow-custom">MABP - P&M</h1>
+        <h1 class="text-xl font-bold text-yellow-custom">P&M</h1>
         <p class="text-sm text-gray-300">Plant & Machinery Data Management System</p>
       </div>
 

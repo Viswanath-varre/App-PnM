@@ -384,6 +384,13 @@ def user_profile():
     user_role = session.get('role')
     return render_template('user_profile.html', user_email=user_email, user_role=user_role)
 
+# ---------------- ADMIN PROFILE ----------------
+@app.route('/admin_profile')
+@require_role('admin')
+def admin_profile():
+    user_email = session.get('user')
+    user_role = session.get('role')
+    return render_template('admin_profile.html', user_email=user_email, user_role=user_role)
 
 # ---------------- Change Password ----------------
 @app.route('/change_password', methods=['GET', 'POST'])
@@ -411,6 +418,31 @@ def change_password():
 
     return render_template('change_password.html')
 
+# ---------------- ADMIN CHANGE PASSWORD ----------------
+@app.route('/admin_change_password', methods=['GET', 'POST'])
+@require_role('admin')
+def admin_change_password():
+    if request.method == 'POST':
+        old_password = request.form.get('old_password')
+        new_password = request.form.get('new_password')
+        user_email = session.get('user')
+
+        try:
+            auth = supabase.auth.sign_in_with_password({
+                'email': user_email,
+                'password': old_password
+            })
+
+            if not auth.user:
+                return render_template('change_password.html', error="Incorrect current password")
+
+            supabase.auth.update_user({"password": new_password})
+            return redirect('/admin_dashboard')   # ✅ redirect admin back to admin dashboard
+
+        except Exception as e:
+            return render_template('change_password.html', error=str(e))
+
+    return render_template('change_password.html')
 
 # ---------------- MAIN ----------------
 if __name__ == "__main__":
