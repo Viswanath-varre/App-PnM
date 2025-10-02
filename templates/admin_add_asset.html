@@ -1,0 +1,229 @@
+{% extends 'admin_base.html' %}
+{% block title %}Add Asset{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6 bg-white rounded shadow">
+  <h1 class="text-2xl font-bold mb-6">Add New Asset</h1>
+
+  <form id="addAssetForm" class="grid grid-cols-2 gap-4">
+    <!-- Row 1 -->
+    <div>
+      <label class="block text-sm">Asset Code</label>
+      <input name="asset_code" class="w-full border rounded px-3 py-2" required>
+    </div>
+    <div>
+      <label class="block text-sm">Asset Description</label>
+      <input name="asset_description" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 2 -->
+    <div>
+      <label class="block text-sm">Reg. No.</label>
+      <input name="reg_no" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Package</label>
+      <input name="package" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 3 -->
+    <div>
+      <label class="block text-sm">Activity</label>
+      <input name="activity" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Location</label>
+      <input name="location" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 4 -->
+    <div>
+      <label class="block text-sm">Meter Type</label>
+      <input name="meter_type" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">UoM</label>
+      <input name="uom" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 5 -->
+    <div>
+      <label class="block text-sm">Fuel Norms</label>
+      <input name="fuel_norms" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Owner</label>
+      <select name="owner" class="w-full border rounded px-3 py-2">
+        <option value="">-- Select --</option>
+        <option value="Own">Own</option>
+        <option value="Hire">Hire</option>
+        <option value="NC">NC</option>
+      </select>
+    </div>
+
+    <!-- Row 6 -->
+    <div>
+      <label class="block text-sm">Vendor Code</label>
+      <input name="vendor_code" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Agency</label>
+      <input name="agency" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 7 -->
+    <div>
+      <label class="block text-sm">WOD Number</label>
+      <input name="wod_number" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Vendor Mail ID</label>
+      <input type="email" name="vendor_mail_id" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 8 -->
+    <div>
+      <label class="block text-sm">Date of Commission</label>
+      <input type="date" name="date_of_commission" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Starting Reading</label>
+      <input type="number" name="starting_reading" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 9 -->
+    <div>
+      <label class="block text-sm">Tank Capacity</label>
+      <input type="number" name="tank_capacity" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">HSD Available</label>
+      <input type="number" name="hsd_available" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 10 -->
+    <div>
+      <label class="block text-sm">Make</label>
+      <input name="make" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Model</label>
+      <input name="model" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 11 -->
+    <div>
+      <label class="block text-sm">PM Make</label>
+      <input name="pm_make" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">PM Model</label>
+      <input name="pm_model" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 12 -->
+    <div>
+      <label class="block text-sm">EHC (Hire)/IHC (Own)</label>
+      <input type="number" name="ehc" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Additional Operator Charge</label>
+      <input type="number" name="additional_operator_charge" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 13 -->
+    <div>
+      <label class="block text-sm">Shift Hours</label>
+      <input type="number" name="shift_hours" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Operators Available</label>
+      <input type="number" name="operator_available" min="0" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 14 -->
+    <div>
+      <label class="block text-sm">Helpers Available</label>
+      <input type="number" name="helper_available" min="0" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Supervisor/Owner Name</label>
+      <input name="supervisor_owner_name" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 15 -->
+    <div>
+      <label class="block text-sm">Supervisor/Owner Phone</label>
+      <input name="supervisor_owner_phone" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Operator 1</label>
+      <input name="operator1" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 16 -->
+    <div>
+      <label class="block text-sm">Operator 1 Phone</label>
+      <input name="operator1_phone" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Operator 1 Shift</label>
+      <input name="operator1_shift" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 17 -->
+    <div>
+      <label class="block text-sm">Operator 2</label>
+      <input name="operator2" class="w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm">Operator 2 Phone</label>
+      <input name="operator2_phone" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Row 18 -->
+    <div>
+      <label class="block text-sm">Operator 2 Shift</label>
+      <input name="operator2_shift" class="w-full border rounded px-3 py-2">
+    </div>
+
+    <!-- Submit -->
+    <div class="col-span-2 flex justify-end space-x-3 mt-6">
+      <a href="/admin_asset_master" class="px-4 py-2 rounded border">Cancel</a>
+      <button type="submit" class="px-4 py-2 rounded bg-yellow-custom text-black">Save</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  document.getElementById("addAssetForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    // Convert numeric fields properly
+    ["starting_reading","tank_capacity","hsd_available","ehc",
+     "additional_operator_charge","shift_hours",
+     "operator_available","helper_available"].forEach(f=>{
+      if(data[f] !== undefined && data[f] !== "") data[f] = parseFloat(data[f]);
+      else data[f] = null;
+    });
+
+    try {
+      const r = await fetch("/add_asset", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(data)
+      });
+      const resp = await r.json();
+      if(r.status === 201 || resp.success){
+        window.location.href = "/admin_asset_master";
+      } else {
+        alert("Failed to add asset: " + (resp.error || JSON.stringify(resp)));
+      }
+    } catch(err) {
+      alert("Error: " + err);
+    }
+  });
+</script>
+{% endblock %}

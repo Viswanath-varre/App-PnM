@@ -1,8 +1,555 @@
 {% extends 'admin_base.html' %}
 {% block title %}Admin Asset Master{% endblock %}
+
 {% block content %}
-<div class="p-6">
-  <h1 class="text-2xl font-bold mb-4">Admin Asset Master</h1>
-  <p class="text-gray-600">Coming Soon...</p>
+<div class="p-4">
+
+  <!-- Title + Buttons -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+    <div>
+      <h1 class="text-2xl font-bold">Asset Master (Admin)</h1>
+      <p class="text-sm text-gray-600">Manage all asset master records</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Funnel Icon -->
+      <button id="toggleFiltersBtn" class="p-2 rounded border" title="Toggle Filters">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 01.8 1.6L13 10v5a1 1 0 01-1.447.894l-2-1A1 1 0 019 14v-4L3.2 4.6A1 1 0 013 4z" clip-rule="evenodd"/>
+        </svg>
+      </button>
+      
+      <button id="editSelectedBtn" class="px-3 py-2 rounded border bg-blue-500 text-white disabled:opacity-50" disabled>
+        Edit Selected
+      </button>
+
+      <a href="/admin_add_asset" class="px-3 py-2 rounded bg-yellow-custom text-black">Add Asset</a>
+      <a href="/download_assets_csv" class="px-3 py-2 rounded border">Download CSV</a>
+      <a href="/download_assets_template_csv" class="px-3 py-2 rounded border">Download Template CSV</a>
+      <a href="#" id="downloadExcelBtn" class="px-3 py-2 rounded border">Download Excel</a>
+
+      <label class="px-3 py-2 rounded border cursor-pointer bg-white">
+        Upload CSV
+        <input id="csvUploadInput" type="file" accept=".csv" style="display:none" />
+      </label>
+
+      <button id="refreshBtn" class="px-3 py-2 rounded border">Refresh</button>
+      <button id="deleteSelectedBtn" class="px-3 py-2 rounded border bg-red-500 text-white">Delete Selected</button>
+    </div>
+  </div>
+
+  <!-- Upload progress/status -->
+  <div id="uploadWrapper" class="mt-2 hidden">
+    <div class="h-2 bg-gray-200 rounded relative">
+      <div id="uploadProgress" class="h-2 bg-green-500 rounded w-0 text-xs text-white text-center"></div>
+    </div>
+    <div id="uploadStatus" class="text-xs text-gray-500 mt-1"></div>
+  </div>
+
+  <!-- Dashboard Counts -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+    <!-- Total Assets -->
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-bold mb-4">Total Assets</h2>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">Own</div><div id="countOwn" class="text-xl font-bold">0</div></div>
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">Hire</div><div id="countHire" class="text-xl font-bold">0</div></div>
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">NC</div><div id="countNC" class="text-xl font-bold">0</div></div>
+      </div>
+    </div>
+    <!-- Adabari -->
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-bold mb-4">Adabari</h2>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">Own</div><div id="adabariOwn" class="text-xl font-bold">0</div></div>
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">Hire</div><div id="adabariHire" class="text-xl font-bold">0</div></div>
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">NC</div><div id="adabariNC" class="text-xl font-bold">0</div></div>
+      </div>
+    </div>
+    <!-- Birsing -->
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-bold mb-4">Birsing</h2>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">Own</div><div id="birsingOwn" class="text-xl font-bold">0</div></div>
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">Hire</div><div id="birsingHire" class="text-xl font-bold">0</div></div>
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">NC</div><div id="birsingNC" class="text-xl font-bold">0</div></div>
+      </div>
+    </div>
+    <!-- Phulbari -->
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-bold mb-4">Phulbari</h2>
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">Own</div><div id="phulbariOwn" class="text-xl font-bold">0</div></div>
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">Hire</div><div id="phulbariHire" class="text-xl font-bold">0</div></div>
+        <div class="bg-gray-100 p-3 rounded"><div class="text-sm text-gray-500">NC</div><div id="phulbariNC" class="text-xl font-bold">0</div></div>
+      </div>
+    </div>
+    <!-- Last Update -->
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-bold mb-4">Last Update</h2>
+      <div id="lastUpdate" class="text-center text-sm text-gray-700">--</div>
+    </div>
+  </div>
+  <!-- Search -->
+  <div class="flex flex-col sm:flex-row items-center gap-2 mb-3">
+    <div class="flex items-center gap-2"><input type="radio" id="searchAssetCode" name="searchMode" value="asset_code" checked><label for="searchAssetCode" class="text-sm">By Asset Code</label></div>
+    <div class="flex items-center gap-2"><input type="radio" id="searchRegNo" name="searchMode" value="reg_no"><label for="searchRegNo" class="text-sm">By Reg. No.</label></div>
+    <input id="globalSearchInput" placeholder="Type to search..." class="flex-1 px-3 py-2 border rounded" />
+    <button id="clearSearchBtn" class="px-3 py-2 rounded border">Clear</button>
+  </div>
+
+  <!-- Top Scrollbar -->
+  <div id="scrollTop" class="overflow-x-auto mb-1"><div style="height:1px"></div></div>
+  <div id="asset-table" class="overflow-x-auto"></div>
+  <div id="scrollBottom" class="overflow-x-auto mt-1"><div style="height:1px"></div></div>
 </div>
+
+<!-- Error Popup -->
+<div id="errorPopup" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+  <div class="bg-white rounded shadow-lg w-96 max-h-96 overflow-y-auto p-4">
+    <h3 class="text-lg font-bold text-red-600 mb-2">Upload Errors</h3>
+    <ul id="errorList" class="list-disc pl-5 text-sm text-gray-700"></ul>
+    <div class="text-right mt-4 space-x-2">
+      <button id="downloadErrorCsv" class="px-3 py-1 bg-gray-600 text-white rounded">Download Errors</button>
+      <button id="closeErrorPopup" class="px-3 py-1 bg-red-500 text-white rounded">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Asset Modal (moved outside of script) -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+  <div class="bg-white rounded shadow-lg w-11/12 max-w-5xl max-h-[90vh] overflow-y-auto p-6">
+    <h2 class="text-xl font-bold mb-4">Edit Asset</h2>
+    <form id="editAssetForm" class="grid grid-cols-2 gap-4">
+        <input type="hidden" id="edit_id">
+
+        <div><label>Asset Code</label><input id="edit_asset_code" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Asset Description</label><input id="edit_asset_description" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Reg. No.</label><input id="edit_reg_no" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Package</label><input id="edit_package" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Activity</label><input id="edit_activity" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Location</label><input id="edit_location" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Meter Type</label><input id="edit_meter_type" class="w-full border rounded px-3 py-2"></div>
+        <div><label>UoM</label><input id="edit_uom" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Fuel Norms</label><input id="edit_fuel_norms" class="w-full border rounded px-3 py-2"></div>
+        <div>
+            <label>Owner</label>
+            <select id="edit_owner" class="w-full border rounded px-3 py-2">
+                <option value="">-- Select --</option>
+                <option value="Own">Own</option>
+                <option value="Hire">Hire</option>
+                <option value="NC">NC</option>
+            </select>
+        </div>
+        <div><label>Vendor Code</label><input id="edit_vendor_code" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Agency</label><input id="edit_agency" class="w-full border rounded px-3 py-2"></div>
+        <div><label>WOD Number</label><input id="edit_wod_number" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Vendor Mail Id</label><input id="edit_vendor_mail_id" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Date of Commission</label><input type="date" id="edit_date_of_commission" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Starting Reading</label><input type="number" id="edit_starting_reading" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Tank Capacity</label><input type="number" id="edit_tank_capacity" class="w-full border rounded px-3 py-2"></div>
+        <div><label>HSD Available</label><input type="number" id="edit_hsd_available" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Make</label><input id="edit_make" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Model</label><input id="edit_model" class="w-full border rounded px-3 py-2"></div>
+        <div><label>PM Make</label><input id="edit_pm_make" class="w-full border rounded px-3 py-2"></div>
+        <div><label>PM Model</label><input id="edit_pm_model" class="w-full border rounded px-3 py-2"></div>
+        <div><label>EHC</label><input type="number" id="edit_ehc" class="w-full border rounded px-3 py-2"></div>
+        <div><label>IHC</label><input type="number" id="edit_ihc" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Additional Operator Charge</label><input type="number" id="edit_additional_operator_charge" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Shift Hours</label><input type="number" id="edit_shift_hours" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Operators Available</label><input type="number" id="edit_operator_available" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Helpers Available</label><input type="number" id="edit_helper_available" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Supervisor/Owner Name</label><input id="edit_supervisor_owner_name" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Supervisor/Owner Phone</label><input id="edit_supervisor_owner_phone" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Operator 1</label><input id="edit_operator1" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Operator 1 Phone</label><input id="edit_operator1_phone" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Operator 1 Shift</label><input id="edit_operator1_shift" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Operator 2</label><input id="edit_operator2" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Operator 2 Phone</label><input id="edit_operator2_phone" class="w-full border rounded px-3 py-2"></div>
+        <div><label>Operator 2 Shift</label><input id="edit_operator2_shift" class="w-full border rounded px-3 py-2"></div>
+
+        <div class="col-span-2 flex justify-end gap-2 mt-4">
+            <button type="button" id="closeEditModal" class="px-4 py-2 rounded border">Cancel</button>
+            <button type="submit" class="px-4 py-2 rounded bg-green-600 text-white">Update</button>
+        </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabulator -->
+<link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+<script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
+<style>
+  #asset-table .tabulator .tabulator-header .tabulator-col .tabulator-header-filter { display: none; }
+  #asset-table.filters-visible .tabulator .tabulator-header .tabulator-col .tabulator-header-filter { display: block !important; }
+  #uploadProgress { text-align: center; font-size: 10px; color: white; }
+</style>
+
+<script>
+  const columns = [
+    {formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:50, cellClick:function(e, cell){ cell.getRow().toggleSelect(); }},
+    {title:"ID", field:"id", width:70, hozAlign:"left"},
+    {title:"Sl. No.", formatter:"rownum", hozAlign:"center", width:80},
+    {title:"Asset Code", field:"asset_code", editor:"input", headerFilter:"input", frozen:true},
+    {title:"Asset Description", field:"asset_description", editor:"input", headerFilter:"input"},
+    {title:"Reg. No.", field:"reg_no", editor:"input", headerFilter:"input"},
+    {title:"Package", field:"package", editor:"input", headerFilter:"input"},
+    {title:"Activity", field:"activity", editor:"input", headerFilter:"input"},
+    {title:"Location", field:"location", editor:"input", headerFilter:"input"},
+    {title:"Meter Type", field:"meter_type", editor:"input", headerFilter:"input"},
+    {title:"UoM", field:"uom", editor:"input", headerFilter:"input"},
+    {title:"Fuel Norms", field:"fuel_norms", editor:"input", headerFilter:"input"},
+    {title:"Owner", field:"owner", editor:"select", editorParams:{"":"", "Own":"Own","Hire":"Hire","NC":"NC"}, headerFilter:"select", headerFilterParams:{values:{"":"All","Own":"Own","Hire":"Hire","NC":"NC"}}},
+    {title:"Vendor Code", field:"vendor_code", editor:"input", headerFilter:"input"},
+    {title:"Agency", field:"agency", editor:"input", headerFilter:"input"},
+    {title:"WOD Number", field:"wod_number", editor:"input", headerFilter:"input"},
+    {title:"Vendor Mail Id", field:"vendor_mail_id", editor:"input", headerFilter:"input"},
+    {title:"Date of Commission", field:"date_of_commission", editor:"input", headerFilter:"input"},
+    {title:"Starting Reading", field:"starting_reading", editor:"number", headerFilter:"input"},
+    {title:"Tank Capacity", field:"tank_capacity", editor:"number", headerFilter:"input"},
+    {title:"HSD Available", field:"hsd_available", editor:"number", headerFilter:"input"},
+    {title:"Make", field:"make", editor:"input", headerFilter:"input"},
+    {title:"Model", field:"model", editor:"input", headerFilter:"input"},
+    {title:"PM Make", field:"pm_make", editor:"input", headerFilter:"input"},
+    {title:"PM Model", field:"pm_model", editor:"input", headerFilter:"input"},
+    {title:"EHC (Hire)/IHC (Own)", field:"ehc", editor:"number", headerFilter:"input"},
+    {title:"Add. Op Charge", field:"additional_operator_charge", editor:"number", headerFilter:"input"},
+    {title:"Shift Hours", field:"shift_hours", editor:"number", headerFilter:"input"},
+    {title:"Operators Avail", field:"operator_available", editor:"number", headerFilter:"input"},
+    {title:"Helpers Avail", field:"helper_available", editor:"number", headerFilter:"input"},
+    {title:"Supervisor/Owner Name", field:"supervisor_owner_name", editor:"input", headerFilter:"input"},
+    {title:"Supervisor/Owner Phone", field:"supervisor_owner_phone", editor:"input", headerFilter:"input"},
+    {title:"Operator 1", field:"operator1", editor:"input", headerFilter:"input"},
+    {title:"Op1 Phone", field:"operator1_phone", editor:"input", headerFilter:"input"},
+    {title:"Op1 Shift", field:"operator1_shift", editor:"input", headerFilter:"input"},
+    {title:"Operator 2", field:"operator2", editor:"input", headerFilter:"input"},
+    {title:"Op2 Phone", field:"operator2_phone", editor:"input", headerFilter:"input"},
+    {title:"Op2 Shift", field:"operator2_shift", editor:"input", headerFilter:"input"},
+    {title:"Last Updated By", field:"last_updated_by"},
+    {title:"Last Updated At", field:"last_updated_at"},
+    {
+      title:"Actions", width:160, hozAlign:"center",
+      formatter:(cell) => {
+        const id = cell.getRow().getData().id;
+        return `
+          <a href="/admin_edit_asset/${id}" class="px-2 py-1 bg-blue-500 text-white rounded text-xs">Edit</a>
+          <button class="deleteRowBtn px-2 py-1 bg-red-500 text-white rounded text-xs">Delete</button>
+        `;
+      },
+      cellClick:(e, cell) => {
+        const target = e.target;
+        const id = cell.getRow().getData().id;
+
+        // ✅ Fix: only intercept Delete button
+        if(target.classList.contains("deleteRowBtn")){
+          e.preventDefault();
+          if(confirm("Delete this asset?")){
+            fetch(`/delete_asset/${id}`, { method: "DELETE" })
+            .then(r=>r.json()).then(resp=>{
+              if(resp.success){ cell.getRow().delete(); updateOwnerCounts(); }
+              else alert("Delete failed: " + resp.error);
+            });
+          }
+        }
+        // 👉 Edit <a> untouched → will redirect
+      }
+    }
+  ];
+  const table = new Tabulator("#asset-table", {
+    height: "500px",
+    layout:"fitDataStretch",
+    columns: columns,
+    ajaxURL:"/get_assets",
+    index:"id",
+    placeholder:"No Data",
+    selectable:true,
+    cellEdited:function(cell){
+      const row = cell.getRow().getData();
+      row.last_updated_by = "{{ session.get('name','') }}";
+      row.last_updated_at = new Date().toISOString();
+      fetch(`/update_asset/${row.id}`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(row)
+      }).then(r=>r.json()).then(resp=>{
+        if(!resp.success) alert("Update failed: " + resp.error);
+        loadData();
+      });
+    }
+  });
+
+  // wire to enable editSelected only when exactly 1 row selected
+  table.on("rowSelectionChanged", function(data){
+    document.getElementById("editSelectedBtn").disabled = (data.length !== 1);
+  });
+
+  // Load Data
+  function loadData(){
+    table.replaceData("/get_assets").then(updateOwnerCounts);
+  }
+
+  // Update counts + last update
+  function updateOwnerCounts(){
+    const data = table.getData("all");
+    let own=0, hire=0, nc=0;
+    const packages={"Adabari":{own:0,hire:0,nc:0},"Birsing":{own:0,hire:0,nc:0},"Phulbari":{own:0,hire:0,nc:0}};
+    data.forEach(r=>{
+      const o=(r.owner||"").toLowerCase(), pkg=(r.package||"").trim();
+      if(o==="own") own++; else if(o==="hire") hire++; else if(o==="nc") nc++;
+      if(packages[pkg]){
+        if(o==="own") packages[pkg].own++;
+        else if(o==="hire") packages[pkg].hire++;
+        else if(o==="nc") packages[pkg].nc++;
+      }
+    });
+    document.getElementById("countOwn").innerText=own;
+    document.getElementById("countHire").innerText=hire;
+    document.getElementById("countNC").innerText=nc;
+    document.getElementById("adabariOwn").innerText=packages.Adabari.own;
+    document.getElementById("adabariHire").innerText=packages.Adabari.hire;
+    document.getElementById("adabariNC").innerText=packages.Adabari.nc;
+    document.getElementById("birsingOwn").innerText=packages.Birsing.own;
+    document.getElementById("birsingHire").innerText=packages.Birsing.hire;
+    document.getElementById("birsingNC").innerText=packages.Birsing.nc;
+    document.getElementById("phulbariOwn").innerText=packages.Phulbari.own;
+    document.getElementById("phulbariHire").innerText=packages.Phulbari.hire;
+    document.getElementById("phulbariNC").innerText=packages.Phulbari.nc;
+
+    // Last Update card
+    const latest = data.reduce((acc, r) => {
+      if (r.last_updated_at && (!acc || new Date(r.last_updated_at) > new Date(acc))) {
+        return r.last_updated_at;
+      }
+      return acc;
+    }, null);
+    document.getElementById("lastUpdate").innerText = latest ? new Date(latest).toLocaleString() : "--";
+  }
+
+  // Toggle Filters
+  let filtersVisible = false;
+  document.getElementById("toggleFiltersBtn").addEventListener("click", () => {
+    filtersVisible = !filtersVisible;
+    const container = document.getElementById("asset-table");
+    if (filtersVisible) container.classList.add("filters-visible");
+    else container.classList.remove("filters-visible");
+  });
+
+  // Search
+  document.getElementById("globalSearchInput").addEventListener("input", e=>{
+    const mode=document.querySelector("input[name='searchMode']:checked").value,q=e.target.value.toLowerCase();
+    if(!q) table.clearFilter(); else table.setFilter(mode,"like",q);
+    updateOwnerCounts();
+  });
+  document.getElementById("clearSearchBtn").addEventListener("click",()=>{
+    document.getElementById("globalSearchInput").value="";
+    table.clearFilter();
+    updateOwnerCounts();
+  });
+
+  // Refresh
+  document.getElementById("refreshBtn").addEventListener("click", loadData);
+
+  // Bulk Delete
+  document.getElementById("deleteSelectedBtn").addEventListener("click", () => {
+    const selected = table.getSelectedData();
+    if (!selected.length) { alert("No rows selected!"); return; }
+    if (!confirm(`Delete ${selected.length} selected asset(s)?`)) return;
+    const ids = selected.map(r => r.id);
+    fetch("/delete_assets_bulk", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ids})
+    }).then(r=>r.json()).then(resp=>{
+      if(resp.success){ loadData(); }
+      else alert("Bulk delete failed: " + resp.error);
+    });
+  });
+
+  // CSV Upload with true byte-based progress
+  document.getElementById("csvUploadInput").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const wrapper=document.getElementById("uploadWrapper");
+    const bar=document.getElementById("uploadProgress");
+    const status=document.getElementById("uploadStatus");
+    wrapper.classList.remove("hidden");
+    bar.style.width="0%"; bar.innerText="";
+    status.innerText="Starting upload...";
+    const xhr=new XMLHttpRequest();
+    xhr.open("POST","/upload_assets_csv");
+    xhr.upload.onprogress=function(ev){
+      if(ev.lengthComputable){
+        const percent=(ev.loaded/ev.total)*100;
+        const uploaded=ev.loaded<1024?`${ev.loaded} B`:`${(ev.loaded/1024).toFixed(1)} KB`;
+        const total=ev.total<1024?`${ev.total} B`:`${(ev.total/1024).toFixed(1)} KB`;
+        bar.style.width=percent+"%";
+        bar.innerText=`${Math.round(percent)}%`;
+        status.innerText=`Uploading ${uploaded} / ${total}`;
+      }
+    };
+    xhr.onload=function(){
+      try{
+        const resp=JSON.parse(xhr.responseText);
+        if(xhr.status===200&&resp.success){
+          bar.style.width="100%";
+          bar.innerText="100%";
+          status.innerText="✅ Upload completed";
+          loadData();
+        } else {
+          status.innerText="❌ "+(resp.error||"Upload failed");
+          if(resp.details&&resp.details.length){ showErrorPopup(resp.details); }
+        }
+      }catch(err){
+        status.innerText="❌ Upload failed (invalid response)";
+      }
+      setTimeout(()=>{
+        wrapper.classList.add("hidden");
+        bar.innerText="";
+      },4000);
+    };
+    xhr.onerror=function(){
+      status.innerText="❌ Upload error";
+      setTimeout(()=>{
+        wrapper.classList.add("hidden");
+        bar.innerText="";
+      },4000);
+    };
+    const fd=new FormData();
+    fd.append("csv_file", file);
+    xhr.send(fd);
+    e.target.value="";
+  });
+
+  function showErrorPopup(errors){
+    const popup=document.getElementById("errorPopup"),list=document.getElementById("errorList");
+    list.innerHTML="";
+    errors.forEach(err=>{
+      const li=document.createElement("li");
+      li.textContent=err;
+      list.appendChild(li);
+    });
+    popup.classList.remove("hidden");
+    document.getElementById("downloadErrorCsv").onclick=()=>{
+      const csvContent="data:text/csv;charset=utf-8,"+errors.map(e=>`"${e}"`).join("\n");
+      const link=document.createElement("a");
+      link.setAttribute("href",encodeURI(csvContent));
+      link.setAttribute("download","upload_errors.csv");
+      link.click();
+    };
+  }
+  document.getElementById("closeErrorPopup").addEventListener("click",()=>{
+    document.getElementById("errorPopup").classList.add("hidden");
+  });
+
+  // Excel
+  document.getElementById("downloadExcelBtn").addEventListener("click",()=>{
+    table.download("xlsx","asset_master.xlsx",{sheetName:"Assets"});
+  });
+
+  // Sync scroll
+  const topScroll=document.getElementById("scrollTop"), bottomScroll=document.getElementById("scrollBottom");
+  function syncScroll(e){
+    if(e.target===topScroll) bottomScroll.scrollLeft=topScroll.scrollLeft;
+    else topScroll.scrollLeft=bottomScroll.scrollLeft;
+  }
+  topScroll.addEventListener("scroll", syncScroll);
+  bottomScroll.addEventListener("scroll", syncScroll);
+
+  // Edit Selected button behavior: open modal with selected row data
+  document.getElementById("editSelectedBtn").addEventListener("click", function(){
+    const selected = table.getSelectedData();
+    if(selected.length !== 1) return;
+    const row = selected[0];
+
+    const fields = [
+      "asset_code","asset_description","reg_no","package","activity","location","meter_type","uom",
+      "fuel_norms","owner","vendor_code","agency","wod_number","vendor_mail_id","date_of_commission",
+      "starting_reading","tank_capacity","hsd_available","make","model","pm_make","pm_model",
+      "ehc","ihc","additional_operator_charge","shift_hours","operator_available","helper_available",
+      "supervisor_owner_name","supervisor_owner_phone","operator1","operator1_phone","operator1_shift",
+      "operator2","operator2_phone","operator2_shift"
+    ];
+
+    document.getElementById("edit_id").value = row.id || "";
+
+    fields.forEach(f => {
+      const el = document.getElementById("edit_" + f);
+      if(el){
+        if(el.type === "number"){
+          el.value = row[f] != null ? row[f] : "";
+        } else if(el.type === "date"){
+          if(row[f]){
+            try {
+              const d = new Date(row[f]);
+              el.value = d.toISOString().split("T")[0];
+            } catch(e){
+              el.value = "";
+            }
+          } else {
+            el.value = "";
+          }
+        } else if(el.tagName === "SELECT"){
+          el.value = row[f] || "";
+        } else {
+          el.value = row[f] || "";
+        }
+      }
+    });
+
+    document.getElementById("editModal").classList.remove("hidden");
+  });
+  
+  // Close edit modal
+  document.getElementById("closeEditModal").addEventListener("click", function(){
+    document.getElementById("editModal").classList.add("hidden");
+  });
+
+  // Submit edit form
+  document.getElementById("editAssetForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    const id = document.getElementById("edit_id").value;
+
+    const fields = [
+      "asset_code","asset_description","reg_no","package","activity","location","meter_type","uom",
+      "fuel_norms","owner","vendor_code","agency","wod_number","vendor_mail_id","date_of_commission",
+      "starting_reading","tank_capacity","hsd_available","make","model","pm_make","pm_model",
+      "ehc","ihc","additional_operator_charge","shift_hours","operator_available","helper_available",
+      "supervisor_owner_name","supervisor_owner_phone","operator1","operator1_phone","operator1_shift",
+      "operator2","operator2_phone","operator2_shift"
+    ];
+
+    const data = {};
+    fields.forEach(f => {
+      const el = document.getElementById("edit_" + f);
+      data[f] = el ? el.value : null;
+    });
+
+    ["starting_reading","tank_capacity","hsd_available","ehc","ihc",
+     "additional_operator_charge","shift_hours","operator_available","helper_available"].forEach(f=>{
+      if(data[f] !== "" && data[f] !== null) data[f] = parseFloat(data[f]);
+      else data[f] = null;
+    });
+
+    data.last_updated_by = "{{ session.get('name','') }}";
+    data.last_updated_at = new Date().toISOString();
+
+    fetch(`/update_asset/${id}`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(data)
+    }).then(r=>r.json()).then(resp=>{
+      if(resp.success){
+        loadData();
+        document.getElementById("editModal").classList.add("hidden");
+      } else {
+        alert("Update failed: " + resp.error);
+      }
+    }).catch(err=>{
+      alert("Update error: " + err);
+    });
+  });
+
+  document.addEventListener("DOMContentLoaded", loadData);
+</script>
 {% endblock %}

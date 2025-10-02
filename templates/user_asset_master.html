@@ -1,8 +1,904 @@
 {% extends 'user_base.html' %}
 {% block title %}User Asset Master{% endblock %}
+
 {% block content %}
-<div class="p-6">
-  <h1 class="text-2xl font-bold mb-4">User Asset Master</h1>
-  <p class="text-gray-600">Coming Soon...</p>
+<style>
+.user-asset-master {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 0;
+}
+
+.user-asset-master .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Page Header (fixed from "header" conflict) */
+.user-asset-master .page-header {
+  background: linear-gradient(135deg, #1f2937, #374151);
+  color: #fbbf24;
+  padding: 30px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(31, 41, 55, 0.3);
+}
+
+.user-asset-master .page-header h1 {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+}
+
+.user-asset-master .page-header p {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* Action Bar */
+.user-asset-master .action-bar {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-asset-master .btn-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.user-asset-master .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.user-asset-master .btn-primary {
+  background: #1f2937;
+  color: #fbbf24;
+}
+
+.user-asset-master .btn-primary:hover {
+  background: #111827;
+  transform: translateY(-1px);
+}
+
+.user-asset-master .btn-success {
+  background: #059669;
+  color: white;
+}
+
+.user-asset-master .btn-success:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.user-asset-master .btn-info {
+  background: #f59e0b;
+  color: #1f2937;
+}
+
+.user-asset-master .btn-info:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+}
+
+.user-asset-master .btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.user-asset-master .btn-secondary:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.user-asset-master .btn-filter {
+  background: #f59e0b;
+  color: #1f2937;
+  padding: 12px;
+}
+
+.user-asset-master .btn-filter:hover {
+  background: #d97706;
+}
+
+.user-asset-master .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Last Update Info */
+.user-asset-master .last-update-info {
+  text-align: right;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 15px;
+  padding: 8px 15px;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Dashboard Cards */
+.user-asset-master .dashboard {
+  margin-bottom: 30px;
+}
+
+.user-asset-master .total-assets-card {
+  margin-bottom: 20px;
+}
+
+.user-asset-master .locations-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.user-asset-master .card {
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.user-asset-master .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.user-asset-master .card-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #374151;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.user-asset-master .stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.user-asset-master .stat {
+  text-align: center;
+  padding: 15px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.user-asset-master .stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.user-asset-master .stat-number {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.user-asset-master .stat-number.own { color: #059669; }
+.user-asset-master .stat-number.hire { color: #1f2937; }
+.user-asset-master .stat-number.nc { color: #f59e0b; }
+
+/* Search Panel */
+.user-asset-master .search-panel {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.user-asset-master .search-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+
+.user-asset-master .radio-group {
+  display: flex;
+  gap: 25px;
+}
+
+.user-asset-master .radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-asset-master .radio-item input[type="radio"] {
+  width: 18px;
+  height: 18px;
+}
+
+.user-asset-master .radio-item label {
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+}
+
+.user-asset-master .search-input {
+  flex: 1;
+  min-width: 300px;
+  padding: 12px 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.user-asset-master .search-input:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+/* Table */
+.user-asset-master .table-container {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 2px solid #d1d5db;
+}
+
+/* Modal */
+.user-asset-master .modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.user-asset-master .modal.hidden {
+  display: none;
+}
+
+.user-asset-master .modal-content {
+  background: white;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.user-asset-master .modal-header {
+  padding: 25px 30px 20px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.user-asset-master .modal-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #374151;
+  margin: 0;
+}
+
+.user-asset-master .modal-body {
+  padding: 30px;
+}
+
+.user-asset-master .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 25px;
+}
+
+.user-asset-master .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-asset-master .form-label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.user-asset-master .form-input {
+  padding: 12px 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.user-asset-master .form-input:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.user-asset-master .modal-footer {
+  padding: 20px 30px 30px;
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+/* Tabulator Excel Style */
+.user-asset-master .tabulator {
+  border: 2px solid #d1d5db !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 13px !important;
+}
+
+.user-asset-master .tabulator-header {
+  background: #f8fafc !important;
+  border-bottom: 2px solid #d1d5db !important;
+}
+
+.user-asset-master .tabulator-col {
+  background: #f8fafc !important;
+  border-right: 1px solid #d1d5db !important;
+  text-align: center !important;
+}
+
+.user-asset-master .tabulator-col-title {
+  font-weight: bold !important;
+  color: #374151 !important;
+  text-align: center !important;
+  padding: 12px 8px !important;
+}
+
+.user-asset-master .tabulator-row {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.user-asset-master .tabulator-cell {
+  border-right: 1px solid #e5e7eb !important;
+  text-align: center !important;
+  padding: 10px 8px !important;
+}
+
+.user-asset-master .tabulator-row:nth-child(even) {
+  background: #f9fafb !important;
+}
+
+.user-asset-master .tabulator-row:hover {
+  background: #e0f2fe !important;
+}
+
+.user-asset-master .tabulator-selected {
+  background: #dbeafe !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .user-asset-master .container {
+    padding: 15px;
+  }
+  
+  .user-asset-master .page-header {
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .user-asset-master .page-header h1 {
+    font-size: 24px;
+  }
+  
+  .user-asset-master .locations-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-asset-master .action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .user-asset-master .btn-group {
+    justify-content: center;
+  }
+  
+  .user-asset-master .search-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .user-asset-master .search-input {
+    min-width: auto;
+  }
+  
+  .user-asset-master .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+</style>
+
+<div class="user-asset-master">
+  <div class="container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Asset Master</h1>
+    
+  </div>
+
+  <!-- Last Update Info -->
+  <div class="last-update-info">
+    <span>Last Update: </span>
+    <span id="lastUpdate">--</span>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <!-- Total Assets Row -->
+    <div class="card total-assets-card">
+      <h3 class="card-title">Total Assets</h3>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Own</div>
+          <div id="countOwn" class="stat-number own">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Hire</div>
+          <div id="countHire" class="stat-number hire">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">NC</div>
+          <div id="countNC" class="stat-number nc">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Locations Row -->
+    <div class="locations-row">
+      <div class="card">
+        <h3 class="card-title">Adabari</h3>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Own</div>
+            <div id="adabariOwn" class="stat-number own">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Hire</div>
+            <div id="adabariHire" class="stat-number hire">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">NC</div>
+            <div id="adabariNC" class="stat-number nc">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Birsing</h3>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Own</div>
+            <div id="birsingOwn" class="stat-number own">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Hire</div>
+            <div id="birsingHire" class="stat-number hire">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">NC</div>
+            <div id="birsingNC" class="stat-number nc">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Phulbari</h3>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Own</div>
+            <div id="phulbariOwn" class="stat-number own">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Hire</div>
+            <div id="phulbariHire" class="stat-number hire">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">NC</div>
+            <div id="phulbariNC" class="stat-number nc">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <div class="btn-group">
+      <button id="editSelectedBtn" class="btn btn-primary" disabled>Edit Selected</button>
+    </div>
+    
+    <div class="btn-group">
+      <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+      <button id="downloadExcelBtn" class="btn btn-success">Download Excel</button>
+      <button id="downloadCsvBtn" class="btn btn-info">Download CSV</button>
+    </div>
+  </div>
+
+  <!-- Search Panel -->
+  <div class="search-panel">
+    <div class="search-controls">
+      <div class="radio-group">
+        <div class="radio-item">
+          <input type="radio" id="searchAssetCode" name="searchMode" value="asset_code" checked>
+          <label for="searchAssetCode">By Asset Code</label>
+        </div>
+        <div class="radio-item">
+          <input type="radio" id="searchRegNo" name="searchMode" value="reg_no">
+          <label for="searchRegNo">By Registration No.</label>
+        </div>
+      </div>
+      
+      <input id="globalSearchInput" placeholder="Search assets..." class="search-input" />
+      <button id="clearSearchBtn" class="btn btn-secondary">Clear</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <div id="scrollTop" style="overflow-x: auto;"><div style="height:1px"></div></div>
+    <div id="asset-table"></div>
+    <div id="scrollBottom" style="overflow-x: auto;"><div style="height:1px"></div></div>
+  </div>
 </div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">Edit Asset (Quick)</h2>
+    </div>
+    <form id="editAssetForm">
+      <div class="modal-body">
+        <input type="hidden" id="edit_id">
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Package</label>
+            <input id="edit_package" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Activity</label>
+            <input id="edit_activity" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input id="edit_location" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Operators Avail</label>
+            <input id="edit_operator_available" type="number" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Helpers Avail</label>
+            <input id="edit_helper_available" type="number" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Supervisor/Owner Name</label>
+            <input id="edit_supervisor_owner_name" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Supervisor/Owner Phone</label>
+            <input id="edit_supervisor_owner_phone" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Operator 1</label>
+            <input id="edit_operator1" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Op1 Phone</label>
+            <input id="edit_operator1_phone" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Op1 Shift</label>
+            <input id="edit_operator1_shift" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Operator 2</label>
+            <input id="edit_operator2" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Op2 Phone</label>
+            <input id="edit_operator2_phone" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Op2 Shift</label>
+            <input id="edit_operator2_shift" class="form-input">
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" id="closeEditModal" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn btn-success">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabulator & Excel Export Support -->
+<link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+
+<!-- SheetJS library for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
+<!-- Tabulator -->
+<link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
+<script>
+  const columns = [
+    {formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:50, download:false,
+      cellClick:function(e, cell){ cell.getRow().toggleSelect(); }},
+    {title:"Sl. No.", formatter:"rownum", hozAlign:"center", width:80},
+
+    {title:"Asset Code", field:"asset_code", headerFilter:"input", hozAlign:"center"},
+    {title:"Asset Description", field:"asset_description", headerFilter:"input", hozAlign:"center"},
+    {title:"Reg. No.", field:"reg_no", headerFilter:"input", hozAlign:"center"},
+    {title:"Package", field:"package", headerFilter:"input", hozAlign:"center"},
+    {title:"Activity", field:"activity", headerFilter:"input", hozAlign:"center"},
+    {title:"Location", field:"location", headerFilter:"input", hozAlign:"center"},
+    {title:"Meter Type", field:"meter_type", headerFilter:"input", hozAlign:"center"},
+    {title:"UoM", field:"uom", headerFilter:"input", hozAlign:"center"},
+    {title:"Fuel Norms", field:"fuel_norms", headerFilter:"input", hozAlign:"center"},
+    {title:"Owner", field:"owner", hozAlign:"center"},
+    {title:"Vendor Code", field:"vendor_code", headerFilter:"input", hozAlign:"center"},
+    {title:"Agency", field:"agency", headerFilter:"input", hozAlign:"center"},
+    {title:"WOD Number", field:"wod_number", headerFilter:"input", hozAlign:"center"},
+    {title:"Vendor Mail Id", field:"vendor_mail_id", headerFilter:"input", hozAlign:"center"},
+    {title:"Date of Commission", field:"date_of_commission", headerFilter:"input", hozAlign:"center"},
+    {title:"Starting Reading", field:"starting_reading", hozAlign:"center"},
+    {title:"Tank Capacity", field:"tank_capacity", hozAlign:"center"},
+    {title:"HSD Available", field:"hsd_available", hozAlign:"center"},
+    {title:"Make", field:"make", headerFilter:"input", hozAlign:"center"},
+    {title:"Model", field:"model", headerFilter:"input", hozAlign:"center"},
+    {title:"PM Make", field:"pm_make", headerFilter:"input", hozAlign:"center"},
+    {title:"PM Model", field:"pm_model", headerFilter:"input", hozAlign:"center"},
+    {title:"EHC", field:"ehc", hozAlign:"center"},
+    {title:"IHC", field:"ihc", hozAlign:"center"},
+    {title:"Add. Op Charge", field:"additional_operator_charge", hozAlign:"center"},
+    {title:"Shift Hours", field:"shift_hours", hozAlign:"center"},
+    {title:"Operators Avail", field:"operator_available", headerFilter:"input", hozAlign:"center"},
+    {title:"Helpers Avail", field:"helper_available", headerFilter:"input", hozAlign:"center"},
+    {title:"Supervisor/Owner Name", field:"supervisor_owner_name", headerFilter:"input", hozAlign:"center"},
+    {title:"Supervisor/Owner Phone", field:"supervisor_owner_phone", headerFilter:"input", hozAlign:"center"},
+    {title:"Operator 1", field:"operator1", headerFilter:"input", hozAlign:"center"},
+    {title:"Op1 Phone", field:"operator1_phone", headerFilter:"input", hozAlign:"center"},
+    {title:"Op1 Shift", field:"operator1_shift", headerFilter:"input", hozAlign:"center"},
+    {title:"Operator 2", field:"operator2", headerFilter:"input", hozAlign:"center"},
+    {title:"Op2 Phone", field:"operator2_phone", headerFilter:"input", hozAlign:"center"},
+    {title:"Op2 Shift", field:"operator2_shift", headerFilter:"input", hozAlign:"center"},
+    {title:"Last Updated By", field:"last_updated_by", hozAlign:"center"},
+    {title:"Last Updated At", field:"last_updated_at", hozAlign:"center"},
+
+    {
+      title:"Actions", width:140, hozAlign:"center",
+      formatter:(cell) => {
+        const id = cell.getRow().getData().id;
+        return `<a href="/user_edit_asset/${id}" class="btn btn-info" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">Full Edit</a>`;
+      }
+    }
+  ];
+
+  const table = new Tabulator("#asset-table", {
+    height: "500px",
+    layout:"fitDataStretch",
+    columns: columns,
+    ajaxURL:"/user_get_assets",
+    index:"id",
+    selectable:true,
+    placeholder:"No Data Available",
+  });
+
+  // Enable Edit button only if 1 row selected
+  table.on("rowSelectionChanged", function(data){
+    document.getElementById("editSelectedBtn").disabled = (data.length !== 1);
+  });
+
+  // Load Data
+  function loadData(){
+    table.replaceData("/user_get_assets").then(updateOwnerCounts);
+  }
+
+  // Update Counts
+  function updateOwnerCounts(){
+    const data = table.getData("all");
+    let own=0, hire=0, nc=0;
+    const packages = {
+      "adabari": {own:0, hire:0, nc:0},
+      "birsing": {own:0, hire:0, nc:0},
+      "phulbari": {own:0, hire:0, nc:0}
+    };
+
+    data.forEach(r=>{
+      const o=(r.owner||"").toLowerCase();
+      const pkg=(r.package||"").trim().toLowerCase();
+      if(o==="own") own++;
+      else if(o==="hire") hire++;
+      else if(o==="nc") nc++;
+      if(packages[pkg]){
+        if(o==="own") packages[pkg].own++;
+        else if(o==="hire") packages[pkg].hire++;
+        else if(o==="nc") packages[pkg].nc++;
+      }
+    });
+
+    document.getElementById("countOwn").innerText=own;
+    document.getElementById("countHire").innerText=hire;
+    document.getElementById("countNC").innerText=nc;
+    document.getElementById("adabariOwn").innerText=packages.adabari.own;
+    document.getElementById("adabariHire").innerText=packages.adabari.hire;
+    document.getElementById("adabariNC").innerText=packages.adabari.nc;
+    document.getElementById("birsingOwn").innerText=packages.birsing.own;
+    document.getElementById("birsingHire").innerText=packages.birsing.hire;
+    document.getElementById("birsingNC").innerText=packages.birsing.nc;
+    document.getElementById("phulbariOwn").innerText=packages.phulbari.own;
+    document.getElementById("phulbariHire").innerText=packages.phulbari.hire;
+    document.getElementById("phulbariNC").innerText=packages.phulbari.nc;
+
+    // Last Update
+    const latest = data.reduce((acc, r) => {
+      if (r.last_updated_at && (!acc || new Date(r.last_updated_at) > new Date(acc))) return r.last_updated_at;
+      return acc;
+    }, null);
+    document.getElementById("lastUpdate").innerText = latest ? new Date(latest).toLocaleString() : "No updates yet";
+  }
+
+  // Helper function for file names
+  function getFileName(baseName, ext){
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const hh = String(now.getHours()).padStart(2, "0");
+    const min = String(now.getMinutes()).padStart(2, "0");
+    const ss = String(now.getSeconds()).padStart(2, "0");
+    return `${baseName}_${yyyy}-${mm}-${dd}_${hh}-${min}-${ss}.${ext}`;
+  }
+
+  // Excel download - All rows with styling + correct Sl.No. in column A
+  document.getElementById("downloadExcelBtn").addEventListener("click", ()=>{
+    const filename = getFileName("Asset_Master", "xlsx");
+    table.download("xlsx", filename, {
+      sheetName: "Assets",
+      rowRange: "all",
+      documentProcessing: function(workbook){
+        const worksheet = workbook.Sheets["Assets"];
+        if(!worksheet || !worksheet["!ref"]) return workbook;
+
+        const range = XLSX.utils.decode_range(worksheet["!ref"]);
+        const headerRow = range.s.r;
+
+        // find "Sl. No." column
+        let slCol = null;
+        for(let C = range.s.c; C <= range.e.c; ++C){
+          const headerAddr = XLSX.utils.encode_cell({r: headerRow, c: C});
+          const headerCell = worksheet[headerAddr];
+          const txt = headerCell && headerCell.v ? String(headerCell.v).trim().toLowerCase() : "";
+          if(txt.startsWith("sl")) { slCol = C; break; }
+        }
+        if(slCol === null) slCol = range.s.c;
+
+        const headerStyle = {
+          font: {bold: true, color: {rgb: "FFFFFF"}},
+          fill: {fgColor: {rgb: "1F2937"}},
+          alignment: {horizontal: "center", vertical: "center"},
+          border: {top:{style:"thin"},bottom:{style:"thin"},left:{style:"thin"},right:{style:"thin"}}
+        };
+
+        const cellStyle = {
+          alignment: {horizontal: "center", vertical: "center"},
+          border: {top:{style:"thin"},bottom:{style:"thin"},left:{style:"thin"},right:{style:"thin"}}
+        };
+
+        // style header
+        for(let C = range.s.c; C <= range.e.c; ++C){
+          const headerAddr = XLSX.utils.encode_cell({r: headerRow, c: C});
+          if(worksheet[headerAddr]) worksheet[headerAddr].s = headerStyle;
+        }
+
+        // fill Sl.No and style data
+        for(let R = headerRow + 1; R <= range.e.r; ++R){
+          for(let C = range.s.c; C <= range.e.c; ++C){
+            const addr = XLSX.utils.encode_cell({r: R, c: C});
+            if(!worksheet[addr]) worksheet[addr] = { t: 's', v: "" };
+            if(C === slCol){
+              worksheet[addr].v = R - headerRow;
+              worksheet[addr].t = 'n';
+            }
+            worksheet[addr].s = cellStyle;
+          }
+        }
+
+        return workbook;
+      }
+    });
+  });
+
+  // CSV download - manual with Sl.No. in column A
+  document.getElementById("downloadCsvBtn").addEventListener("click", ()=>{
+    const data = table.getData("all");
+    const filename = getFileName("Asset_Master", "csv");
+    const headers = [
+      "Sl. No.","Asset Code","Asset Description","Reg. No.","Package","Activity","Location",
+      "Meter Type","UoM","Fuel Norms","Owner","Vendor Code","Agency","WOD Number",
+      "Vendor Mail Id","Date of Commission","Starting Reading","Tank Capacity","HSD Available",
+      "Make","Model","PM Make","PM Model","EHC","IHC","Add. Op Charge","Shift Hours",
+      "Operators Avail","Helpers Avail","Supervisor/Owner Name","Supervisor/Owner Phone",
+      "Operator 1","Op1 Phone","Op1 Shift","Operator 2","Op2 Phone","Op2 Shift",
+      "Last Updated By","Last Updated At"
+    ];
+
+    const rows = [];
+    rows.push(headers.join(","));
+    data.forEach((r, idx) => {
+      const rowArr = [
+        idx+1, r.asset_code||"", r.asset_description||"", r.reg_no||"", r.package||"", r.activity||"", r.location||"",
+        r.meter_type||"", r.uom||"", r.fuel_norms||"", r.owner||"", r.vendor_code||"", r.agency||"", r.wod_number||"",
+        r.vendor_mail_id||"", r.date_of_commission||"", r.starting_reading||"", r.tank_capacity||"", r.hsd_available||"",
+        r.make||"", r.model||"", r.pm_make||"", r.pm_model||"", r.ehc||"", r.ihc||"", r.additional_operator_charge||"", r.shift_hours||"",
+        r.operator_available||"", r.helper_available||"", r.supervisor_owner_name||"", r.supervisor_owner_phone||"",
+        r.operator1||"", r.operator1_phone||"", r.operator1_shift||"", r.operator2||"", r.operator2_phone||"", r.operator2_shift||"",
+        r.last_updated_by||"", r.last_updated_at||""
+      ];
+      rows.push(rowArr.map(v => `"${String(v).replace(/"/g,'""')}"`).join(","));
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + rows.join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  document.addEventListener("DOMContentLoaded", loadData);
+
+</script>
+
+
 {% endblock %}
