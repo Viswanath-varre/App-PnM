@@ -20,25 +20,23 @@ def create_app():
     app.config['supabase'] = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
     app.config['supabase_admin'] = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    # Modules list (same as before)
+    # Modules list (cleaned and properly indented)
     app.config['MODULES'] = [
-        'asset_master',
-        'asset_running_status',
-        'fuel_consumption_analysis',
-        'break_down_report',
-        'day_wise_works',
-        'spares_requirements',
-        'docments_status',
-        'maintenance_schedule',
-        'breakdown_report',
-        'digital_status',
-        'asset_green_card_status',
         'asset_documents_status',
-        'daywise_works',
-        'uauc_status',
-        'hire_billing_status',
+        'asset_green_card_status',
+        'asset_master',
+        'breakdown_report',
         'concrete_production',
+        'daywise_fuel_consumption',
+        'daywise_works',
+        'digital_status',
+        'documents_status',
+        'emfc_report',
+        'hire_billing_status',
+        'maintenance_schedule',
         'solar_report',
+        'spares_requirements',
+        'uauc_status',
         'workmen_status'
     ]
 
@@ -48,8 +46,8 @@ def create_app():
     from user_routes import user_bp
 
     app.register_blueprint(auth_bp)                     # login/logout at /login, /logout, etc.
-    app.register_blueprint(admin_bp, url_prefix='')     # admin routes (paths keep previous names)
-    app.register_blueprint(user_bp, url_prefix='')      # user routes
+    app.register_blueprint(admin_bp, url_prefix='/admin')     # admin routes (paths keep previous names)
+    app.register_blueprint(user_bp, url_prefix='/user')      # user routes
 
     # home route preserves old behavior
     @app.route('/')
@@ -58,12 +56,13 @@ def create_app():
 
     return app
 
-
 if __name__ == "__main__":
     app = create_app()
 
-    # Ensure first admin exists (keeps same logic)
+    # Ensure first admin exists
     from services import ensure_first_admin
     ensure_first_admin(app.config['supabase_admin'], app.config['MODULES'])
 
     app.run(host="0.0.0.0", port=5000, debug=True)
+
+

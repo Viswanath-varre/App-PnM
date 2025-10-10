@@ -1,8 +1,10 @@
-# admin_routes.py
-from flask import Blueprint, render_template, request, redirect, session, flash, Response, current_app
+from flask import Blueprint, render_template, request, redirect, session, flash, Response, current_app, jsonify, url_for
 from services import require_role, _create_single_user, generate_users_csv
 import io, csv
-
+from flask import jsonify
+from datetime import datetime, timedelta, timezone
+# ✅ Define India Standard Time (UTC+5:30)
+IST = timezone(timedelta(hours=5, minutes=30))
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -11,6 +13,20 @@ admin_bp = Blueprint("admin", __name__)
 @require_role('admin')
 def admin_dashboard():
     return render_template('admin_dashboard.html')
+
+
+# ---------------- ADMIN ASSET MASTER PAGE ----------------
+@admin_bp.route('/admin_asset_master')
+@require_role('admin')
+def admin_asset_master_page():
+    return render_template("admin_asset_master.html")
+
+
+# ---------------- ADMIN ADD ASSET PAGE ----------------
+@admin_bp.route('/admin_add_asset')
+@require_role('admin')
+def admin_add_asset_page():
+    return render_template("admin_add_asset.html")
 
 
 # ---------------- USER MANAGEMENT ----------------
@@ -50,16 +66,60 @@ def create_users():
     # If CSV upload
     if 'csv_file' in request.files:
         file = request.files['csv_file']
-        if file.filename.endswith('.csv'):
-            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-            reader = csv.DictReader(stream)
-            for row in reader:
-                try:
-                    _create_single_user(row, supabase_admin)
-                except Exception as e:
-                    print("!!! CSV user create failed:", e)
-                    flash(f"CSV user create failed: {e}")
-        return redirect('/admin_user_management')
+        if not file.filename.lower().endswith('.csv'):
+            flash("Only CSV files allowed")
+            return redirect(url_for('admin.admin_user_management'))
+
+        stream = io.StringIO(file.stream.read().decode("utf8"), newline=None)
+        reader = csv.DictReader(stream)
+
+        created_rows = []
+        errors = []
+
+        for i, row in enumerate(reader, start=1):
+            try:
+                # Normalize accesses column: allow comma-separated string
+                if 'accesses' in row and row['accesses']:
+                    row['accesses'] = [x.strip() for x in row['accesses'].split(',') if x.strip()]
+                else:
+                    row['accesses'] = []
+
+                result = _create_single_user(row, supabase_admin)
+                gen_pass = result.get("generated_password") if isinstance(result, dict) else None
+
+                created_rows.append({
+                    "user_id": row.get("user_id", ""),
+                    "email": row.get("email", ""),
+                    "generated_password": gen_pass or (row.get("password") or "")
+                })
+            except Exception as e:
+                errors.append(f"Row {i}: {str(e)}")
+
+        # If there were errors, flash them so admin can see
+        if errors:
+            flash(f"CSV create finished with {len(errors)} error(s). Check details below.")
+            for err in errors[:10]:  # show top 10 in UI
+                flash(err)
+            if len(errors) > 10:
+                flash(f"...and {len(errors)-10} more errors")
+
+        # If we created accounts, return a downloadable CSV with the credentials
+        if created_rows:
+            si = io.StringIO()
+            writer = csv.writer(si)
+            writer.writerow(["user_id", "email", "generated_password"])
+            for r in created_rows:
+                writer.writerow([r["user_id"], r["email"], r["generated_password"]])
+
+            output = si.getvalue().encode("utf-8")
+            return Response(
+                output,
+                mimetype="text/csv",
+                headers={"Content-Disposition": "attachment;filename=created_users_with_passwords.csv"}
+            )
+
+        # otherwise just redirect back
+        return redirect(url_for('admin.admin_user_management'))
 
     # Otherwise normal form
     data = {
@@ -77,7 +137,7 @@ def create_users():
     except Exception as e:
         print("!!! Failed to create user:", e)
         flash(f"Failed to create user: {e}")
-    return redirect('/admin_user_management')
+    return redirect(url_for('admin.admin_user_management'))
 
 
 @admin_bp.route('/edit_user/<user_id>', methods=['POST'])
@@ -111,7 +171,7 @@ def edit_user(user_id):
     except Exception as e:
         flash(f"Failed to edit user: {e}")
 
-    return redirect('/admin_user_management')
+    return redirect(url_for('admin.admin_user_management'))
 
 
 @admin_bp.route('/delete_user/<user_id>', methods=['POST'])
@@ -122,7 +182,7 @@ def delete_user(user_id):
         supabase_admin.table("users_meta").delete().eq("user_id", user_id).execute()
     except Exception as e:
         flash(f"Failed to delete user: {e}")
-    return redirect('/admin_user_management')
+    return redirect(url_for('admin.admin_user_management'))
 
 
 @admin_bp.route('/download_users_csv')
@@ -151,30 +211,14 @@ def admin_profile():
     return render_template('admin_profile.html', user_email=user_email, user_role=user_role)
 
 
-# ---------------- DYNAMIC SIMPLE ADMIN PAGES ----------------
-# Catch-all for /admin_<module_name> routes (like your old make_routes)
-@admin_bp.route('/admin_<module_name>')
-@require_role('admin')
-def admin_module_page(module_name):
-    modules = current_app.config['MODULES']
-    if module_name not in modules:
-        return redirect('/admin_dashboard')
-    try:
-        return render_template(f"admin_{module_name}.html")
-    except Exception:
-        # fallback if template missing
-        return render_template('admin_asset_master.html')
-
-# ---------------- ASSET MASTER ----------------
-from datetime import datetime
-
+# ---------------- ASSET MASTER (API endpoints) ----------------
 @admin_bp.route('/get_assets')
 @require_role('admin')
 def get_assets():
     supabase_admin = current_app.config['supabase_admin']
     try:
         result = supabase_admin.table("asset_master").select("*").execute()
-        return result.data, 200
+        return jsonify(result.data), 200
     except Exception as e:
         return {"error": str(e)}, 500
 
@@ -186,25 +230,34 @@ def add_asset():
     data = request.json
     try:
         data["last_updated_by"] = session.get("name")
-        data["last_updated_at"] = datetime.utcnow().isoformat()
+        data["last_updated_at"] = datetime.now(IST).isoformat()
         supabase_admin.table("asset_master").insert(data).execute()
         return {"success": True}, 201
     except Exception as e:
         return {"error": str(e)}, 500
 
 
-@admin_bp.route('/update_asset/<int:asset_id>', methods=['POST'])
+@admin_bp.route('/update_asset/<asset_id>', methods=['POST'])
 @require_role('admin')
 def update_asset(asset_id):
     supabase_admin = current_app.config['supabase_admin']
-    data = request.json
     try:
-        data["last_updated_by"] = session.get("name")
-        data["last_updated_at"] = datetime.utcnow().isoformat()
-        supabase_admin.table("asset_master").update(data).eq("id", asset_id).execute()
-        return {"success": True}, 200
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        # Update in Supabase
+        result = supabase_admin.table("asset_master").update(data).eq("id", asset_id).execute()
+
+        # Optionally check if rows updated
+        if not result.data:
+            return jsonify({"success": False, "error": "Asset not found"}), 404
+
+        return jsonify({"success": True}), 200
+
     except Exception as e:
-        return {"error": str(e)}, 500
+        current_app.logger.error(f"Error updating asset {asset_id}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @admin_bp.route('/delete_asset/<int:asset_id>', methods=['DELETE'])
@@ -229,12 +282,13 @@ def delete_assets_bulk():
 
         batch_size = 200
         for i in range(0, len(ids), batch_size):
-            supabase_admin.table("asset_master").delete().in_("id", ids[i:i+batch_size]).execute()
+            supabase_admin.table("asset_master").delete().in_("id", ids[i:i + batch_size]).execute()
 
         return {"success": True}, 200
     except Exception as e:
         return {"success": False, "error": str(e)}, 500
-    
+
+
 # ---- Helper to normalize dates ----
 def normalize_date(val):
     """Convert DD-MM-YYYY or YYYY-MM-DD to YYYY-MM-DD (DB format)."""
@@ -276,9 +330,9 @@ def upload_assets_csv():
 
                 # Convert numeric fields safely
                 for field in ["starting_reading", "tank_capacity", "hsd_available",
-                              "ehc", "additional_operator_charge", "shift_hours",
+                              "ehc", "ihc","additional_operator_charge", "shift_hours",
                               "operator_available", "helper_available"]:
-                    if field in row and row[field]:
+                    if field in row and str(row[field]).strip():
                         try:
                             row[field] = float(row[field])
                         except:
@@ -287,6 +341,7 @@ def upload_assets_csv():
                 asset_data = {
                     "asset_code": row.get("asset_code"),
                     "asset_description": row.get("asset_description"),
+                    "asset_category": row.get("asset_category"),
                     "reg_no": row.get("reg_no"),
                     "package": row.get("package"),
                     "activity": row.get("activity"),
@@ -308,7 +363,7 @@ def upload_assets_csv():
                     "pm_make": row.get("pm_make"),
                     "pm_model": row.get("pm_model"),
                     "ehc": row.get("ehc"),
-                    "additional_operator_charge": row.get("additional_operator_charge"),
+                    "ihc": row.get("ihc"),
                     "shift_hours": row.get("shift_hours"),
                     "operator_available": row.get("operator_available"),
                     "helper_available": row.get("helper_available"),
@@ -321,7 +376,7 @@ def upload_assets_csv():
                     "operator2_phone": row.get("operator2_phone"),
                     "operator2_shift": row.get("operator2_shift"),
                     "last_updated_by": session.get("name"),
-                    "last_updated_at": datetime.utcnow().isoformat()
+                    "last_updated_at": datetime.now(IST).isoformat()
                 }
 
                 supabase_admin.table("asset_master").insert(asset_data).execute()
@@ -353,35 +408,20 @@ def download_assets_csv():
     try:
         assets = supabase_admin.table("asset_master").select("*").execute()
         assets = assets.data if assets.data else []
+
+        if not assets:
+            return {"error": "No assets found"}, 404
+
+        # ✅ Dynamically detect columns
+        headers = list(assets[0].keys())
+        headers.sort()
+
         si = io.StringIO()
         writer = csv.writer(si)
-        writer.writerow([
-            "id","asset_code","asset_description","reg_no","package","activity","location",
-            "meter_type","uom","fuel_norms","owner","vendor_code","agency","wod_number",
-            "vendor_mail_id","date_of_commission","starting_reading","tank_capacity","hsd_available",
-            "make","model","pm_make","pm_model","ehc","ihc",
-            "additional_operator_charge","shift_hours",
-            "operator_available","helper_available",
-            "supervisor_owner_name","supervisor_owner_phone",
-            "operator1","operator1_phone","operator1_shift",
-            "operator2","operator2_phone","operator2_shift",
-            "last_updated_by","last_updated_at"
-        ])
+        writer.writerow(headers)
         for a in assets:
-            writer.writerow([
-                a.get("id"), a.get("asset_code"), a.get("asset_description"), a.get("reg_no"),
-                a.get("package"), a.get("activity"), a.get("location"), a.get("meter_type"),
-                a.get("uom"), a.get("fuel_norms"), a.get("owner"), a.get("vendor_code"), a.get("agency"),
-                a.get("wod_number"), a.get("vendor_mail_id"), a.get("date_of_commission"), a.get("starting_reading"),
-                a.get("tank_capacity"), a.get("hsd_available"), a.get("make"), a.get("model"),
-                a.get("pm_make"), a.get("pm_model"), a.get("ehc"), a.get("ihc"),
-                a.get("additional_operator_charge"), a.get("shift_hours"),
-                a.get("operator_available"), a.get("helper_available"),
-                a.get("supervisor_owner_name"), a.get("supervisor_owner_phone"),
-                a.get("operator1"), a.get("operator1_phone"), a.get("operator1_shift"),
-                a.get("operator2"), a.get("operator2_phone"), a.get("operator2_shift"),
-                a.get("last_updated_by"), a.get("last_updated_at")
-            ])
+            writer.writerow([a.get(h, "") for h in headers])
+
         output = si.getvalue().encode("utf-8")
         return Response(
             output,
@@ -395,31 +435,33 @@ def download_assets_csv():
 @admin_bp.route('/download_assets_template_csv')
 @require_role('admin')
 def download_assets_template_csv():
-    headers = [
-        "asset_code","asset_description","reg_no","package","activity","location",
-        "meter_type","uom","fuel_norms","owner","vendor_code","agency","wod_number",
-        "vendor_mail_id","date_of_commission","starting_reading","tank_capacity",
-        "hsd_available","make","model","pm_make","pm_model","ehc",
-        "additional_operator_charge","shift_hours","operator_available","helper_available",
-        "supervisor_owner_name","supervisor_owner_phone","operator1","operator1_phone",
-        "operator1_shift","operator2","operator2_phone","operator2_shift"
-    ]
-    si = io.StringIO()
-    writer = csv.writer(si)
-    writer.writerow(headers)
-    output = si.getvalue().encode("utf-8")
-    return Response(
-        output,
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment;filename=asset_master_template.csv"}
-    )
+    supabase_admin = current_app.config['supabase_admin']
 
-# ---------------- ADD ASSET PAGES ----------------
-@admin_bp.route('/admin_add_asset')
-@require_role('admin')
-def admin_add_asset_page():
-    return render_template("admin_add_asset.html")
+    try:
+        # ✅ Dynamically get one row to detect columns
+        result = supabase_admin.table("asset_master").select("*").limit(1).execute()
+        if not result.data:
+            result = supabase_admin.table("asset_master").select("*").execute()
+        sample = result.data[0] if result.data else {}
 
+        headers = list(sample.keys()) if sample else ["asset_code", "activity", "location"]
+        headers.sort()
+
+        si = io.StringIO()
+        writer = csv.writer(si)
+        writer.writerow(headers)
+        output = si.getvalue().encode("utf-8")
+
+        return Response(
+            output,
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment;filename=asset_master_template.csv"}
+        )
+    except Exception as e:
+        return {"error": f"Failed to generate template: {e}"}, 500
+
+
+# ---------------- ADMIN EDIT ASSET PAGE ----------------
 @admin_bp.route('/admin_edit_asset/<int:asset_id>')
 @require_role('admin')
 def admin_edit_asset_page(asset_id):
@@ -429,3 +471,19 @@ def admin_edit_asset_page(asset_id):
         return render_template("admin_edit_asset.html", asset=asset.data[0])
     else:
         return "Asset not found", 404
+
+
+# ---------------- DYNAMIC SIMPLE ADMIN PAGES (catch-all) ----------------
+@admin_bp.route('/admin_<module_name>')
+@require_role('admin')
+def admin_module_page(module_name):
+    modules = current_app.config.get('MODULES', [])
+    if module_name not in modules:
+        return redirect(url_for('admin.admin_dashboard'))
+    try:
+        return render_template(f"admin_{module_name}.html")
+    except Exception:
+        return render_template('admin_asset_master.html')
+
+
+

@@ -1,0 +1,73 @@
+{% extends 'admin_base.html' %}
+{% block title %}Admin Fuel Consumption Analyzer{% endblock %}
+{% block content %}
+<div class="p-6 space-y-6">
+
+  <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">Fuel Consumption (Admin Analyzer)</h1>
+    <form id="csvUploadForm" class="flex gap-2" enctype="multipart/form-data">
+      <input type="file" name="csv_file" accept=".csv" class="border p-2 rounded">
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md shadow">
+        ⬆ Upload CSV
+      </button>
+    </form>
+  </div>
+
+  <div id="fuel-table" class="bg-white shadow rounded-lg"></div>
+
+  <div id="analysis-section" class="mt-10">
+    <h2 class="text-xl font-semibold mb-3">Monthly Analyzer Dashboard</h2>
+    <div class="grid md:grid-cols-2 gap-6">
+      <canvas id="dailyTrendChart"></canvas>
+      <canvas id="packageWiseChart"></canvas>
+      <canvas id="activityWiseChart"></canvas>
+      <canvas id="siteWiseChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  // Upload CSV
+  document.getElementById("csvUploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch("/upload_fuel_data", { method: "POST", body: formData });
+    const result = await res.json();
+    alert(result.message || result.error);
+  });
+
+  // Tabulator Table
+  var table = new Tabulator("#fuel-table", {
+    layout: "fitColumns",
+    pagination: "local",
+    paginationSize: 20,
+    responsiveLayout: "collapse",
+    placeholder: "No data yet",
+    columns: [
+      { title: "Asset Code", field: "asset_code", headerFilter: "input" },
+      { title: "Date", field: "date", sorter: "date" },
+      { title: "Site", field: "site" },
+      { title: "Hrs Run", field: "hrs_run" },
+      { title: "Kmr Run", field: "kmr_run" },
+      { title: "HMR", field: "hmr" },
+      { title: "KMR", field: "kmr" },
+      { title: "HSD (L)", field: "hsd_liters" },
+      { title: "BioDiesel (L)", field: "biodiesel_liters" },
+      { title: "Remarks", field: "remarks" },
+    ],
+  });
+
+  // Load mock data for now
+  table.setData([
+    {asset_code:"A001", date:"2025-09-01", site:"Adabari", hrs_run:6, kmr_run:0, hmr:3500, kmr:0, hsd_liters:48, biodiesel_liters:2.5, remarks:"Normal"},
+    {asset_code:"A002", date:"2025-09-01", site:"Birsing", hrs_run:0, kmr_run:120, hmr:0, kmr:12200, hsd_liters:34, biodiesel_liters:1.8, remarks:"Normal"}
+  ]);
+
+});
+</script>
+{% endblock %}

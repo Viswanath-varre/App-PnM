@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}MABP {{ session['name'] }}{% endblock %}</title>
+  <title>{% block title %}MABP {{ session.get('name', '') }}{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
@@ -131,41 +131,42 @@
 
     <!-- Navigation -->
     <nav class="mt-4 px-2">
-      <a href="/user_dashboard" class="sidebar-link">Dashboard</a>
-      {% for m in session['accesses'] %}
-        {% if m == 'asset_master' %}
-          <a href="/user_asset_master" class="sidebar-link">Asset Master</a>
-        {% elif m == 'break_down_report' %}
-          <a href="/user_breakdown_report" class="sidebar-link">Break Down Report</a>
-        {% elif m == 'docments_status' %}
-          <a href="/user_asset_documents_status" class="sidebar-link">RTO/TPI Docments</a>
-        {% elif m == 'fuel_consumption_analysis' %}
-          <a href="/user_fuel_consumption_analysis" class="sidebar-link">Day Wise HSD Consumption</a>
-        {% elif m == 'asset_running_status' %}
-          <a href="/user_asset_running_status" class="sidebar-link">EMFC Report</a>
-        {% elif m == 'spares_requirements' %}
-          <a href="/user_spares_requirements" class="sidebar-link">Spares Requirement</a>
-        {% elif m == 'maintenance_schedule' %}
-          <a href="/user_maintenance_schedule" class="sidebar-link">Maintenance Schedule</a>
-        {% elif m == 'digital_status' %}
-          <a href="/user_digital_status" class="sidebar-link">Digital Status</a>
-        {% elif m == 'green_card_status' %}
-          <a href="/user_green_card_status" class="sidebar-link">Green Card</a>
-        {% elif m == 'uauc_status' %}
-          <a href="/user_uauc_status" class="sidebar-link">UA/UC Status</a>
-        {% elif m == 'daywise_works' %}
-          <a href="/user_daywise_works" class="sidebar-link">Daywise Works</a>
-        {% elif m == 'hire_billing_status' %}
-          <a href="/user_hire_billing_status" class="sidebar-link">Hire Billing</a>
-        {% elif m == 'concrete_production' %}
-          <a href="/user_concrete_production" class="sidebar-link">Concrete Production</a>
-        {% elif m == 'solar_report' %}
-          <a href="/user_solar_report" class="sidebar-link">Solar Report</a>
-        {% elif m == 'workmen_status' %}
-          <a href="/user_workmen_status" class="sidebar-link">Workmen Status</a>
-        {% endif %}
-      {% endfor %}
+        <a href="/user/dashboard" class="sidebar-link">Dashboard</a>
+        {% for m in session['accesses'] %}
+            {% if m == 'asset_master' %}
+                <a href="/user/asset_master" class="sidebar-link">Asset Master</a>
+            {% elif m == 'break_down_report' %}
+                <a href="/user/breakdown_report" class="sidebar-link">Break Down Report</a>
+            {% elif m == 'docments_status' %}
+                <a href="/user/asset_documents_status" class="sidebar-link">RTO/TPI Documents</a>
+            {% elif m == 'daywise_fuel_consumption' %}
+                <a href="/user/daywise_fuel_consumption" class="sidebar-link">Day Wise Fuel Consumption</a>
+            {% elif m == 'emfc_report' %}
+                <a href="/user/emfc_report" class="sidebar-link">EMFC Report</a>
+            {% elif m == 'spares_requirements' %}
+                <a href="/user/spares_requirements" class="sidebar-link">Spares Requirement</a>
+            {% elif m == 'maintenance_schedule' %}
+                <a href="/user/maintenance_schedule" class="sidebar-link">Maintenance Schedule</a>
+            {% elif m == 'digital_status' %}
+                <a href="/user/digital_status" class="sidebar-link">Digital Status</a>
+            {% elif m == 'green_card_status' %}
+                <a href="/user/green_card_status" class="sidebar-link">Green Card</a>
+            {% elif m == 'uauc_status' %}
+                <a href="/user/uauc_status" class="sidebar-link">UA/UC Status</a>
+            {% elif m == 'daywise_works' %}
+                <a href="/user/daywise_works" class="sidebar-link">Daywise Works</a>
+            {% elif m == 'hire_billing_status' %}
+                <a href="/user/hire_billing_status" class="sidebar-link">Hire Billing</a>
+            {% elif m == 'concrete_production' %}
+                <a href="/user/concrete_production" class="sidebar-link">Concrete Production</a>
+            {% elif m == 'solar_report' %}
+                <a href="/user/solar_report" class="sidebar-link">Solar Report</a>
+            {% elif m == 'workmen_status' %}
+                <a href="/user/workmen_status" class="sidebar-link">Workmen Status</a>
+            {% endif %}
+        {% endfor %}
     </nav>
+
 
     <!-- Logout -->
     <div class="mt-auto px-2 pb-6">
@@ -193,7 +194,7 @@
       <!-- Center: Welcome -->
       <div class="flex flex-col items-center text-center flex-grow mx-2">
         <p class="text-yellow-custom font-semibold text-sm sm:text-base">Welcome</p>
-        <p class="text-white text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{{ session['name'] }}</p>
+        <p class="text-white text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{{ session.get('name', '') }}</p>
       </div>
 
       <!-- Right: Profile -->
@@ -205,7 +206,7 @@
             </svg>
           </button>
           <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
-            <a href="/user_profile" class="block px-4 py-2 text-sm hover:bg-gray-100">View Profile</a>
+            <a href="/user/profile" class="block px-4 py-2 text-sm hover:bg-gray-100">View Profile</a>
             <a href="/change_password" class="block px-4 py-2 text-sm hover:bg-gray-100">Change Password</a>
             <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
           </div>

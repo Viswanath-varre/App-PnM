@@ -1,135 +1,278 @@
-{% extends 'user_base.html' %}
+{% extends 'admin_base.html' %}
 {% block title %}Edit Asset{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto p-4 sm:p-6 bg-white rounded shadow">
-  <!-- Header -->
-  <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold mb-3 sm:mb-0">Edit Asset</h1>
-    <a href="/user_asset_master" class="px-4 py-2 rounded border bg-gray-100 hover:bg-gray-200 text-sm">← Back to Asset Master</a>
-  </div>
+<div class="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-6 mt-6">
 
-  <!-- Reference Info (readonly) -->
-  <div class="bg-gray-50 border rounded p-4 mb-6">
-    <h2 class="text-lg font-semibold mb-3">Asset Reference Info</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-      <div>
-        <label class="block text-gray-600">Asset Code</label>
-        <div class="font-medium text-gray-800">{{ asset.asset_code }}</div>
-      </div>
-      <div>
-        <label class="block text-gray-600">Description</label>
-        <div class="font-medium text-gray-800">{{ asset.asset_description }}</div>
-      </div>
-      <div>
-        <label class="block text-gray-600">Reg. No.</label>
-        <div class="font-medium text-gray-800">{{ asset.reg_no }}</div>
-      </div>
-    </div>
-  </div>
+  <h1 class="text-2xl font-bold mb-6 text-gray-800">Edit Asset</h1>
 
-  <!-- Edit Form -->
-  <form id="editAssetForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <form id="editAssetForm" class="space-y-10">
     <input type="hidden" id="asset_id" value="{{ asset.id }}">
 
-    <!-- Allowed fields only -->
-    <div>
-      <label class="block text-sm mb-1">Package</label>
-      <input id="package" name="package" value="{{ asset.package }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Activity</label>
-      <input id="activity" name="activity" value="{{ asset.activity }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Location</label>
-      <input id="location" name="location" value="{{ asset.location }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Operators Available</label>
-      <input id="operator_available" type="number" name="operator_available" value="{{ asset.operator_available }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Helpers Available</label>
-      <input id="helper_available" type="number" name="helper_available" value="{{ asset.helper_available }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Supervisor/Owner Name</label>
-      <input id="supervisor_owner_name" name="supervisor_owner_name" value="{{ asset.supervisor_owner_name }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Supervisor/Owner Phone</label>
-      <input id="supervisor_owner_phone" name="supervisor_owner_phone" value="{{ asset.supervisor_owner_phone }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Operator 1</label>
-      <input id="operator1" name="operator1" value="{{ asset.operator1 }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Operator 1 Phone</label>
-      <input id="operator1_phone" name="operator1_phone" value="{{ asset.operator1_phone }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Operator 1 Shift</label>
-      <input id="operator1_shift" name="operator1_shift" value="{{ asset.operator1_shift }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Operator 2</label>
-      <input id="operator2" name="operator2" value="{{ asset.operator2 }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Operator 2 Phone</label>
-      <input id="operator2_phone" name="operator2_phone" value="{{ asset.operator2_phone }}" class="w-full border rounded px-3 py-2">
-    </div>
-    <div>
-      <label class="block text-sm mb-1">Operator 2 Shift</label>
-      <input id="operator2_shift" name="operator2_shift" value="{{ asset.operator2_shift }}" class="w-full border rounded px-3 py-2">
-    </div>
+    <!-- -------------------- ASSET DETAILS -------------------- -->
+    <section>
+      <h2 class="text-lg font-semibold mb-4 border-b pb-1 text-yellow-700">Asset Details</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Asset Code</label>
+          <input id="asset_code" name="asset_code" value="{{ asset.asset_code }}" class="w-full border rounded px-3 py-2">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Asset Description</label>
+          <input id="asset_description" name="asset_description" value="{{ asset.asset_description }}" class="w-full border rounded px-3 py-2">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Asset Category</label>
+          <select id="asset_category" name="asset_category" class="w-full border rounded px-3 py-2">
+            <option value="">-- Select Category --</option>
+            <option value="Concreting Eqpt" {% if asset.asset_category == "Concreting Eqpt" %}selected{% endif %}>Concreting Eqpt</option>
+            <option value="Earthmoving Eqpt" {% if asset.asset_category == "Earthmoving Eqpt" %}selected{% endif %}>Earthmoving Eqpt</option>
+            <option value="Cranes" {% if asset.asset_category == "Cranes" %}selected{% endif %}>Cranes</option>
+            <option value="Marine Eqpt" {% if asset.asset_category == "Marine Eqpt" %}selected{% endif %}>Marine Eqpt</option>
+            <option value="Material Handling Eqpt" {% if asset.asset_category == "Material Handling Eqpt" %}selected{% endif %}>Material Handling Eqpt</option>
+            <option value="Power Generators" {% if asset.asset_category == "Power Generators" %}selected{% endif %}>Power Generators</option>
+            <option value="Utility Eqpt" {% if asset.asset_category == "Utility Eqpt" %}selected{% endif %}>Utility Eqpt</option>
+            <option value="Vehicles - Cargo" {% if asset.asset_category == "Vehicles - Cargo" %}selected{% endif %}>Vehicles - Cargo</option>
+            <option value="Vehicles - Passenger" {% if asset.asset_category == "Vehicles - Passenger" %}selected{% endif %}>Vehicles - Passenger</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Registration No.</label>
+          <input id="reg_no" name="reg_no" value="{{ asset.reg_no }}" class="w-full border rounded px-3 py-2">
+        </div>
+      </div>
+    </section>
+
+    <!-- -------------------- LOCATION & ACTIVITY -------------------- -->
+    <section>
+      <h2 class="text-lg font-semibold mb-4 border-b pb-1 text-yellow-700">Location & Activity</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Package</label>
+          <select id="package" name="package" class="w-full border rounded px-3 py-2">
+            <option value="">-- Select Package --</option>
+            <option value="Adabari" {% if asset.package == "Adabari" %}selected{% endif %}>Adabari</option>
+            <option value="Birsing" {% if asset.package == "Birsing" %}selected{% endif %}>Birsing</option>
+            <option value="Phulbari" {% if asset.package == "Phulbari" %}selected{% endif %}>Phulbari</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Activity</label>
+          <select id="activity" name="activity" class="w-full border rounded px-3 py-2">
+            <option value="">-- Select Activity --</option>
+            {% for a in ['Batching Plant','LG','Fabrication','Civil Works','Bridge Builders','Upper Pylon','Pier Table','Marine','Well Works','Office / Accommodation / Admin','Enabling','Other Works'] %}
+              <option value="{{ a }}" {% if asset.activity == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Activity Works</label>
+          <input type="text" id="activity_works" name="activity_works"
+          value="{{ asset.activity_works or '' }}"
+          placeholder="Enter specific work details"
+          class="w-full border rounded px-3 py-2">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Location</label>
+          <input id="location" name="location" value="{{ asset.location }}" class="w-full border rounded px-3 py-2">
+        </div>
+      </div>
+    </section>
+
+    <!-- -------------------- OWNER / METER / FUEL -------------------- -->
+    <section>
+      <h2 class="text-lg font-semibold mb-4 border-b pb-1 text-yellow-700">Owner / Meter Type / Fuel Details</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Meter Type</label>
+          <select id="meter_type" name="meter_type" class="w-full border rounded px-3 py-2">
+            <option value="">-- Select --</option>
+            <option value="HMR" {% if asset.meter_type == "HMR" %}selected{% endif %}>HMR</option>
+            <option value="KMR" {% if asset.meter_type == "KMR" %}selected{% endif %}>KMR</option>
+            <option value="HMR/KMR" {% if asset.meter_type == "HMR/KMR" %}selected{% endif %}>HMR/KMR</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">UoM</label>
+          <select id="uom" name="uom" class="w-full border rounded px-3 py-2">
+            <option value="">-- Select --</option>
+            <option value="KMPL" {% if asset.uom == "KMPL" %}selected{% endif %}>KMPL</option>
+            <option value="LPH" {% if asset.uom == "LPH" %}selected{% endif %}>LPH</option>
+            <option value="LPH/KMPL" {% if asset.uom == "LPH/KMPL" %}selected{% endif %}>LPH/KMPL</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Fuel Norms</label>
+          <input id="fuel_norms" name="fuel_norms" value="{{ asset.fuel_norms }}" class="w-full border rounded px-3 py-2">
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Owner</label>
+          <select id="owner" name="owner" class="w-full border rounded px-3 py-2">
+            <option value="">-- Select Owner --</option>
+            <option value="Own" {% if asset.owner == "Own" %}selected{% endif %}>Own</option>
+            <option value="Hire" {% if asset.owner == "Hire" %}selected{% endif %}>Hire</option>
+            <option value="NC" {% if asset.owner == "NC" %}selected{% endif %}>NC</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- -------------------- VENDOR DETAILS -------------------- -->
+    <section>
+      <h2 class="text-lg font-semibold mb-4 border-b pb-1 text-yellow-700">Vendor Details</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for field, label in {
+          'vendor_code':'Vendor Code','agency':'Agency','wod_number':'WOD Number',
+          'vendor_mail_id':'Vendor Mail ID','starting_reading':'Starting Reading',
+          'tank_capacity':'Tank Capacity','hsd_available':'HSD Available',
+          'make':'Make','model':'Model','pm_make':'PM Make','pm_model':'PM Model'
+        }.items() %}
+        <div>
+          <label class="block text-sm mb-1">{{ label }}</label>
+          <input id="{{ field }}" name="{{ field }}" value="{{ asset[field] }}" class="w-full border rounded px-3 py-2">
+        </div>
+        {% endfor %}
+
+        <div>
+          <label class="block text-sm mb-1">Date of Commission</label>
+          <input type="date" id="date_of_commission" name="date_of_commission"
+                 min="2021-01-01" max="2030-12-31"
+                 value="{{ asset.date_of_commission or '' }}" 
+                 class="w-full border rounded px-3 py-2">
+        </div>
+      </div>
+    </section>
+
+    <!-- -------------------- HIRE CHARGES -------------------- -->
+    <section>
+      <h2 class="text-lg font-semibold mb-4 border-b pb-1 text-yellow-700">Hire Charges</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for field, label in {
+          'ehc':'EHC',
+          'ihc':'IHC',
+          'shift_hours':'Shift Hours'
+        }.items() %}
+        <div>
+          <label class="block text-sm mb-1">{{ label }}</label>
+          <input type="number" step="any" id="{{ field }}" name="{{ field }}" value="{{ asset[field] }}" class="w-full border rounded px-3 py-2">
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- -------------------- OPERATOR DETAILS -------------------- -->
+    <section>
+      <h2 class="text-lg font-semibold mb-4 border-b pb-1 text-yellow-700">Operator Details</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Operators Available</label>
+          <input id="operator_available" name="operator_available" type="number" min="0" max="4" value="{{ asset.operator_available }}" class="w-full border rounded px-3 py-2">
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Helpers Available</label>
+          <input id="helper_available" name="helper_available" type="number" min="0" max="6" value="{{ asset.helper_available }}" class="w-full border rounded px-3 py-2">
+        </div>
+
+        {% for field, label in {
+          'supervisor_owner_name':'Supervisor/Owner Name','supervisor_owner_phone':'Supervisor/Owner Phone',
+          'operator1':'Operator 1','operator1_phone':'Operator 1 Phone',
+          'operator2':'Operator 2','operator2_phone':'Operator 2 Phone'
+        }.items() %}
+        <div>
+          <label class="block text-sm mb-1">{{ label }}</label>
+          <input id="{{ field }}" name="{{ field }}" value="{{ asset[field] }}" class="w-full border rounded px-3 py-2">
+        </div>
+        {% endfor %}
+
+        <div>
+          <label class="block text-sm mb-1">Operator 1 Shift</label>
+          <select id="operator1_shift" name="operator1_shift" class="w-full border rounded px-3 py-2">
+            <option value="">-- Select Shift --</option>
+            <option value="Day" {% if asset.operator1_shift == "Day" %}selected{% endif %}>Day</option>
+            <option value="Night" {% if asset.operator1_shift == "Night" %}selected{% endif %}>Night</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Operator 2 Shift</label>
+          <select id="operator2_shift" name="operator2_shift" class="w-full border rounded px-3 py-2">
+            <option value="">-- Select Shift --</option>
+            <option value="Day" {% if asset.operator2_shift == "Day" %}selected{% endif %}>Day</option>
+            <option value="Night" {% if asset.operator2_shift == "Night" %}selected{% endif %}>Night</option>
+          </select>
+        </div>
+      </div>
+    </section>
 
     <!-- Buttons -->
-    <div class="col-span-1 sm:col-span-2 flex flex-col sm:flex-row justify-end gap-3 mt-6">
-      <a href="/user_asset_master" class="px-4 py-3 rounded border text-center w-full sm:w-auto">Cancel</a>
-      <button type="submit" class="px-4 py-3 rounded bg-green-600 text-white w-full sm:w-auto">Update</button>
+    <div class="flex justify-end gap-4 mt-8">
+      <button type="button" id="cancelBtn" class="px-4 py-2 rounded border bg-gray-200 hover:bg-gray-300 text-gray-800">Cancel</button>
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow">💾 Update Asset</button>
     </div>
   </form>
 </div>
 
 <script>
-  document.getElementById("editAssetForm").addEventListener("submit", async function(e){
+  document.getElementById("cancelBtn").addEventListener("click", () => {
+    if (confirm("Discard changes and return to Asset Master?")) {
+      window.location.href = "/admin_asset_master";
+    }
+  });
+
+  document.getElementById("editAssetForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = document.getElementById("asset_id").value;
-
-    const fields = [
-      "package","activity","location",
-      "operator_available","helper_available",
-      "supervisor_owner_name","supervisor_owner_phone",
-      "operator1","operator1_phone","operator1_shift",
-      "operator2","operator2_phone","operator2_shift"
-    ];
-
+    const form = e.target;
     const data = {};
-    fields.forEach(f => {
-      const el = document.getElementById(f);
-      data[f] = el ? el.value : null;
+
+    Array.from(form.elements).forEach(el => {
+      if (el.name) {
+        if (el.type === "number") data[el.name] = el.value ? parseFloat(el.value) : null;
+        else data[el.name] = el.value || null;
+      }
     });
 
     data.last_updated_by = "{{ session.get('name','') }}";
     data.last_updated_at = new Date().toISOString();
 
     try {
-      const r = await fetch(`/user_update_asset/${id}`, {
+      const r = await fetch(`/user/update_asset/${id}`, {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
+        credentials: "include"
       });
-      const resp = await r.json();
-      if(resp.success){
-        window.location.href = "/user_asset_master";
-      } else {
-        alert("Update failed: " + (resp.error || "Unknown error"));
+
+      // ✅ Permanent JSON-safe fix (6-space indentation)
+      let resp;
+      try {
+            resp = await r.json();
+      } catch {
+            const text = await r.text();
+            console.error("⚠️ Non-JSON response:", text);
+            alert("⚠️ Session expired or server error — please re-login.");
+            return;
       }
-    } catch(err){
-      alert("Error: " + err);
+
+      if (resp.success) {
+            alert("✅ Asset updated successfully!");
+            window.location.href = "/admin_asset_master";
+      } else {
+            alert("❌ Update failed: " + (resp.error || "Unknown error"));
+      }
+    } catch (err) {
+      alert("❌ Error: " + err);
     }
   });
 </script>
