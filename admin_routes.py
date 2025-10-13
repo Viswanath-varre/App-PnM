@@ -54,7 +54,8 @@ def admin_user_management():
             'user_id', 'full_name', 'designation', 'phone', 'email',
             'accesses', 'role', 'auth_id', 'created_at'
         ],
-        modules=modules
+        modules=modules,
+        feature_matrix=current_app.config['FEATURE_MATRIX']   # ✅ Added line
     )
 
 
@@ -121,7 +122,20 @@ def create_users():
         # otherwise just redirect back
         return redirect(url_for('admin.admin_user_management'))
 
-    # Otherwise normal form
+    # --- Build structured permissions ---
+    raw_feature_accesses = request.form.getlist("feature_accesses")
+    feature_accesses = {}
+
+    for item in raw_feature_accesses:
+        try:
+            page, feature, perm = item.split(":")
+            feature_accesses.setdefault(page, {}).setdefault(feature, []).append(perm)
+        except ValueError:
+            continue
+
+    # --- Extract top-level page names for quick listing (optional) ---
+    accesses = list(feature_accesses.keys())
+
     data = {
         "user_id": request.form.get("user_id"),
         "full_name": request.form.get("full_name"),
@@ -130,7 +144,8 @@ def create_users():
         "phone": request.form.get("phone"),
         "email": request.form.get("email"),
         "password": request.form.get("password"),
-        "accesses": request.form.getlist("accesses"),
+        "accesses": accesses,                 # quick reference for accessible pages
+        "feature_accesses": feature_accesses  # full structured permission data
     }
     try:
         _create_single_user(data, supabase_admin)

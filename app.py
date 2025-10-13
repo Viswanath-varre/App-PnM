@@ -39,6 +39,13 @@ def create_app():
         'uauc_status',
         'workmen_status'
     ]
+    
+    # ------------------------------------------------------------
+    # ✅  Auto-detect all user-page features from /templates
+    # ------------------------------------------------------------
+    from feature_registry import scan_user_templates
+    app.config['FEATURE_MATRIX'] = scan_user_templates("templates")
+    print("🔍 Loaded feature matrix with", len(app.config['FEATURE_MATRIX']), "user pages.")
 
     # Register blueprints
     from auth_routes import auth_bp
