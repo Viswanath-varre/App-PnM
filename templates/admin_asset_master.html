@@ -7,9 +7,13 @@
   <!-- Title + Buttons -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
     <div>
-      <h1 class="text-2xl font-bold">Asset Master (Admin)</h1>
-      <p class="text-sm text-gray-600">Manage all asset master records</p>
+      <h1 class="text-2xl font-bold">Asset Master</h1>
+      <p class="text-sm text-gray-600">Manage all asset records</p>
     </div>
+
+    <span id="dropdownStatus" class="text-xs text-green-700 font-semibold ml-2 hidden">
+      🟢 Dropdowns Updated Just Now
+    </span>
 
     <div class="flex flex-wrap items-center gap-2">
       <!-- Funnel Icon -->
@@ -25,6 +29,10 @@
       <a href="/admin/download_assets_csv" class="px-3 py-2 rounded border">Download CSV</a>
       <a href="/admin/download_assets_template_csv" class="px-3 py-2 rounded border">Download Template CSV</a>
       <a href="#" id="downloadExcelBtn" class="px-3 py-2 rounded border">Download Excel</a>
+      
+      <button id="openDropdownConfigBtn" class="px-3 py-2 rounded border bg-gray-100 hover:bg-gray-200">
+        ⚙️ Manage Dropdowns
+      </button>
 
       <label class="px-3 py-2 rounded border cursor-pointer bg-white">
         Upload CSV
@@ -195,6 +203,36 @@
   <div id="scrollBottom" class="overflow-x-auto mt-1"><div style="height:1px"></div></div>
 </div>
 
+<!-- 🔧 Dropdown Config Management Panel -->
+<div class="bg-white shadow rounded-lg p-4 mb-6 border border-gray-200">
+  <h2 class="text-lg font-bold text-gray-800 mb-3">⚙️ Manage Dropdown Lists</h2>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div>
+      <label class="block text-sm font-semibold mb-1 text-gray-700">Select List</label>
+      <select id="listSelector" class="border rounded w-full p-2">
+        <option value="asset_category">Asset Category</option>
+        <option value="package">Package</option>
+        <option value="activity">Activity</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold mb-1 text-gray-700">Value</label>
+      <input id="newListValue" placeholder="Enter value..." class="border rounded w-full p-2" />
+    </div>
+
+    <div class="flex items-end gap-2">
+      <button id="addListValueBtn" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded">Add</button>
+      <button id="removeListValueBtn" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded">Remove</button>
+    </div>
+  </div>
+
+  <div class="mt-3 text-sm text-gray-500">
+    Changes apply instantly — reflected in both Admin & User Asset Masters.
+  </div>
+</div>
+
 <!-- Error Popup -->
 <div id="errorPopup" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
   <div class="bg-white rounded shadow-lg w-96 max-h-96 overflow-y-auto p-4">
@@ -207,6 +245,42 @@
   </div>
 </div>
 
+<!-- ⚙️ Dropdown Config Modal -->
+<div id="dropdownConfigModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
+    <h2 class="text-lg font-bold text-gray-800 mb-3">Manage Dropdown Lists</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-gray-700">Select List</label>
+        <select id="listSelector" class="border rounded w-full p-2">
+          <option value="asset_category">Asset Category</option>
+          <option value="package">Package</option>
+          <option value="activity">Activity</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-gray-700">Value</label>
+        <input id="newListValue" placeholder="Enter value..." class="border rounded w-full p-2" />
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button id="addListValueBtn" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded">Add</button>
+        <button id="removeListValueBtn" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded">Remove</button>
+      </div>
+    </div>
+
+    <div class="max-h-40 overflow-y-auto border-t pt-2 mt-2">
+      <h3 class="font-semibold text-sm mb-1 text-gray-700">Current Values</h3>
+      <ul id="dropdownValuesList" class="text-sm text-gray-600 space-y-1"></ul>
+    </div>
+
+    <div class="flex justify-end mt-4">
+      <button id="closeDropdownModal" class="px-4 py-2 rounded border bg-gray-200 hover:bg-gray-300">Close</button>
+    </div>
+  </div>
+</div>
 
 <!-- ✅ Toast Notification Box -->
 <div id="toast" class="fixed bottom-5 right-5 hidden z-50 rounded-lg px-4 py-3 text-white shadow-lg transition-all duration-500 transform">
@@ -1116,9 +1190,252 @@
 
     document.getElementById("editModal").classList.remove("hidden");
   }
+  
 
+  // --- Render values inside modal
+  function renderDropdownList() {
+    const selected = document.getElementById("listSelector").value;
+    const values = dropdownData[selected] || [];
+    valuesList.innerHTML = "";
+    values.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = "• " + (item.value || item);
+      valuesList.appendChild(li);
+    });
+  }
 
+  // --- Change list refresh
+  document.getElementById("listSelector").addEventListener("change", renderDropdownList);
+
+  // --- Add Value
+  document.getElementById("addListValueBtn").addEventListener("click", async () => {
+    const list_name = document.getElementById("listSelector").value;
+    const value = document.getElementById("newListValue").value.trim();
+    if (!value) return alert("Enter a value to add!");
+
+    await fetch("/admin/update_dropdown", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add", list_name, value })
+    });
+
+    showToast(`Added "${value}" to ${list_name}`, "success");
+    dropdownChannel.postMessage("updated");   // 🟢 broadcast to all open tabs
+    await loadDropdownConfig();
+    renderDropdownList();
+    reloadEditors();
+    showDropdownStatus();
+  });
+
+  // --- Remove Value
+  document.getElementById("removeListValueBtn").addEventListener("click", async () => {
+    const list_name = document.getElementById("listSelector").value;
+    const value = document.getElementById("newListValue").value.trim();
+    if (!value) return alert("Enter a value to remove!");
+    await fetch("/admin/update_dropdown", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", list_name, value })
+    });
+    showToast(`Removed "${value}" from ${list_name}`, "error");
+    await loadDropdownConfig();
+    renderDropdownList();
+    reloadEditors();
+  });
+
+  // 🔁 Refresh Tabulator dropdown editors instantly
+  async function reloadEditors() {
+    if (!dropdownData || !table) return;
+
+    // extract pure value arrays from Supabase response
+    const packages = dropdownData.package?.map(v => v.value) || [];
+    const activities = dropdownData.activity?.map(v => v.value) || [];
+    const categories = dropdownData.asset_category?.map(v => v.value) || [];
+
+    table.updateColumnDefinition("package", {
+      editor: "list",
+      editorParams: { values: packages },
+      headerFilter: "select",
+      headerFilterParams: { values: { "": "All", ...Object.fromEntries(packages.map(v => [v, v])) } }
+    });
+
+    table.updateColumnDefinition("activity", {
+      editor: "list",
+      editorParams: { values: activities },
+      headerFilter: "select",
+      headerFilterParams: { values: { "": "All", ...Object.fromEntries(activities.map(v => [v, v])) } }
+    });
+
+    table.updateColumnDefinition("asset_category", {
+      editor: "list",
+      editorParams: { values: categories },
+      headerFilter: "select",
+      headerFilterParams: { values: { "": "All", ...Object.fromEntries(categories.map(v => [v, v])) } }
+    });
+
+    table.redraw(true);
+    console.log("✅ Tabulator dropdowns reloaded live");
+  }
+  
+  function showDropdownStatus() {
+    const el = document.getElementById("dropdownStatus");
+    if (!el) return;
+    el.classList.remove("hidden");
+    el.textContent = "🟢 Dropdowns Updated Just Now";
+    setTimeout(() => {
+      el.classList.add("hidden");
+    }, 4000);
+  }
+
+  // ⚙️ GLOBAL DROPDOWN CONFIG POPUP LOGIC WITH LIVE REFRESH (FIXED)
+  const dropdownModal = document.getElementById("dropdownConfigModal");
+  const openDropdownBtn = document.getElementById("openDropdownConfigBtn");
+  const closeDropdownBtn = document.getElementById("closeDropdownModal");
+  const valuesList = document.getElementById("dropdownValuesList");
+  const removeListBtn = document.getElementById("removeListValueBtn");
+
+  // Create <select> dynamically for remove dropdown
+  const removeSelect = document.createElement("select");
+  removeSelect.id = "removeDropdownValue";
+  removeSelect.className = "border rounded w-full p-2 mt-2 mb-2";
+  removeListBtn.before(removeSelect);
+
+  let dropdownData = {};
+  const dropdownChannel = new BroadcastChannel("dropdown_updates");
+
+  // 🔁 Listen for updates from any tab or page
+  dropdownChannel.onmessage = async () => {
+    await loadDropdownConfig();
+    reloadEditors();
+    renderDropdownList();       // ✅ keep modal list fresh
+  };
+
+  // --- Open Modal
+  openDropdownBtn.addEventListener("click", async () => {
+    await loadDropdownConfig();
+    renderDropdownList();
+    dropdownModal.classList.remove("hidden");
+    dropdownModal.classList.add("flex");
+  });
+
+  // --- Close Modal
+  closeDropdownBtn.addEventListener("click", () => {
+    dropdownModal.classList.add("hidden");
+    dropdownModal.classList.remove("flex");
+  });
+
+  // --- Fetch dropdowns from backend
+  async function loadDropdownConfig() {
+    const res = await fetch("/admin/dropdown_config");
+    dropdownData = await res.json();
+  }
+
+  // --- Render both visible list and remove-select list
+  function renderDropdownList() {
+    const selected = document.getElementById("listSelector").value;
+    const values = dropdownData[selected] || [];
+
+    valuesList.innerHTML = "";
+    removeSelect.innerHTML = "";
+
+    if (values.length === 0) {
+      valuesList.innerHTML = "<li class='text-gray-500'>No values found</li>";
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "No values";
+      removeSelect.appendChild(opt);
+      removeSelect.disabled = true;
+      return;
+    }
+
+    removeSelect.disabled = false;
+
+    values.forEach(item => {
+      const value = item.value || item;
+      const li = document.createElement("li");
+      li.textContent = "• " + value;
+      valuesList.appendChild(li);
+
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = value;
+      removeSelect.appendChild(opt);
+    });
+  }
+
+  // --- Refresh list when dropdown type changes
+  document.getElementById("listSelector").addEventListener("change", renderDropdownList);
+
+  // --- Add Value
+  document.getElementById("addListValueBtn").addEventListener("click", async () => {
+    const list_name = document.getElementById("listSelector").value;
+    const value = document.getElementById("newListValue").value.trim();
+    if (!value) return alert("Enter a value to add!");
+
+    await fetch("/admin/update_dropdown", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add", list_name, value })
+    });
+
+    showToast(`Added "${value}" to ${list_name}`, "success");
+    dropdownChannel.postMessage("updated");
+    await loadDropdownConfig();
+    renderDropdownList();
+    reloadEditors();
+    showDropdownStatus();
+  });
+
+  // --- Remove Value (use selected option)
+  removeListBtn.addEventListener("click", async () => {
+    const list_name = document.getElementById("listSelector").value;
+    const value = removeSelect.value;
+    if (!value) return alert("Select a value to remove!");
+
+    await fetch("/admin/update_dropdown", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remove", list_name, value })
+    });
+
+    showToast(`Removed "${value}" from ${list_name}`, "error");
+    dropdownChannel.postMessage("updated");
+    await loadDropdownConfig();
+    renderDropdownList();
+    reloadEditors();
+    showDropdownStatus();
+  });
+
+  // --- Refresh Tabulator dropdowns immediately
+  async function reloadEditors() {
+    if (!dropdownData || !table) return;
+    table.updateColumnDefinition("package", {
+      editorParams: { values: dropdownData.package.map(v => v.value || v) }
+    });
+    table.updateColumnDefinition("activity", {
+      editorParams: { values: dropdownData.activity.map(v => v.value || v) }
+    });
+    table.updateColumnDefinition("asset_category", {
+      editorParams: { values: dropdownData.asset_category.map(v => v.value || v) }
+    });
+    table.redraw(true);
+  }
+
+  // --- Small success indicator
+  function showDropdownStatus() {
+    const el = document.getElementById("dropdownStatus");
+    if (!el) return;
+    el.classList.remove("hidden");
+    el.textContent = "🟢 Dropdowns Updated Just Now";
+    setTimeout(() => {
+      el.classList.add("hidden");
+    }, 4000);
+  }
+  
   table.on("dataLoaded", updateOwnerCounts);
-  document.addEventListener("DOMContentLoaded", loadData);
+  document.addEventListener("DOMContentLoaded", async () => {
+    await loadDropdownConfig();
+    reloadEditors();
+  });  
 </script>
 {% endblock %}

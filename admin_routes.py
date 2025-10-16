@@ -64,30 +64,22 @@ def admin_user_management():
 def create_users():
     supabase_admin = current_app.config['supabase_admin']
 
-    # If CSV upload
+    # ---------- 1️⃣ CSV Upload ----------
     if 'csv_file' in request.files:
         file = request.files['csv_file']
         if not file.filename.lower().endswith('.csv'):
-            flash("Only CSV files allowed")
+            flash("Only CSV files allowed", "danger")
             return redirect(url_for('admin.admin_user_management'))
 
         stream = io.StringIO(file.stream.read().decode("utf8"), newline=None)
         reader = csv.DictReader(stream)
-
-        created_rows = []
-        errors = []
+        created_rows, errors = [], []
 
         for i, row in enumerate(reader, start=1):
             try:
-                # Normalize accesses column: allow comma-separated string
-                if 'accesses' in row and row['accesses']:
-                    row['accesses'] = [x.strip() for x in row['accesses'].split(',') if x.strip()]
-                else:
-                    row['accesses'] = []
-
+                row['accesses'] = [x.strip() for x in row.get('accesses', '').split(',') if x.strip()]
                 result = _create_single_user(row, supabase_admin)
                 gen_pass = result.get("generated_password") if isinstance(result, dict) else None
-
                 created_rows.append({
                     "user_id": row.get("user_id", ""),
                     "email": row.get("email", ""),
@@ -96,22 +88,17 @@ def create_users():
             except Exception as e:
                 errors.append(f"Row {i}: {str(e)}")
 
-        # If there were errors, flash them so admin can see
         if errors:
-            flash(f"CSV create finished with {len(errors)} error(s). Check details below.")
-            for err in errors[:10]:  # show top 10 in UI
-                flash(err)
-            if len(errors) > 10:
-                flash(f"...and {len(errors)-10} more errors")
+            flash(f"CSV upload finished with {len(errors)} error(s).", "warning")
+            for err in errors[:10]:
+                flash(err, "danger")
 
-        # If we created accounts, return a downloadable CSV with the credentials
         if created_rows:
             si = io.StringIO()
             writer = csv.writer(si)
             writer.writerow(["user_id", "email", "generated_password"])
             for r in created_rows:
                 writer.writerow([r["user_id"], r["email"], r["generated_password"]])
-
             output = si.getvalue().encode("utf-8")
             return Response(
                 output,
@@ -119,22 +106,29 @@ def create_users():
                 headers={"Content-Disposition": "attachment;filename=created_users_with_passwords.csv"}
             )
 
-        # otherwise just redirect back
         return redirect(url_for('admin.admin_user_management'))
 
-    # --- Build structured permissions ---
+    # ---------- 2️⃣ Manual Form Creation ----------
     raw_feature_accesses = request.form.getlist("feature_accesses")
     feature_accesses = {}
+    flat_accesses = set()
 
     for item in raw_feature_accesses:
-        try:
-            page, feature, perm = item.split(":")
-            feature_accesses.setdefault(page, {}).setdefault(feature, []).append(perm)
-        except ValueError:
-            continue
+        parts = item.split(":")
+        if len(parts) == 1:
+            page = parts[0]
+            feature_accesses.setdefault(page, {})
+            flat_accesses.add(page)
+        elif len(parts) == 2:
+            page, feature = parts
+            feature_accesses.setdefault(page, {}).setdefault(feature, [])
+            flat_accesses.add(page)
+        elif len(parts) == 3:
+            page, feature, sub = parts
+            feature_accesses.setdefault(page, {}).setdefault(feature, []).append(sub)
+            flat_accesses.add(page)
 
-    # --- Extract top-level page names for quick listing (optional) ---
-    accesses = list(feature_accesses.keys())
+    accesses = sorted(set(flat_accesses.union(request.form.getlist("accesses"))))
 
     data = {
         "user_id": request.form.get("user_id"),
@@ -144,14 +138,66 @@ def create_users():
         "phone": request.form.get("phone"),
         "email": request.form.get("email"),
         "password": request.form.get("password"),
-        "accesses": accesses,                 # quick reference for accessible pages
-        "feature_accesses": feature_accesses  # full structured permission data
+        "accesses": accesses,
+        "feature_accesses": feature_accesses
     }
+
     try:
         _create_single_user(data, supabase_admin)
+        flash("✅ User created successfully!", "success")
     except Exception as e:
-        print("!!! Failed to create user:", e)
-        flash(f"Failed to create user: {e}")
+        print("❌ Failed to create user:", e)
+        flash(f"Failed to create user: {e}", "danger")
+
+    return redirect(url_for('admin.admin_user_management'))
+
+
+    # ---------- 2️⃣ Manual Form User Creation ----------
+    raw_feature_accesses = request.form.getlist("feature_accesses")
+    feature_accesses = {}
+    flat_accesses = set()
+
+    for item in raw_feature_accesses:
+        # Handles:
+        #  - page:feature
+        #  - page:feature:subfeature
+        #  - simple page (edge cases)
+        parts = item.split(":")
+        if len(parts) == 1:
+            page = parts[0]
+            feature_accesses.setdefault(page, {})
+            flat_accesses.add(page)
+        elif len(parts) == 2:
+            page, feature = parts
+            feature_accesses.setdefault(page, {}).setdefault(feature, [])
+            flat_accesses.add(page)
+        elif len(parts) == 3:
+            page, feature, sub = parts
+            feature_accesses.setdefault(page, {}).setdefault(feature, []).append(sub)
+            flat_accesses.add(page)
+
+    # Also include old-style "accesses" checkboxes if used
+    accesses = sorted(set(flat_accesses.union(request.form.getlist("accesses"))))
+
+    data = {
+        "user_id": request.form.get("user_id"),
+        "full_name": request.form.get("full_name"),
+        "designation": request.form.get("designation"),
+        "role": request.form.get("role"),
+        "phone": request.form.get("phone"),
+        "email": request.form.get("email"),
+        "password": request.form.get("password"),
+        "accesses": accesses,  # flat page names
+        "feature_accesses": feature_accesses  # full structure
+    }
+
+    try:
+        _create_single_user(data, supabase_admin)
+        flash("✅ User created successfully!", "success")
+    except Exception as e:
+        print("❌ Failed to create user:", e)
+        flash(f"Failed to create user: {e}", "danger")
+
     return redirect(url_for('admin.admin_user_management'))
 
 
@@ -165,28 +211,59 @@ def edit_user(user_id):
     phone = request.form.get("phone")
     email = request.form.get("email")
     password = request.form.get("password")
-    accesses = request.form.getlist("accesses")
+    role = request.form.get("role", "user")
+
+    # 🟡 Collect all permission data coming from checkboxes
+    raw_feature_accesses = request.form.getlist("feature_accesses")
+    feature_accesses = {}
+    flat_accesses = set()
+
+    for item in raw_feature_accesses:
+        parts = item.split(":")
+        if len(parts) == 1:
+            page = parts[0]
+            feature_accesses.setdefault(page, {})
+            flat_accesses.add(page)
+        elif len(parts) == 2:
+            page, feature = parts
+            feature_accesses.setdefault(page, {}).setdefault(feature, [])
+            flat_accesses.add(page)
+        elif len(parts) == 3:
+            page, feature, sub = parts
+            feature_accesses.setdefault(page, {}).setdefault(feature, []).append(sub)
+            flat_accesses.add(page)
+
+    # Merge page-only checkboxes too
+    page_accesses = set(request.form.getlist("accesses"))
+    accesses = list(flat_accesses.union(page_accesses))
 
     try:
+        # --- Update user_meta record in Supabase ---
         supabase_admin.table("users_meta").update({
             "full_name": full_name,
             "designation": designation,
             "phone": phone,
             "email": email,
-            "accesses": accesses
+            "role": role,
+            "accesses": accesses,               # flat page list
+            "feature_accesses": feature_accesses  # nested dict
         }).eq("user_id", user_id).execute()
 
+        # --- Update password in Supabase Auth (if provided) ---
         if password:
             user_record = supabase_admin.table("users_meta").select("auth_id").eq("user_id", user_id).execute()
             if user_record.data and user_record.data[0].get("auth_id"):
                 auth_id = user_record.data[0]["auth_id"]
                 supabase_admin.auth.admin.update_user(auth_id, {"password": password})
 
-        flash("User updated successfully")
+        flash("✅ User updated successfully", "success")
+
     except Exception as e:
-        flash(f"Failed to edit user: {e}")
+        print("❌ edit_user error:", e)
+        flash(f"Failed to edit user: {e}", "danger")
 
     return redirect(url_for('admin.admin_user_management'))
+
 
 
 @admin_bp.route('/delete_user/<user_id>', methods=['POST'])
@@ -500,5 +577,51 @@ def admin_module_page(module_name):
     except Exception:
         return render_template('admin_asset_master.html')
 
+# ---------------- DROPDOWN CONFIG API (Admin) ----------------
+@admin_bp.route('/dropdown_config', methods=['GET'])
+@require_role('admin')
+def admin_get_dropdown_config():
+    supabase_admin = current_app.config['supabase_admin']
+    try:
+        result = supabase_admin.table("dropdown_config").select("*").execute()
+        data = sorted(result.data or [], key=lambda x: (x["list_name"], x["value"]))
+        grouped = {}
+        for row in data:
+            grouped.setdefault(row["list_name"], []).append({"value": row["value"], "id": row["id"]})
+        return jsonify(grouped), 200
+    except Exception as e:
+        current_app.logger.error(f"dropdown_config GET error: {e}")
+        return jsonify({"error": str(e)}), 500
 
+
+@admin_bp.route('/update_dropdown', methods=['POST'])
+@require_role('admin')
+def admin_update_dropdown():
+    """
+    Body (JSON):
+      { "action": "add"|"remove", "list_name": "<name>", "value": "<value>" }
+    For remove you may pass value (exact match). Remove will delete rows where list_name & value match.
+    """
+    supabase_admin = current_app.config['supabase_admin']
+    data = request.get_json() or {}
+    action = data.get("action")
+    list_name = data.get("list_name")
+    value = data.get("value")
+
+    if not action or not list_name or not value:
+        return jsonify({"success": False, "error": "Missing action/list_name/value"}), 400
+
+    try:
+        if action == "add":
+            # Insert (allow duplicates prevention via DB constraint if set)
+            supabase_admin.table("dropdown_config").insert({"list_name": list_name, "value": value}).execute()
+        elif action == "remove":
+            supabase_admin.table("dropdown_config").delete().eq("list_name", list_name).eq("value", value).execute()
+        else:
+            return jsonify({"success": False, "error": "Invalid action"}), 400
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        current_app.logger.error(f"update_dropdown error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 

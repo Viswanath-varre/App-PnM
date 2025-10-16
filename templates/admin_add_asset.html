@@ -22,10 +22,7 @@
         <div>
           <label class="block text-sm mb-1">Asset Category</label>
           <select id="asset_category" name="asset_category" class="w-full border rounded px-3 py-2" required>
-            <option value="">-- Select Category --</option>
-            {% for cat in ["Concreting Eqpt","Cranes","EarthMoving Eqpt","Marine Eqpt","Material Handling Eqpt","Power Generators","Utility Eqpt","Vehicles - Cargo","Vehicles - Passenger"] %}
-              <option value="{{ cat }}">{{ cat }}</option>
-            {% endfor %}
+            <option value="">-- Loading... --</option>
           </select>
         </div>
         <div>
@@ -42,17 +39,14 @@
         <div>
           <label class="block text-sm mb-1">Package</label>
           <select id="package" name="package" class="w-full border rounded px-3 py-2">
-            {% for p in ["Adabari","Birsing","Phulbari"] %}
-              <option value="{{ p }}">{{ p }}</option>
-            {% endfor %}
+            <option value="">-- Loading... --</option>
           </select>
         </div>
+        
         <div>
           <label class="block text-sm mb-1">Activity</label>
           <select id="activity" name="activity" class="w-full border rounded px-3 py-2">
-            {% for a in ["Batching Plant","LG","Fabrication","Civil Works","Bridge Builders","Pire Table","Upper Pylon","Marine","Well Works","Office / Accommodation / Admin","Enabling","Other Works"] %}
-              <option value="{{ a }}">{{ a }}</option>
-            {% endfor %}
+            <option value="">-- Loading... --</option>
           </select>
         </div>
 
@@ -197,6 +191,7 @@
 </div>
 
 <script>
+  // 🟢 ------------------- ADD ASSET FORM SUBMIT -------------------
   document.getElementById("addAssetForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -232,5 +227,48 @@
       alert("❌ Error: " + err.message);
     }
   });
+
+
+
+  // 🪄 ------------------- DYNAMIC DROPDOWN LOADER -------------------
+  const dropdownChannel = new BroadcastChannel("dropdown_updates");
+
+  async function loadDropdowns() {
+    try {
+      const res = await fetch("/admin/dropdown_config");
+      const data = await res.json();
+
+      const fillSelect = (id, values) => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = "";
+        const def = document.createElement("option");
+        def.value = "";
+        def.textContent = "-- Select --";
+        sel.appendChild(def);
+        (values || []).forEach(v => {
+          const opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          sel.appendChild(opt);
+        });
+      };
+
+      // ✅ Ensure only value strings are used from Supabase response
+      fillSelect("asset_category", data.asset_category?.map(v => v.value) || []);
+      fillSelect("package", data.package?.map(v => v.value) || []);
+      fillSelect("activity", data.activity?.map(v => v.value) || []);
+
+      console.log("✅ Dropdowns loaded from Supabase");
+    } catch (err) {
+      console.error("❌ Failed to load dropdowns:", err);
+    }
+  }
+
+  // 🔁 ------------------- LIVE UPDATES (ALL TABS) -------------------
+  dropdownChannel.onmessage = loadDropdowns;
+
+  // 🚀 ------------------- LOAD ON PAGE OPEN -------------------
+  document.addEventListener("DOMContentLoaded", loadDropdowns);
 </script>
 {% endblock %}

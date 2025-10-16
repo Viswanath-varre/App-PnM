@@ -26,16 +26,27 @@ def user_profile():
 @user_bp.route('/<module_name>')
 @require_role('user')
 def user_module_page(module_name):
+    # 🔹 Step 1: Retrieve the access list from session
     accesses = session.get('accesses', [])
-    if module_name not in accesses:
+    prefixed = f"user_{module_name}"
+
+    # 🔹 Step 2: Print debug info to confirm what’s being checked
+    print("🧭 Requested module_name:", module_name)
+    print("📦 Prefixed name:", prefixed)
+    print("🎯 Session accesses:", accesses)
+
+    # 🔹 Step 3: Compare using prefixed version (user_<page>)
+    if prefixed not in accesses:
+        print(f"⛔ Access denied: {prefixed} not in session accesses.")
         return redirect(url_for('user.user_dashboard'))
 
+    # 🔹 Step 4: Try to load the page template dynamically
     try:
         return render_template(f"user_{module_name}.html")
-    except Exception:
-        # fallback placeholder if missing
+    except Exception as e:
+        print(f"⚠️ Missing template for: user_{module_name} ({e})")
+        # fallback if template missing
         return render_template('user_asset_master.html')
-
 
 # ---------------- USER ASSET MASTER (API + PAGE) ----------------
 @user_bp.route('/get_assets')
@@ -104,3 +115,19 @@ def user_edit_asset_page(asset_id):
     except Exception as e:
         print("❌ user_edit_asset_page error:", e)
         return f"Error loading asset: {e}", 500
+
+# ---------------- DROPDOWN CONFIG API (User) ----------------
+@user_bp.route('/dropdown_config', methods=['GET'])
+@require_role('user')
+def user_get_dropdown_config():
+    supabase_admin = current_app.config['supabase_admin']
+    try:
+        result = supabase_admin.table("dropdown_config").select("*").execute()
+        data = sorted(result.data or [], key=lambda x: (x["list_name"], x["value"]))
+        grouped = {}
+        for row in data:
+            grouped.setdefault(row["list_name"], []).append(row["value"])
+        return jsonify(grouped), 200
+    except Exception as e:
+        current_app.logger.error(f"user_dropdown_config GET error: {e}")
+        return jsonify({"error": str(e)}), 500

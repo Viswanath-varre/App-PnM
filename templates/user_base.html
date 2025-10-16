@@ -132,38 +132,41 @@
     <!-- Navigation -->
     <nav class="mt-4 px-2">
         <a href="/user/dashboard" class="sidebar-link">Dashboard</a>
-        {% for m in session['accesses'] %}
-            {% if m == 'asset_master' %}
-                <a href="/user/asset_master" class="sidebar-link">Asset Master</a>
-            {% elif m == 'break_down_report' %}
-                <a href="/user/breakdown_report" class="sidebar-link">Break Down Report</a>
-            {% elif m == 'docments_status' %}
-                <a href="/user/asset_documents_status" class="sidebar-link">RTO/TPI Documents</a>
-            {% elif m == 'daywise_fuel_consumption' %}
-                <a href="/user/daywise_fuel_consumption" class="sidebar-link">Day Wise Fuel Consumption</a>
-            {% elif m == 'emfc_report' %}
-                <a href="/user/emfc_report" class="sidebar-link">EMFC Report</a>
-            {% elif m == 'spares_requirements' %}
-                <a href="/user/spares_requirements" class="sidebar-link">Spares Requirement</a>
-            {% elif m == 'maintenance_schedule' %}
-                <a href="/user/maintenance_schedule" class="sidebar-link">Maintenance Schedule</a>
-            {% elif m == 'digital_status' %}
-                <a href="/user/digital_status" class="sidebar-link">Digital Status</a>
-            {% elif m == 'green_card_status' %}
-                <a href="/user/green_card_status" class="sidebar-link">Green Card</a>
-            {% elif m == 'uauc_status' %}
-                <a href="/user/uauc_status" class="sidebar-link">UA/UC Status</a>
-            {% elif m == 'daywise_works' %}
-                <a href="/user/daywise_works" class="sidebar-link">Daywise Works</a>
-            {% elif m == 'hire_billing_status' %}
-                <a href="/user/hire_billing_status" class="sidebar-link">Hire Billing</a>
-            {% elif m == 'concrete_production' %}
-                <a href="/user/concrete_production" class="sidebar-link">Concrete Production</a>
-            {% elif m == 'solar_report' %}
-                <a href="/user/solar_report" class="sidebar-link">Solar Report</a>
-            {% elif m == 'workmen_status' %}
-                <a href="/user/workmen_status" class="sidebar-link">Workmen Status</a>
-            {% endif %}
+        {% for m in session.get('accesses', []) %}
+                {% set clean = m.replace('user_', '') %}
+                {% if clean == 'asset_master' %}
+                    <a href="/user/asset_master" class="sidebar-link">Asset Master</a>
+                {% elif clean == 'breakdown_report' %}
+                    <a href="/user/breakdown_report" class="sidebar-link">Break Down Report</a>
+                {% elif clean == 'asset_documents_status' %}
+                    <a href="/user/asset_documents_status" class="sidebar-link">RTO/TPI Documents</a>
+                {% elif clean == 'daywise_fuel_consumption' %}
+                    <a href="/user/daywise_fuel_consumption" class="sidebar-link">Day Wise Fuel Consumption</a>
+                {% elif clean == 'emfc_report' %}
+                    <a href="/user/emfc_report" class="sidebar-link">EMFC Report</a>
+                {% elif clean == 'spares_requirements' %}
+                    <a href="/user/spares_requirements" class="sidebar-link">Spares Requirement</a>
+                {% elif clean == 'maintenance_schedule' %}
+                    <a href="/user/maintenance_schedule" class="sidebar-link">Maintenance Schedule</a>
+                {% elif clean == 'digital_status' %}
+                    <a href="/user/digital_status" class="sidebar-link">Digital Status</a>
+                {% elif clean == 'asset_green_card_status' %}
+                    <a href="/user/green_card_status" class="sidebar-link">Green Card</a>
+                {% elif clean == 'uauc_status' %}
+                    <a href="/user/uauc_status" class="sidebar-link">UA/UC Status</a>
+                {% elif clean == 'daywise_works' %}
+                    <a href="/user/daywise_works" class="sidebar-link">Daywise Works</a>
+                {% elif clean == 'hire_billing_status' %}
+                    <a href="/user/hire_billing_status" class="sidebar-link">Hire Billing</a>
+                {% elif clean == 'concrete_production' %}
+                    <a href="/user/concrete_production" class="sidebar-link">Concrete Production</a>
+                {% elif clean == 'solar_report' %}
+                    <a href="/user/solar_report" class="sidebar-link">Solar Report</a>
+                {% elif clean == 'workmen_status' %}
+                    <a href="/user/workmen_status" class="sidebar-link">Workmen Status</a>
+                {% elif clean == 'dashboard' %}
+                    <a href="/user/dashboard" class="sidebar-link">Dashboard</a>
+                {% endif %}
         {% endfor %}
     </nav>
 
@@ -264,6 +267,29 @@
     document.querySelectorAll('.sidebar-link').forEach(link => {
       if (link.getAttribute('href') === currentPath) link.classList.add('active');
     });
+
+        // 🌐 Global dropdown sync every 30 seconds (for all users)
+    setInterval(async () => {
+      try {
+        // Check timestamp from Supabase (using a lightweight endpoint)
+        const res = await fetch("/user/dropdown_config");
+        const data = await res.json();
+
+        // Compare with cached JSON — only update if changed
+        const newData = JSON.stringify(data);
+        if (window._lastDropdownData !== newData) {
+          window._lastDropdownData = newData;
+          console.log("🔁 Network-wide dropdowns refreshed");
+          const channel = new BroadcastChannel("dropdown_updates");
+          channel.postMessage("updated");
+        }
+      } catch (err) {
+        console.warn("Dropdown sync check failed:", err);
+      }
+    }, 30000); // every 30s
+
+
+
   </script>
 </body>
 </html>

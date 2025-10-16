@@ -250,7 +250,7 @@
       const r = await fetch(`/user/update_asset/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
         credentials: "include"
       });
 
@@ -275,5 +275,55 @@
       alert("❌ Error: " + err);
     }
   });
+
+  // 🔁 Live dropdown sync from Admin (for Add/Edit forms)
+  const dropdownChannel = new BroadcastChannel("dropdown_updates");
+
+  // 🪄 Load dropdown options dynamically
+  async function refreshDropdownOptions() {
+    try {
+      const res = await fetch("/user/dropdown_config");
+      const dropdownData = await res.json();
+
+      // Extract clean arrays from Supabase response
+      const packages = dropdownData.package?.map(v => v.value) || [];
+      const activities = dropdownData.activity?.map(v => v.value) || [];
+      const categories = dropdownData.asset_category?.map(v => v.value) || [];
+
+      // Helper: refill a <select>
+      const populateSelect = (select, values) => {
+        if (!select) return;
+        const current = select.value;
+        select.innerHTML = "";
+        const def = document.createElement("option");
+        def.value = "";
+        def.textContent = "-- Select --";
+        select.appendChild(def);
+        (values || []).forEach(v => {
+          const opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          select.appendChild(opt);
+        });
+        if (current && values.includes(current)) select.value = current;
+      };
+
+      // Apply to all dropdowns
+      populateSelect(document.getElementById("package"), packages);
+      populateSelect(document.getElementById("activity"), activities);
+      populateSelect(document.getElementById("asset_category"), categories);
+
+      console.log("✅ User Edit: dropdowns refreshed from Supabase");
+    } catch (err) {
+      console.error("❌ Failed to refresh dropdowns:", err);
+    }
+  }
+
+  // Listen for live updates across all open tabs
+  dropdownChannel.onmessage = refreshDropdownOptions;
+
+  // Load once on page open
+  document.addEventListener("DOMContentLoaded", refreshDropdownOptions);
+
 </script>
 {% endblock %}

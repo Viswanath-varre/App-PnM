@@ -582,10 +582,23 @@
   <span data-feature="user_asset_master:inline_edit" data-label="Inline Edit"></span>
 
   <!-- Subfeatures (columns/boxes the user can edit) -->
+  <!-- Subfeatures (columns/boxes the user can edit) -->
   <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Package"></span>
   <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Activity"></span>
-  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Operator"></span>
-  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Helper"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Activity Works"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Location"></span>
+
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Operator Avail"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Helper Avail"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Supervisor/Owner Name"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Supervisor/Owner Phone"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Operator 1"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Operator 1 Phone"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Operator 1 Shift"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Operator 2"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Operator 2 Phone"></span>
+  <span data-subfeature="user_asset_master:inline_edit" data-label="Edit Operator 2 Shift"></span>
+
 
   <!-- Other independent features -->
   <span data-feature="user_asset_master:download_excel" data-label="Download Excel"></span>
@@ -792,477 +805,360 @@
 <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
 
 <script>
+  /* ✅ MOBILE-FRIENDLY SELECT EDITOR (single unified version) */
+  function mobileSelectEditor(cell, onRendered, success, cancel, editorParams) {
+    const values = editorParams?.values || [];
+    const current = cell.getValue() || "";
+
+    // Create the <select>
+    const select = document.createElement("select");
+    select.style.width = "100%";
+    select.style.padding = "8px";
+    select.style.fontSize = "14px";
+    select.style.border = "1px solid #ccc";
+    select.style.borderRadius = "6px";
+    select.style.background = "#fff";
+    select.style.zIndex = 9999;
+
+    // Populate options
+    values.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      if (v === current) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    // Prevent mobile keyboard popup
+    select.addEventListener("touchstart", e => e.stopPropagation());
+    select.addEventListener("mousedown", e => e.stopPropagation());
+
+    // Save / Cancel
+    select.addEventListener("change", () => success(select.value));
+    select.addEventListener("blur", () => success(select.value));
+
+    onRendered(() => {
+      select.focus({ preventScroll: true });
+    });
+
+    return select;
+  }
+
+  /* ✅ TABULATOR COLUMN DEFINITIONS */
   const columns = [
-    { title: "Sl. No.", formatter: "rownum", hozAlign: "center", width: 80 },
-    { title: "Asset Code", field: "asset_code", headerFilter: "input", hozAlign: "center" },
-    { title: "Asset Description", field: "asset_description", headerFilter: "input", hozAlign: "center" },
+      { title: "Sl. No.", formatter: "rownum", hozAlign: "center", width: 80 },
+      { title: "Asset Code", field: "asset_code", headerFilter: "input", hozAlign: "center" },
+      { title: "Asset Description", field: "asset_description", headerFilter: "input", hozAlign: "center" },
+      { title: "Asset Category", field: "asset_category", headerFilter: "input", hozAlign: "center" },
+      { title: "Reg. No.", field: "reg_no", headerFilter: "input", hozAlign: "center" },
 
-    {
-      title: "Asset Category",
-      field: "asset_category",
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-   
-    {
-      title: "Reg. No.",
-      field: "reg_no",
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-    {
-      title: "Package",
-      field: "package",
-      editor: "list",
-      editorParams: {
-        values: ["Adabari", "Birsing", "Phulbari"]
+      {
+          title: "Package",
+          field: "package",
+          editor: mobileSelectEditor,
+          editorParams: { values: ["Adabari", "Birsing", "Phulbari"] },
+          headerFilter: "input",
+          hozAlign: "center"
       },
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-    {
-      title: "Activity",
-      field: "activity",
-      editor: "list",
-      editorParams: {
-        values: [
-          "Batching Plant",
-          "LG",
-          "Fabrication",
-          "Civil Works",
-          "Upper Pylon",
-          "Bridge Builders",
-          "Pire Table",
-          "Marine",
-          "Well Works",
-          "Office / Accommodation / Admin",
-          "Enabling",
-          "Other Works"
-        ]
+      {
+          title: "Activity",
+          field: "activity",
+          editor: mobileSelectEditor,
+          editorParams: {
+              values: [
+                  "Batching Plant",
+                  "LG",
+                  "Fabrication",
+                  "Civil Works",
+                  "Upper Pylon",
+                  "Bridge Builders",
+                  "Pire Table",
+                  "Marine",
+                  "Well Works",
+                  "Office / Accommodation / Admin",
+                  "Enabling",
+                  "Other Works"
+              ]
+          },
+          headerFilter: "input",
+          hozAlign: "center"
       },
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-    {
-      title: "Activity Works",
-      field: "activity_works",
-      editor: "input",
-      headerFilter: "input", 
-      hozAlign: "center"
-    },  
-    {
-      title: "Location",
-      field: "location",
-      editor: "input",
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-    {
-      title: "Meter Type",
-      field: "meter_type",
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-    {
-      title: "UoM",
-      field: "uom",
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-    {
-      title: "Fuel Norms",
-      field: "fuel_norms",
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-    {
-      title: "Owner",
-      field: "owner",
-      headerFilter: "input",
-      hozAlign: "center"
-    },
-    { title: "Vendor Code", field: "vendor_code", headerFilter: "input", hozAlign: "center" },
-    { title: "Agency", field: "agency", headerFilter: "input", hozAlign: "center" },
-    { title: "WOD Number", field: "wod_number", headerFilter: "input", hozAlign: "center" },
-    { title: "Vendor Mail Id", field: "vendor_mail_id", headerFilter: "input", hozAlign: "center" },
-    { title: "Date of Commission", field: "date_of_commission", headerFilter: "input", hozAlign: "center" },
-    { title: "Starting Reading", field: "starting_reading", hozAlign: "center" },
-    { title: "Tank Capacity", field: "tank_capacity", hozAlign: "center" },
-    { title: "HSD Available", field: "hsd_available", hozAlign: "center" },
-    { title: "Make", field: "make", headerFilter: "input", hozAlign: "center" },
-    { title: "Model", field: "model", headerFilter: "input", hozAlign: "center" },
-    { title: "PM Make", field: "pm_make", headerFilter: "input", hozAlign: "center" },
-    { title: "PM Model", field: "pm_model", headerFilter: "input", hozAlign: "center" },
-    { title: "EHC", field: "ehc", hozAlign: "center" },
-    { title: "IHC", field: "ihc", hozAlign: "center" },
-    { title: "Shift Hours", field: "shift_hours", hozAlign: "center" },
-    { title: "Operators Avail", field: "operator_available", headerFilter: "input", hozAlign: "center" },
-    { title: "Helpers Avail", field: "helper_available", headerFilter: "input", hozAlign: "center" },
-    { title: "Supervisor/Owner Name", field: "supervisor_owner_name", headerFilter: "input", hozAlign: "center" },
-    { title: "Supervisor/Owner Phone", field: "supervisor_owner_phone", headerFilter: "input", hozAlign: "center" },
-    { title: "Operator 1", field: "operator1", headerFilter: "input", hozAlign: "center" },
-    { title: "Op1 Phone", field: "operator1_phone", headerFilter: "input", hozAlign: "center" },
-    { title: "Op1 Shift", field: "operator1_shift", editor: "list", editorParams:{values:["Day","Night"]}, headerFilter: "input", hozAlign: "center" },
-    { title: "Operator 2", field: "operator2", headerFilter: "input", hozAlign: "center" },
-    { title: "Op2 Phone", field: "operator2_phone", headerFilter: "input", hozAlign: "center" },
-    { title: "Op2 Shift", field: "operator2_shift", editor: "list", editorParams:{values:["Day","Night"]}, headerFilter: "input", hozAlign: "center" },
-    { title: "Last Updated By", field: "last_updated_by", hozAlign: "center" },
-    { title: "Last Updated At", field: "last_updated_at", hozAlign: "center" },
+      {
+          title: "Activity Works",
+          field: "activity_works",
+          editor: "input",
+          headerFilter: "input",
+          hozAlign: "center"
+      },
+      {
+          title: "Location",
+          field: "location",
+          editor: "input",
+          headerFilter: "input",
+          hozAlign: "center"
+      },
 
-    {
-      title: "Actions",
-      width: 140,
-      hozAlign: "center",
-      formatter: (cell) => {
-        const id = cell.getRow().getData().id;
-        return `<a href="/user/edit_asset/${id}" class="btn btn-info" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">Edit</a>`;
+      { title: "Meter Type", field: "meter_type", headerFilter: "input", hozAlign: "center" },
+      { title: "UoM", field: "uom", headerFilter: "input", hozAlign: "center" },
+      { title: "Fuel Norms", field: "fuel_norms", headerFilter: "input", hozAlign: "center" },
+      { title: "Owner", field: "owner", headerFilter: "input", hozAlign: "center" },
+      { title: "Vendor Code", field: "vendor_code", headerFilter: "input", hozAlign: "center" },
+      { title: "Agency", field: "agency", headerFilter: "input", hozAlign: "center" },
+      { title: "WOD Number", field: "wod_number", headerFilter: "input", hozAlign: "center" },
+      { title: "Vendor Mail Id", field: "vendor_mail_id", headerFilter: "input", hozAlign: "center" },
+      { title: "Date of Commission", field: "date_of_commission", headerFilter: "input", hozAlign: "center" },
+      { title: "Starting Reading", field: "starting_reading", hozAlign: "center" },
+      { title: "Tank Capacity", field: "tank_capacity", hozAlign: "center" },
+      { title: "HSD Available", field: "hsd_available", hozAlign: "center" },
+      { title: "Make", field: "make", headerFilter: "input", hozAlign: "center" },
+      { title: "Model", field: "model", headerFilter: "input", hozAlign: "center" },
+      { title: "PM Make", field: "pm_make", headerFilter: "input", hozAlign: "center" },
+      { title: "PM Model", field: "pm_model", headerFilter: "input", hozAlign: "center" },
+      { title: "EHC", field: "ehc", hozAlign: "center" },
+      { title: "IHC", field: "ihc", hozAlign: "center" },
+      { title: "Shift Hours", field: "shift_hours", hozAlign: "center" },
+
+      // 🧩 Editable inline fields
+      { title: "Operators Avail", field: "operator_available", editor: "input", headerFilter: "input", hozAlign: "center" },
+      { title: "Helpers Avail", field: "helper_available", editor: "input", headerFilter: "input", hozAlign: "center" },
+      { title: "Supervisor/Owner Name", field: "supervisor_owner_name", editor: "input", headerFilter: "input", hozAlign: "center" },
+      { title: "Supervisor/Owner Phone", field: "supervisor_owner_phone", editor: "input", headerFilter: "input", hozAlign: "center" },
+      { title: "Operator 1", field: "operator1", editor: "input", headerFilter: "input", hozAlign: "center" },
+      { title: "Op1 Phone", field: "operator1_phone", editor: "input", headerFilter: "input", hozAlign: "center" },
+      {
+          title: "Op1 Shift",
+          field: "operator1_shift",
+          editor: mobileSelectEditor,
+          editorParams: { values: ["Day", "Night"] },
+          headerFilter: "input",
+          hozAlign: "center"
+      },
+      { title: "Operator 2", field: "operator2", editor: "input", headerFilter: "input", hozAlign: "center" },
+      { title: "Op2 Phone", field: "operator2_phone", editor: "input", headerFilter: "input", hozAlign: "center" },
+      {
+          title: "Op2 Shift",
+          field: "operator2_shift",
+          editor: mobileSelectEditor,
+          editorParams: { values: ["Day", "Night"] },
+          headerFilter: "input",
+          hozAlign: "center"
+      },
+
+      { title: "Last Updated By", field: "last_updated_by", hozAlign: "center" },
+      { title: "Last Updated At", field: "last_updated_at", hozAlign: "center" },
+
+      {
+          title: "Actions",
+          width: 140,
+          hozAlign: "center",
+          formatter: (cell) => {
+              const id = cell.getRow().getData().id;
+              return `<a href="/user/edit_asset/${id}" class="btn btn-info" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">Edit</a>`;
+          }
       }
-    }
   ];
 
+  /* ✅ CREATE TABULATOR */
   const table = new Tabulator("#asset-table", {
-    height: "500px",
-    layout: "fitDataStretch",
-    columns: columns,
-    ajaxURL: "/user/get_assets",
-    index: "id",
-    placeholder: "No Data Available",
-
-    // ✅ Always sort naturally by Asset Code (01, 1, 02, 2, 03, 3)
-    initialSort: [{ column: "asset_code", dir: "asc" }],
-    sortMode: "local",
-    columnDefaults: { headerSort: false },  // optional: lock header sorting
-
-    sorters: {
-      asset_code: function(a, b) {
-        const valA = String(a || "").trim();
-        const valB = String(b || "").trim();
-
-        // extract numeric parts
-        const numA = parseInt(valA.replace(/\D/g, "")) || 0;
-        const numB = parseInt(valB.replace(/\D/g, "")) || 0;
-
-        // if numbers differ, compare numerically
-        if (numA !== numB) return numA - numB;
-
-        // otherwise, fall back to normal string comparison
-        return valA.localeCompare(valB, undefined, { numeric: true });
+      height: "500px",
+      layout: "fitDataStretch",
+      columns: columns,
+      ajaxURL: "/user/get_assets",
+      index: "id",
+      placeholder: "No Data Available",
+      initialSort: [{ column: "asset_code", dir: "asc" }],
+      sortMode: "local",
+      columnDefaults: { headerSort: false },
+      sorters: {
+          asset_code: function(a, b) {
+              const valA = String(a || "").trim();
+              const valB = String(b || "").trim();
+              const numA = parseInt(valA.replace(/\D/g, "")) || 0;
+              const numB = parseInt(valB.replace(/\D/g, "")) || 0;
+              if (numA !== numB) return numA - numB;
+              return valA.localeCompare(valB, undefined, { numeric: true });
+          }
       }
-    }
   });
 
-  // ✅ Catch inline cell edits globally and sync with Supabase
+  /* ✅ Inline edit + save */
   table.on("cellEdited", async function(cell) {
-    const row = cell.getRow().getData();
-    const field = cell.getField();
-    const value = cell.getValue();
-
-    try {
-      const res = await fetch(`/user/update_asset/${row.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: value })
-      });
-
-      const text = await res.text();
-      let result;
+      const row = cell.getRow().getData();
+      const field = cell.getField();
+      const value = cell.getValue();
       try {
-        result = JSON.parse(text);
-      } catch {
-        console.error("Non-JSON response:", text);
-        showToast("⚠️ Session expired or server error. Please log in again.");
-        return;
+          const res = await fetch(`/user/update_asset/${row.id}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ [field]: value })
+          });
+          const result = await res.json();
+          if (result.success) {
+              updateOwnerCounts();
+              showToast("✅ Saved Successfully");
+          } else {
+              showToast("⚠️ Failed to update");
+          }
+      } catch (err) {
+          showToast("❌ Error saving");
       }
-
-      if (result.success) {
-        console.log(`✅ Inline updated '${field}' for ID ${row.id}`);
-        updateOwnerCounts();
-        showToast("✅ Saved Successfully");
-      } else {
-        console.warn("⚠️ Supabase update failed:", result.error);
-        showToast("⚠️ Failed to update");
-      }
-    } catch (err) {
-      console.error("❌ Error saving inline:", err);
-      showToast("❌ Error saving");
-    }
   });
 
-  // Show loading overlay at start
+  /* ✅ Loader + dashboard update logic unchanged */
   const loader = document.getElementById("loadingOverlay");
   loader.classList.remove("hidden");
 
-  // ✅ Trigger after Tabulator has fully loaded and parsed data
   table.on("dataLoaded", function(data) {
-    if (loader) loader.classList.add("hidden");
-
-    if (Array.isArray(data) && data.length > 0) {
-      updateOwnerCounts();
-    } else {
-      console.warn("⚠️ No data available yet for dashboard counts.");
-      setTimeout(() => {
-        const allData = table.getData("all");
-        if (Array.isArray(allData) && allData.length > 0) {
-          updateOwnerCounts();
-          if (loader) loader.classList.add("hidden");
-        }
-      }, 2000);
-    }
+      loader.classList.add("hidden");
+      if (Array.isArray(data) && data.length > 0) updateOwnerCounts();
   });
 
-  // ✅ Optional: re-run counts every time data is refreshed
   table.on("dataProcessed", function() {
-    updateOwnerCounts();
-    if (loader) loader.classList.add("hidden");
+      updateOwnerCounts();
+      loader.classList.add("hidden");
   });
 
-  // Load Data
-  function loadData() {
-    table.replaceData("/user/get_assets");
-  }
+  function loadData() { table.replaceData("/user/get_assets"); }
 
-  // 💰 Helper: Convert numeric value to ₹ Crore format
   function toCrore(value) {
-    if (!value || isNaN(value)) return "₹ 0 Cr";
-    const crore = value / 10000000; // 1 Crore = 10,000,000
-    return "₹ " + crore.toFixed(2) + " Cr";
+      if (!value || isNaN(value)) return "₹ 0 Cr";
+      return "₹ " + (value / 10000000).toFixed(2) + " Cr";
   }
 
-  // ✅ Update Counts (Own, Hire, NC + EHC, IHC)
   function updateOwnerCounts() {
-    const data = table.getData("all");
-    let own = 0, hire = 0, nc = 0;
-    let totalEHC = 0, totalIHC = 0;
+      const data = table.getData("all");
+      let own = 0, hire = 0, nc = 0, totalEHC = 0, totalIHC = 0;
+      const packages = {
+          adabari: { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 },
+          birsing: { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 },
+          phulbari: { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 }
+      };
 
-    const packages = {
-      "adabari": { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 },
-      "birsing": { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 },
-      "phulbari": { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 }
-    };
+      data.forEach(r => {
+          const o = (r.owner || "").toLowerCase();
+          const pkg = (r.package || "").trim().toLowerCase();
+          const ehc = parseFloat(r.ehc) || 0;
+          const ihc = parseFloat(r.ihc) || 0;
 
-    data.forEach(r => {
-      const o = (r.owner || "").toLowerCase();
-      const pkg = (r.package || "").trim().toLowerCase();
-      const ehc = parseFloat(r.ehc) || 0;
-      const ihc = parseFloat(r.ihc) || 0;
+          if (o === "own") own++;
+          else if (o === "hire") hire++;
+          else if (o === "nc") nc++;
 
-      // Count owner types
-      if (o === "own") own++;
-      else if (o === "hire") hire++;
-      else if (o === "nc") nc++;
+          totalEHC += ehc;
+          totalIHC += ihc;
 
-      // Accumulate totals
-      totalEHC += ehc;
-      totalIHC += ihc;
-
-      // Per-package totals
-      if (packages[pkg]) {
-        if (o === "own") packages[pkg].own++;
-        else if (o === "hire") packages[pkg].hire++;
-        else if (o === "nc") packages[pkg].nc++;
-        packages[pkg].ehc += ehc;
-        packages[pkg].ihc += ihc;
-      }
-    });
-
-    // ✅ Update total dashboard
-    document.getElementById("countOwn").innerText = own;
-    document.getElementById("countHire").innerText = hire;
-    document.getElementById("countNC").innerText = nc;
-    document.getElementById("totalEHC").innerText = toCrore(totalEHC);
-    document.getElementById("totalIHC").innerText = toCrore(totalIHC);
-
-    // ✅ Update each package dashboard
-    ["adabari", "birsing", "phulbari"].forEach(p => {
-      document.getElementById(`${p}Own`).innerText = packages[p].own;
-      document.getElementById(`${p}Hire`).innerText = packages[p].hire;
-      document.getElementById(`${p}NC`).innerText = packages[p].nc;
-      document.getElementById(`${p}EHC`).innerText = toCrore(packages[p].ehc);
-      document.getElementById(`${p}IHC`).innerText = toCrore(packages[p].ihc);
-    });
-
-    // ✅ Last Update Timestamp
-    const latest = data.reduce((acc, r) => {
-      if (r.last_updated_at && (!acc || new Date(r.last_updated_at) > new Date(acc)))
-        return r.last_updated_at;
-      return acc;
-    }, null);
-
-    let formatted = latest;
-    if (latest && !isNaN(Date.parse(latest))) {
-      formatted = new Date(latest).toLocaleString();
-    }
-    document.getElementById("lastUpdate").innerText = formatted || "No updates yet";
-  }
-
-  // Helper: Generate filename for downloads
-  function getFileName(baseName, ext) {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    const hh = String(now.getHours()).padStart(2, "0");
-    const min = String(now.getMinutes()).padStart(2, "0");
-    const ss = String(now.getSeconds()).padStart(2, "0");
-    return `${baseName}_${yyyy}-${mm}-${dd}_${hh}-${min}-${ss}.${ext}`;
-  }
-
-  // Excel download - All rows with styling + correct Sl.No. in column A
-  document.getElementById("downloadExcelBtn").addEventListener("click", ()=>{
-    const filename = getFileName("Asset_Master", "xlsx");
-    table.download("xlsx", filename, {
-      sheetName: "Assets",
-      rowRange: "all",
-      documentProcessing: function(workbook){
-        const worksheet = workbook.Sheets["Assets"];
-        if(!worksheet || !worksheet["!ref"]) return workbook;
-
-        const range = XLSX.utils.decode_range(worksheet["!ref"]);
-        const headerRow = range.s.r;
-
-        // find "Sl. No." column
-        let slCol = null;
-        for(let C = range.s.c; C <= range.e.c; ++C){
-          const headerAddr = XLSX.utils.encode_cell({r: headerRow, c: C});
-          const headerCell = worksheet[headerAddr];
-          const txt = headerCell && headerCell.v ? String(headerCell.v).trim().toLowerCase() : "";
-          if(txt.startsWith("sl")) { slCol = C; break; }
-        }
-        if(slCol === null) slCol = range.s.c;
-
-        const headerStyle = {
-          font: {bold: true, color: {rgb: "FFFFFF"}},
-          fill: {fgColor: {rgb: "1F2937"}},
-          alignment: {horizontal: "center", vertical: "center"},
-          border: {top:{style:"thin"},bottom:{style:"thin"},left:{style:"thin"},right:{style:"thin"}}
-        };
-
-        const cellStyle = {
-          alignment: {horizontal: "center", vertical: "center"},
-          border: {top:{style:"thin"},bottom:{style:"thin"},left:{style:"thin"},right:{style:"thin"}}
-        };
-
-        // style header
-        for(let C = range.s.c; C <= range.e.c; ++C){
-          const headerAddr = XLSX.utils.encode_cell({r: headerRow, c: C});
-          if(worksheet[headerAddr]) worksheet[headerAddr].s = headerStyle;
-        }
-
-        // fill Sl.No and style data
-        for(let R = headerRow + 1; R <= range.e.r; ++R){
-          for(let C = range.s.c; C <= range.e.c; ++C){
-            const addr = XLSX.utils.encode_cell({r: R, c: C});
-            if(!worksheet[addr]) worksheet[addr] = { t: 's', v: "" };
-            if(C === slCol){
-              worksheet[addr].v = R - headerRow;
-              worksheet[addr].t = 'n';
-            }
-            worksheet[addr].s = cellStyle;
+          if (packages[pkg]) {
+              if (o === "own") packages[pkg].own++;
+              else if (o === "hire") packages[pkg].hire++;
+              else if (o === "nc") packages[pkg].nc++;
+              packages[pkg].ehc += ehc;
+              packages[pkg].ihc += ihc;
           }
-        }
+      });
 
-        return workbook;
-      }
-    });
-  });
+      document.getElementById("countOwn").innerText = own;
+      document.getElementById("countHire").innerText = hire;
+      document.getElementById("countNC").innerText = nc;
+      document.getElementById("totalEHC").innerText = toCrore(totalEHC);
+      document.getElementById("totalIHC").innerText = toCrore(totalIHC);
 
-  // CSV download - manual with Sl.No. in column A
-  document.getElementById("downloadCsvBtn").addEventListener("click", ()=>{
-    const data = table.getData("all");
-    const filename = getFileName("Asset_Master", "csv");
-    const headers = [
-        "Sl. No.","Asset Code","Asset Description","Asset Category","Reg. No.","Package","Activity","Activity Works","Location",
-        "Meter Type","UoM","Fuel Norms","Owner","Vendor Code","Agency","WOD Number",
-        "Vendor Mail Id","Date of Commission","Starting Reading","Tank Capacity","HSD Available",
-        "Make","Model","PM Make","PM Model","EHC","Add. Op Charge","Shift Hours",
-        "Operators Avail","Helpers Avail","Supervisor/Owner Name","Supervisor/Owner Phone",
-        "Operator 1","Op1 Phone","Op1 Shift","Operator 2","Op2 Phone","Op2 Shift",
-        "Last Updated By","Last Updated At"
-    ];
+      ["adabari", "birsing", "phulbari"].forEach(p => {
+          document.getElementById(`${p}Own`).innerText = packages[p].own;
+          document.getElementById(`${p}Hire`).innerText = packages[p].hire;
+          document.getElementById(`${p}NC`).innerText = packages[p].nc;
+          document.getElementById(`${p}EHC`).innerText = toCrore(packages[p].ehc);
+          document.getElementById(`${p}IHC`).innerText = toCrore(packages[p].ihc);
+      });
 
-    const rows = [];
-    rows.push(headers.join(","));
-    data.forEach((r, idx) => {
-        const rowArr = [
-            idx + 1,
-            r.asset_code || "",
-            r.asset_description || "",
-            r.asset_category || "",
-            r.reg_no || "",
-            r.package || "",
-            r.activity || "",
-            r.activity_works || "",
-            r.location || "",
-            r.meter_type || "",
-            r.uom || "",
-            r.fuel_norms || "",
-            r.owner || "",
-            r.vendor_code || "",
-            r.agency || "",
-            r.wod_number || "",
-            r.vendor_mail_id || "",
-            r.date_of_commission || "",
-            r.starting_reading || "",
-            r.tank_capacity || "",
-            r.hsd_available || "",
-            r.make || "",
-            r.model || "",
-            r.pm_make || "",
-            r.pm_model || "",
-            r.ehc || "",
-            r.ihc || "",
-            r.shift_hours || "",
-            r.operator_available || "",
-            r.helper_available || "",
-            r.supervisor_owner_name || "",
-            r.supervisor_owner_phone || "",
-            r.operator1 || "",
-            r.operator1_phone || "",
-            r.operator1_shift || "",
-            r.operator2 || "",
-            r.operator2_phone || "",
-            r.operator2_shift || "",
-            r.last_updated_by || "",
-            r.last_updated_at || ""
-        ];
-        rows.push(rowArr.map(v => `"${String(v).replace(/"/g,'""')}"`).join(","));
-    });
-
-    const csvContent = "data:text/csv;charset=utf-8," + rows.join("\n");
-    const link = document.createElement("a");
-    link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  });
-
-    // Small floating "Saved ✅" popup
-  function showToast(message) {
-    const toast = document.createElement("div");
-    toast.textContent = message;
-    toast.style.position = "fixed";
-    toast.style.bottom = "20px";
-    toast.style.right = "20px";
-    toast.style.background = "#16a34a";
-    toast.style.color = "white";
-    toast.style.padding = "10px 20px";
-    toast.style.borderRadius = "8px";
-    toast.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
-    toast.style.fontSize = "14px";
-    toast.style.zIndex = 9999;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
+      const latest = data.reduce((acc, r) =>
+          r.last_updated_at && (!acc || new Date(r.last_updated_at) > new Date(acc))
+              ? r.last_updated_at
+              : acc, null);
+      document.getElementById("lastUpdate").innerText =
+          latest ? new Date(latest).toLocaleString() : "No updates yet";
   }
-  
-  // ✅ Immediately load when script runs (since script is at the end)
+
+  function showToast(message) {
+      const toast = document.createElement("div");
+      toast.textContent = message;
+      Object.assign(toast.style, {
+          position: "fixed",
+          bottom: "20px",
+          right: "20px",
+          background: "#16a34a",
+          color: "white",
+          padding: "10px 20px",
+          borderRadius: "8px",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+          fontSize: "14px",
+          zIndex: 9999
+      });
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+  }
+
   loadData();
-
-  // ✅ Also attach refresh button
-
   document.getElementById("refreshBtn").addEventListener("click", loadData);
 
-</script>
+   // 🔁 Listen for live dropdown updates from Admin (real-time refresh)
+  const dropdownChannel = new BroadcastChannel("dropdown_updates");
 
+  dropdownChannel.onmessage = async () => {
+    try {
+      const res = await fetch("/user/dropdown_config");
+      const dropdownData = await res.json();
+
+      // 🧠 Extract clean value arrays (Supabase returns [{value:""}])
+      const packages = dropdownData.package?.map(v => v.value) || [];
+      const activities = dropdownData.activity?.map(v => v.value) || [];
+      const categories = dropdownData.asset_category?.map(v => v.value) || [];
+
+      if (typeof table !== "undefined" && table) {
+        table.updateColumnDefinition("package", {
+          editorParams: { values: packages }
+        });
+        table.updateColumnDefinition("activity", {
+          editorParams: { values: activities }
+        });
+        table.updateColumnDefinition("asset_category", {
+          editorParams: { values: categories }
+        });
+        table.redraw(true);
+      }
+
+      console.log("✅ User dropdowns reloaded live from admin update");
+    } catch (err) {
+      console.error("❌ Failed to refresh dropdowns:", err);
+    }
+  };
+
+  // 🚀 Load dropdowns once on page open
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const res = await fetch("/user/dropdown_config");
+      const dropdownData = await res.json();
+
+      const packages = dropdownData.package?.map(v => v.value) || [];
+      const activities = dropdownData.activity?.map(v => v.value) || [];
+      const categories = dropdownData.asset_category?.map(v => v.value) || [];
+
+      table.updateColumnDefinition("package", {
+        editorParams: { values: packages }
+      });
+      table.updateColumnDefinition("activity", {
+        editorParams: { values: activities }
+      });
+      table.updateColumnDefinition("asset_category", {
+        editorParams: { values: categories }
+      });
+      table.redraw(true);
+
+      console.log("✅ User dropdowns loaded on startup");
+    } catch (err) {
+      console.error("❌ Failed to load dropdowns on startup:", err);
+    }
+  });
+
+</script>
 
 {% endblock %}

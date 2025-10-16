@@ -46,10 +46,16 @@
             overflow-y: auto;
             overflow-x: hidden;
         }
-        
+        .sidebar {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }    
+
         .sidebar.hidden {
             transform: translateX(-280px);
+            opacity: 0;
         }
+
+        
         
         .sidebar-link {
             display: flex;
@@ -561,36 +567,41 @@
         let isResizingLeft = false;
         let isResizingRight = false;
         
-        // Sidebar toggle functionality
+        // Sidebar toggle functionality (smooth desktop animation)
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            const header = document.getElementById('header');
-            const menuBtn = document.getElementById('menuBtn');
-            const overlay = document.getElementById('overlay');
-            const resizeHandleLeft = document.getElementById('resizeHandleLeft');
-            
-            if (window.innerWidth <= 768) {
-                sidebar.classList.toggle('open');
-                menuBtn.classList.toggle('active');
-                overlay.classList.toggle('active');
-            } else {
-                // Desktop toggle
-                sidebar.classList.toggle('hidden');
-                mainContent.classList.toggle('sidebar-hidden');
-                header.classList.toggle('sidebar-hidden');
-                resizeHandleLeft.classList.toggle('sidebar-hidden');
-            }
-        }
-        
-        function closeSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const menuBtn = document.getElementById('menuBtn');
-            const overlay = document.getElementById('overlay');
-            
-            sidebar.classList.remove('open');
-            menuBtn.classList.remove('active');
-            overlay.classList.remove('active');
+                const sidebar = document.getElementById('sidebar');
+                const mainContent = document.getElementById('mainContent');
+                const header = document.getElementById('header');
+                const menuBtn = document.getElementById('menuBtn');
+                const overlay = document.getElementById('overlay');
+                const resizeHandleLeft = document.getElementById('resizeHandleLeft');
+
+                if (window.innerWidth <= 768) {
+                        // 🔹 Mobile toggle
+                        sidebar.classList.toggle('open');
+                        menuBtn.classList.toggle('active');
+                        overlay.classList.toggle('active');
+                } else {
+                        // 🔹 Desktop smooth slide toggle
+                        if (sidebar.classList.contains('hidden')) {
+                                // Show sidebar smoothly
+                                sidebar.classList.remove('hidden');
+                                setTimeout(() => {
+                                        sidebar.style.opacity = '1';
+                                        sidebar.style.transform = 'translateX(0)';
+                                }, 10);
+                        } else {
+                                // Hide sidebar smoothly
+                                sidebar.style.opacity = '0';
+                                sidebar.style.transform = 'translateX(-280px)';
+                                setTimeout(() => sidebar.classList.add('hidden'), 300);
+                        }
+
+                        // Adjust layout classes
+                        mainContent.classList.toggle('sidebar-hidden');
+                        header.classList.toggle('sidebar-hidden');
+                        resizeHandleLeft.classList.toggle('sidebar-hidden');
+                }  
         }
         
         // Initialize resize functionality for content spacing
@@ -705,10 +716,25 @@
                 });
             }
         });
-        // -----------------------------------------------------------------------
+    // 🌐 Global dropdown sync every 30 seconds (for all users)
+    setInterval(async () => {
+      try {
+        // Check timestamp from Supabase (using a lightweight endpoint)
+        const res = await fetch("/user/dropdown_config");
+        const data = await res.json();
 
-        // Set user name (you can replace this with dynamic data)
-        // document.getElementById('userName').textContent = 'John Doe'; // Replace with actual user name
+        // Compare with cached JSON — only update if changed
+        const newData = JSON.stringify(data);
+        if (window._lastDropdownData !== newData) {
+          window._lastDropdownData = newData;
+          console.log("🔁 Network-wide dropdowns refreshed");
+          const channel = new BroadcastChannel("dropdown_updates");
+          channel.postMessage("updated");
+        }
+      } catch (err) {
+        console.warn("Dropdown sync check failed:", err);
+      }
+    }, 30000); // every 30s
     </script>
 {% if not config['DEBUG'] %}
 

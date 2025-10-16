@@ -26,10 +26,7 @@
         <div>
           <label class="block text-sm mb-1">Asset Category</label>
           <select id="asset_category" name="asset_category" class="w-full border rounded px-3 py-2">
-            <option value="">-- Select Category --</option>
-            {% for cat in ["Concreting Eqpt","Cranes","Earthmoving Eqpt","Marine Eqpt","Material Handling Eqpt","Power Generators","Utility Eqpt","Vehicles - Cargo"] %}
-              <option value="{{ cat }}" {% if asset.asset_category == cat %}selected{% endif %}>{{ cat }}</option>
-            {% endfor %}
+           <option value="">-- Loading... --</option>    
           </select>
         </div>
 
@@ -48,18 +45,14 @@
         <div>
           <label class="block text-sm mb-1">Package</label>
           <select id="package" name="package" class="w-full border rounded px-3 py-2">
-            {% for p in ["Adabari","Birsing","Phulbari"] %}
-              <option value="{{ p }}" {% if asset.package == p %}selected{% endif %}>{{ p }}</option>
-            {% endfor %}
+            <option value="">-- Loading... --</option>
           </select>
         </div>
 
         <div>
           <label class="block text-sm mb-1">Activity</label>
           <select id="activity" name="activity" class="w-full border rounded px-3 py-2">
-            {% for a in ["Batching Plant","LG","Fabrication","Civil Works","Bridge Builders","Pire Table","Upper Pylon","Marine","Well Works","Office / Accommodation / Admin","Enabling","Other Works"] %}
-              <option value="{{ a }}" {% if asset.activity == a %}selected{% endif %}>{{ a }}</option>
-            {% endfor %}
+           <option value="">-- Loading... --</option>
           </select>
         </div>
 
@@ -218,12 +211,12 @@
 </div>
 
 <script>
+  // 🟢 ------------------- EDIT ASSET FORM SUBMIT -------------------
   document.getElementById("editAssetForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = document.getElementById("asset_id").value;
     const data = {};
 
-    // Collect all fields
     Array.from(e.target.elements).forEach(el => {
       if (el.name) {
         if (el.type === "number") data[el.name] = el.value ? parseFloat(el.value) : null;
@@ -231,27 +224,22 @@
       }
     });
 
-    // Add updater info
-    data.last_updated_by = "{{ session.get('name', '') }}";
+    data.last_updated_by = "{{ session.get('name','') }}";
     data.last_updated_at = new Date().toISOString();
 
     try {
-      // ✅ Correct fetch call
       const r = await fetch(`/admin/update_asset/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
 
-      let resp;
-      try {
-        resp = await r.json();
-      } catch {
+      const resp = await r.json().catch(async () => {
         const text = await r.text();
         console.error("⚠️ Non-JSON response:", text);
         alert("⚠️ Session expired or server error — please re-login.");
-        return;
-      }
+        throw new Error();
+      });
 
       if (resp.success) {
         alert("✅ Asset updated successfully!");
@@ -263,6 +251,51 @@
       alert("⚠️ Request failed: " + err.message);
     }
   });
+
+
+
+  // 🪄 ------------------- DYNAMIC DROPDOWN LOADER -------------------
+  const dropdownChannel = new BroadcastChannel("dropdown_updates");
+
+  async function loadDropdowns() {
+    try {
+      const res = await fetch("/admin/dropdown_config");
+      const data = await res.json();
+
+      const fillSelect = (id, values, currentValue) => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = "";
+        const def = document.createElement("option");
+        def.value = "";
+        def.textContent = "-- Select --";
+        sel.appendChild(def);
+        (values || []).forEach(v => {
+          const val = v.value || v;
+          const opt = document.createElement("option");
+          opt.value = val;
+          opt.textContent = val;
+          if (currentValue === val) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      };
+
+      // ✅ Preserve current selected values from template
+      fillSelect("asset_category", data.asset_category?.map(v => v.value) || [], "{{ asset.asset_category }}");
+      fillSelect("package", data.package?.map(v => v.value) || [], "{{ asset.package }}");
+      fillSelect("activity", data.activity?.map(v => v.value) || [], "{{ asset.activity }}");
+
+      console.log("✅ Dropdowns loaded from Supabase");
+    } catch (err) {
+      console.error("❌ Failed to load dropdowns:", err);
+    }
+  }
+
+  // 🔁 ------------------- LIVE UPDATES (ALL TABS) -------------------
+  dropdownChannel.onmessage = loadDropdowns;
+
+  // 🚀 ------------------- LOAD ON PAGE OPEN -------------------
+  document.addEventListener("DOMContentLoaded", loadDropdowns);
 </script>
 
 {% endblock %}

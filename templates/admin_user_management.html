@@ -87,14 +87,29 @@
                 <div class="space-y-6">
                     {% for page, features in feature_matrix.items() %}
                         <details class="group border border-yellow-300 rounded-2xl shadow-md overflow-hidden transition-all duration-300 bg-gradient-to-br from-yellow-50 to-white hover:shadow-lg">
-                            <summary class="cursor-pointer flex justify-between items-center px-5 py-4 font-semibold text-gray-800 bg-yellow-100 hover:bg-yellow-200 transition-all duration-300">
+                            <summary
+                                class="cursor-pointer flex justify-between items-center px-5 py-3 font-semibold text-gray-800 bg-yellow-100 hover:bg-yellow-200 transition-all duration-300">
                                 <span class="flex items-center gap-3">
-                                    <svg class="w-5 h-5 text-yellow-500 group-open:rotate-90 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    <!-- Page-level checkbox (grant page access first) -->
+                                    <input type="checkbox"
+                                           name="accesses"
+                                           value="{{ page }}"
+                                           id="page_access_{{ loop.index }}"
+                                           class="page-access-checkbox h-4 w-4 text-yellow-500 mr-3"
+                                           aria-label="Grant access to {{ page }}">
+                                    <svg class="w-5 h-5 text-yellow-500 group-open:rotate-90 transform transition-transform duration-300"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M9 5l7 7-7 7" />
                                     </svg>
-                                    <span class="text-base font-bold">{{ page.replace('user_', '').replace('_', ' ').title() }}</span>
+                                    <span class="text-base font-bold">
+                                        {{ page.replace('user_', '').replace('_', ' ').title() }}
+                                    </span>
                                 </span>
-                                <span class="text-xs font-semibold text-gray-500 group-open:text-gray-800 bg-yellow-50 px-3 py-1 rounded-full shadow-inner transition-all duration-200">{{ features|length }} Features</span>
+                                <span
+                                    class="text-xs font-semibold text-gray-500 group-open:text-gray-800 bg-yellow-50 px-3 py-1 rounded-full shadow-inner transition-all duration-200">
+                                    {{ features|length }} Features
+                                </span>
                             </summary>
 
                             <div class="p-6 bg-white border-t border-yellow-200 rounded-b-2xl">
@@ -156,6 +171,21 @@
             </script>
 
             <style>
+                #editModal {
+                    z-index: 9999 !important;
+                }
+                #editModal > div {
+                    position: relative;
+                    z-index: 10000;
+                }        
+                /* Make edit modal fully visible on all devices */
+                @media (max-width: 768px) {
+                    #editModal > div {
+                        margin-top: 2rem;
+                        margin-bottom: 2rem;
+                        width: 100%;
+                    }    
+                }            
                 @keyframes fadeIn {
                     from { opacity: 0; transform: translateY(20px); }
                     to { opacity: 1; transform: translateY(0); }
@@ -177,6 +207,18 @@
                 .select-all-btn:hover {
                     transform: translateY(-1px);
                 }
+                                /* Smooth scrollbar inside modal */
+                #editModal::-webkit-scrollbar {
+                    width: 8px;
+                }
+                #editModal::-webkit-scrollbar-thumb {
+                    background-color: rgba(180, 180, 180, 0.6);
+                    border-radius: 4px;
+                }
+                #editModal::-webkit-scrollbar-thumb:hover {
+                    background-color: rgba(150, 150, 150, 0.8);
+                }
+
             </style>
         </form>     
     </div>
@@ -199,55 +241,69 @@
   <p class="text-xs text-gray-500 mt-3">Note: Use only .csv files with columns like user_id, full_name, phone, email, role, etc.</p>
 </div>
 
-<!-- Users Table -->
+<!-- ✅ Users Table (Edit Button First) -->
     <div class="bg-white shadow rounded-lg p-6 overflow-x-auto">
         <table class="w-full border-collapse text-sm sm:text-base">
             <thead>
                 <tr class="bg-gray-100 text-gray-700">
+                    <!-- ✅ Edit Button Header -->
+                    <th class="border px-2 py-2">Actions</th>
+
+                    <!-- Checkbox -->
                     <th class="border px-2 py-2"></th>
+
+                    <!-- Dynamic Columns -->
                     {% for col in default_columns %}
                         <th class="border px-2 py-2 capitalize">{{ col.replace('_',' ') }}</th>
                     {% endfor %}
-                    <th class="border px-2 py-2">Actions</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for user in users %}
                 <tr class="text-center">
-                    <td class="border px-2 py-1">
-                        <input type="checkbox" class="deleteCheckbox" data-userid="{{ user.user_id }}">
-                    </td>
-                    {% for col in default_columns %}
-                        <td class="border px-2 py-1 break-words">
-                            {% if col == 'accesses' %}
-                                {{ user.get(col,[])|join(', ') }}
-                            {% else %}
-                                {{ user.get(col,'') }}
-                            {% endif %}
-                        </td>
-                    {% endfor %}
+                    <!-- ✅ Edit button first -->
                     <td class="border px-2 py-1">
                         <button class="editBtn bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs sm:text-sm"
                                 data-user='{{ user|tojson }}'>Edit</button>
                     </td>
+
+                    <!-- Checkbox next -->
+                    <td class="border px-2 py-1">
+                        <input type="checkbox" class="deleteCheckbox" data-userid="{{ user.user_id }}">
+                    </td>
+
+                    <!-- Other data columns -->
+                    {% for col in default_columns %}
+                        <td class="border px-2 py-1 break-words">
+                            {% if col == 'accesses' %}
+                                {{ user.get(col, [])|join(', ') }}
+                            {% else %}
+                                {{ user.get(col, '') }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
+        <!-- Action Buttons (Delete + Download CSV) -->
         <div class="mt-4 flex flex-col sm:flex-row gap-4">
-            <button id="deleteSelectedBtn" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg shadow">
+            <button id="deleteSelectedBtn"
+                    class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg shadow">
                 Delete Selected
             </button>
-            <a href="/admin/download_users_csv" class="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-lg shadow text-center">
+            <a href="/admin/download_users_csv"
+               class="w-full sm:w-auto bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-lg shadow text-center">
                 Download CSV
             </a>
         </div>
     </div>
 
-    <!-- ✅ Enhanced Edit Modal -->
-    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl overflow-y-auto max-h-[90vh]">
+    <!-- ✅ Enhanced Dynamic Edit Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 overflow-y-auto p-4 flex justify-center z-[9999]">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-5xl my-12 sm:my-auto">
             <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
                 <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -257,6 +313,7 @@
             </h2>
 
             <form id="editForm" method="POST" class="space-y-6">
+                <!-- User Info -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <input type="text" name="user_id" placeholder="User ID" readonly
                            class="border p-2 rounded w-full bg-gray-100 cursor-not-allowed">
@@ -278,7 +335,7 @@
                            class="border p-2 rounded w-full">
                 </div>
 
-                <!-- ✅ Role Selector -->
+                <!-- Role Selector -->
                 <div>
                     <label class="block font-semibold mb-2">Role</label>
                     <select name="role" required class="border p-2 rounded w-full">
@@ -288,7 +345,7 @@
                     </select>
                 </div>
 
-                <!-- 🌟 Page & Feature Permissions -->
+                <!-- 🌟 Page and Feature Access -->
                 <div class="mt-6 animate-fade-in">
                     <h3 class="text-xl font-extrabold mb-3 text-gray-800 flex items-center gap-2">
                         <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,6 +354,9 @@
                         </svg>
                         Page & Feature Permissions
                     </h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Click each page name to expand and assign feature access for that module.
+                    </p>
 
                     <div class="space-y-6">
                         {% for page, features in feature_matrix.items() %}
@@ -304,6 +364,12 @@
                             <summary
                                 class="cursor-pointer flex justify-between items-center px-5 py-3 font-semibold text-gray-800 bg-yellow-100 hover:bg-yellow-200 transition-all duration-300">
                                 <span class="flex items-center gap-3">
+                                    <!-- ✅ Page-level checkbox -->
+                                    <input type="checkbox"
+                                           name="accesses"
+                                           value="{{ page }}"
+                                           class="page-access-checkbox h-4 w-4 text-yellow-500 mr-3"
+                                           aria-label="Grant access to {{ page }}">
                                     <svg class="w-5 h-5 text-yellow-500 group-open:rotate-90 transform transition-transform duration-300"
                                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -318,7 +384,6 @@
                                     {{ features|length }} Features
                                 </span>
                             </summary>
-
                             <div class="p-6 bg-white border-t border-yellow-200 rounded-b-2xl">
                                 <div class="flex justify-end mb-3">
                                     <button type="button"
@@ -331,9 +396,11 @@
                                 {% for f in features %}
                                 <div
                                     class="border border-yellow-200 rounded-xl p-4 mb-4 bg-gradient-to-br from-yellow-50 to-white hover:shadow-md transition-all duration-500">
+                                    <!-- Parent Feature -->
                                     <label class="flex items-center justify-between cursor-pointer">
                                         <div class="flex items-center space-x-3">
-                                            <input type="checkbox" name="feature_accesses" value="{{ page }}:{{ f.label }}"
+                                            <input type="checkbox" name="feature_accesses"
+                                                   value="{{ page }}:{{ f.label }}"
                                                    class="feature-checkbox h-5 w-5 text-yellow-500 focus:ring-yellow-400 rounded-md transition-transform duration-300 hover:scale-110">
                                             <span class="text-sm font-bold text-gray-800 tracking-wide">{{ f.label }}</span>
                                         </div>
@@ -345,6 +412,7 @@
                                         {% endif %}
                                     </label>
 
+                                    <!-- Subfeatures -->
                                     {% if f.subfeatures %}
                                     <div
                                         class="mt-3 ml-6 border-l-4 border-yellow-300 pl-4 bg-white rounded-lg shadow-inner p-3 animate-fade-in">
@@ -369,7 +437,7 @@
                     </div>
                 </div>
 
-                <!-- ✅ Modal Buttons -->
+                <!-- Buttons -->
                 <div class="flex justify-end gap-3 pt-6 border-t mt-6">
                     <button type="button" id="closeModal" class="bg-gray-400 text-white px-5 py-2 rounded-lg">
                         Cancel
@@ -381,7 +449,6 @@
             </form>
         </div>
     </div>
-</div>
 
 <script>
     // Toggle create form
@@ -392,24 +459,57 @@
     // Edit modal logic
     const editModal = document.getElementById('editModal');
     const editForm = document.getElementById('editForm');
+
     document.querySelectorAll('.editBtn').forEach(btn => {
         btn.addEventListener('click', () => {
             const user = JSON.parse(btn.dataset.user);
             editForm.action = '/admin/edit_user/' + user.user_id;
-            editForm.full_name.value = user.full_name;
-            editForm.designation.value = user.designation;
-            editForm.phone.value = user.phone;
-            editForm.email.value = user.email;
 
-            // Pre-check accesses
-            const checkboxes = editForm.querySelectorAll('input[name="accesses"]');
-            checkboxes.forEach(cb => {
-                cb.checked = (user.accesses || []).includes(cb.value);
+            // Fill basic fields
+            editForm.querySelector('[name="user_id"]').value = user.user_id || '';
+            editForm.querySelector('[name="full_name"]').value = user.full_name || '';
+            editForm.querySelector('[name="designation"]').value = user.designation || '';
+            editForm.querySelector('[name="phone"]').value = user.phone || '';
+            editForm.querySelector('[name="email"]').value = user.email || '';
+            editForm.querySelector('[name="role"]').value = user.role || '';
+
+            // Clear all checkboxes first
+            editForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+
+            // ✅ 1. Pre-check page accesses
+            const pageChecks = editForm.querySelectorAll('.page-access-checkbox');
+            pageChecks.forEach(pageCb => {
+                const pageVal = pageCb.value;
+                if ((user.accesses || []).includes(pageVal)) {
+                    pageCb.checked = true;
+                    // expand the page details and enable its features
+                    const details = pageCb.closest('details');
+                    if (details) details.open = true;
+                }
+            });
+
+            // ✅ 2. Pre-check features/subfeatures
+            const featureChecks = editForm.querySelectorAll('input.feature-checkbox');
+            featureChecks.forEach(cb => {
+                const val = cb.value;
+                if ((user.accesses || []).includes(val) ||
+                    (user.feature_accesses && JSON.stringify(user.feature_accesses).includes(val))) {
+                    cb.checked = true;
+                }
+            });
+
+            // ✅ 3. Trigger the page-toggle logic from Step 1 to sync display/enable state
+            document.querySelectorAll('.page-access-checkbox').forEach(pageCb => {
+                const evt = new Event('change');
+                pageCb.dispatchEvent(evt);
             });
 
             editModal.classList.remove('hidden');
         });
     });
+
     document.getElementById('closeModal').addEventListener('click', () => {
         editModal.classList.add('hidden');
     });
@@ -424,5 +524,51 @@
                 .then(res => { if (res.ok) location.reload(); });
         });
     });
+
+        // Step-1: control page → features visibility
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.page-access-checkbox').forEach(pageCb => {
+            const details = pageCb.closest('details');
+            const featuresContainer = details?.querySelector('div.p-6');
+            if (!featuresContainer) return;
+
+            const updateState = () => {
+                const checked = pageCb.checked;
+                featuresContainer.style.display = checked ? '' : 'none';
+                featuresContainer.querySelectorAll('input.feature-checkbox').forEach(cb => {
+                    cb.disabled = !checked;
+                    if (cb.disabled) cb.closest('label')?.classList?.add('opacity-50');
+                    else cb.closest('label')?.classList?.remove('opacity-50');
+                });
+            };
+
+            updateState();
+
+            pageCb.addEventListener('change', () => {
+                updateState();
+                if (pageCb.checked) details.open = true;
+            });
+
+            details.addEventListener('click', e => {
+                if (!pageCb.checked && e.target?.matches('input.feature-checkbox')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const note = document.createElement('div');
+                    note.textContent = 'Grant page access first';
+                    note.style.position = 'fixed';
+                    note.style.bottom = '20px';
+                    note.style.right = '20px';
+                    note.style.background = '#f59e0b';
+                    note.style.color = '#000';
+                    note.style.padding = '8px 12px';
+                    note.style.borderRadius = '6px';
+                    note.style.zIndex = 9999;
+                    document.body.appendChild(note);
+                    setTimeout(() => note.remove(), 1400);
+                }
+            });
+        });
+    });    
+
 </script>
 {% endblock %}

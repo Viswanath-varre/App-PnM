@@ -16,54 +16,82 @@ def login():
         password = request.form.get('password')
 
         try:
-            # If input looks like phone number → lookup email from users_meta
+            # ✅ Step 1: Resolve phone → email if needed
             if re.match(r'^\d{10,15}$', identifier):
                 print(">>> Login attempt with phone:", identifier)
                 result = supabase_admin.table("users_meta").select("email").eq("phone", identifier).execute()
-                print(">>> Phone lookup result:", result.data)
-
                 if not result.data:
                     return render_template('login.html', error="Phone not registered")
                 email = result.data[0]["email"]
             else:
                 email = identifier  # treat as email
 
-            # Authenticate with Supabase Auth
+            # ✅ Step 2: Authenticate with Supabase Auth
             auth = supabase.auth.sign_in_with_password({
                 'email': email,
                 'password': password
             })
             user = getattr(auth, 'user', None)
-
             if not user:
                 return render_template('login.html', error="Invalid credentials")
 
-            # Save session
+            # ✅ Step 3: Save base session info
             session['user'] = email
             session['role'] = user.user_metadata.get('role', 'user')
 
-            # Always fetch full_name from users_meta
-            meta = supabase_admin.table("users_meta").select("full_name").eq("email", email).single().execute()
-            if meta.data and meta.data.get("full_name"):
-                session['name'] = meta.data["full_name"]
+            # ✅ Step 4: Fetch name & permissions from users_meta
+            meta = supabase_admin.table("users_meta") \
+                .select("full_name, accesses, feature_accesses") \
+                .eq("email", email) \
+                .single() \
+                .execute()
+
+            if meta.data:
+                session['name'] = meta.data.get("full_name") or user.user_metadata.get('full_name', email)
+
+                # --- Original user accesses fetched from Supabase ---
+                user_accesses = meta.data.get("accesses", [])
+                session['feature_accesses'] = meta.data.get("feature_accesses", {})
+
+                # --- ✅ Define your preferred sidebar order here ---
+                ordered_pages = [
+                    'user_dashboard',
+                    'user_asset_master',
+                    'user_daywise_fuel_consumption',
+                    'user_breakdown_report',
+                    'user_spares_requirements',
+                    'user_maintenance_schedule',
+                    'user_concrete_production',
+                    'user_hire_billing_status',
+                    'user_workmen_status',
+                    'user_solar_report',
+                    'user_digital_status',
+                    'user_uauc_status',
+                    'user_asset_documents_status',
+                    'user_asset_green_card_status',
+                    'user_daywise_works',
+                    'user_profile'
+                ]
+
+                # --- ✅ Reorder the accesses based on preferred order ---
+                session['accesses'] = [p for p in ordered_pages if p in user_accesses]
+
+                print("🧭 Ordered session accesses:", session['accesses'])
             else:
                 session['name'] = user.user_metadata.get('full_name', email)
+                session['accesses'] = []
+                session['feature_accesses'] = {}
 
-            # Fetch accesses for sidebar
-            if session['role'] == 'user':
-                result = supabase_admin.table("users_meta").select("accesses").eq("email", email).execute()
-                if result.data:
-                    session['accesses'] = result.data[0].get("accesses", [])
-                else:
-                    session['accesses'] = []
-            else:
-                # Admins see everything
+            # ✅ Step 5: Admin override (see everything)
+            if session['role'] == 'admin':
                 session['accesses'] = [m for m in modules]
+                # Admins see all features too (optional)
+                session['feature_accesses'] = {m: {} for m in modules}
 
-            # ✅ Keep session active for 7 days
+            # ✅ Step 6: Keep session active for 7 days
             session.permanent = True
 
-            # ✅ Redirect based on role (adjusted for blueprint prefixes)
+            # ✅ Step 7: Redirect based on role
             if session['role'] == 'admin':
                 return redirect('/admin/admin_dashboard')
             else:
@@ -73,6 +101,7 @@ def login():
             print("!!! Login failed:", str(e))
             return render_template('login.html', error=f"Login failed: {str(e)}")
 
+    # GET method (show login form)
     return render_template('login.html')
 
 

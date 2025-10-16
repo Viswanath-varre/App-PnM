@@ -124,6 +124,9 @@ def _create_single_user(data, supabase_admin, auto_password_fallback=True):
         password_to_use = _generate_password(10)
         generated_password = password_to_use
 
+    # --- Feature access structure ---
+    feature_accesses = data.get("feature_accesses", {})
+
     # --- Access list normalization ---
     accesses = data.get("accesses", [])
     if isinstance(accesses, str):
@@ -152,6 +155,7 @@ def _create_single_user(data, supabase_admin, auto_password_fallback=True):
             "phone": phone_digits or None,
             "email": email,
             "accesses": accesses,
+            "feature_accesses": feature_accesses,
             "role": role,
             "auth_id": auth_id
         }).execute()
