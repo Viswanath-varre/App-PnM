@@ -1,8 +1,884 @@
 {% extends 'user_base.html' %}
-{% block title %}User Breakdown{% endblock %}
+{% block title %}User — Breakdown Report{% endblock %}
+
 {% block content %}
-<div class="p-6">
-  <h1 class="text-2xl font-bold mb-4">User Breakdown</h1>
-  <p class="text-gray-600">Coming Soon...</p>
+<link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+<script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
+<!-- flatpickr for datetime pickers with Confirm button -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.js"></script>
+
+<script>
+  /* injected from backend */
+  const ASSET_MASTER = {{ asset_master | tojson }};
+</script>
+
+<div class="space-y-6">
+
+  <!-- session user for client-side defaulting -->
+  <div id="session_user" data-name="{{ session.get('name', session.get('user')) }}" style="display:none"></div>
+
+  <!-- HEADER -->
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold">Breakdown Report</h1>
+      <p class="text-sm text-gray-500">Active & historical breakdown tracking</p>
+    </div>
+    <div class="flex gap-3">
+      <button id="btnCreate" class="px-4 py-2 bg-yellow-400 rounded font-semibold">
+        ➕ Create Breakdown
+      </button>
+      <a id="btnExportXlsx" href="/user/breakdown_reports/export_xlsx" class="px-4 py-2 bg-blue-600 text-white rounded font-semibold">⬇️ Download Excel</a>
+      <a id="btnExportCsv" href="/user/breakdown_reports/export" class="px-4 py-2 bg-gray-700 text-white rounded font-semibold">⬇️ Download CSV</a>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <!-- Package-wise summary (dashboard) -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+    <div class="border rounded p-4">
+      <div class="text-sm text-gray-500">Active Downtime (Hrs)</div>
+      <div id="kpiActiveDowntime" class="text-3xl font-bold">0</div>
+    </div>
+    <div class="border rounded p-4">
+      <div class="text-sm text-gray-500">Avg Downtime / Active</div>
+      <div id="kpiAvgDowntime" class="text-3xl font-bold">0</div>
+    </div>
+    <div id="overallSummary" class="border rounded p-3 text-sm font-semibold bg-gray-50"></div>
+  </div>
+  <div id="packageSummary" class="grid grid-cols-1 gap-2 mb-2"></div>
+
+  <!-- FILTER BAR -->
+  <div class="flex gap-2 mb-2">
+    <button id="filterAll" class="px-3 py-1 border rounded font-semibold bg-gray-100">
+      All
+    </button>
+    <button id="filterActive" class="px-3 py-1 border rounded font-semibold bg-red-100 text-red-800">
+      🔴 Active
+    </button>
+    <button id="filterClosed" class="px-3 py-1 border rounded font-semibold bg-green-100 text-green-800">
+      🟢 Closed
+    </button>
+  </div>
+
+  <div class="border rounded p-2">
+    <div id="breakdownTable"></div>
+  </div>
 </div>
+
+<!-- MODAL -->
+<div id="bdModal" class="hidden fixed inset-0 bg-black/60 z-50">
+  <div class="bg-white w-[95%] max-w-7xl max-h-[90%] overflow-y-auto mx-auto mt-6 rounded">
+
+    <div class="flex justify-between items-center border-b px-6 py-3">
+      <h2 id="modalTitle" class="text-xl font-bold"></h2>
+      <button onclick="closeModal()">✖</button>
+    </div>
+
+    <div class="p-6 space-y-6">
+
+      <!-- ASSET (CREATE ONLY FIELDS) -->
+      <section class="create-only">
+        <h3 class="font-semibold mb-3">Asset</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+          <!-- Asset live-search input (replaces select) -->
+          <input
+            id="asset_input"
+            list="asset_list"
+            placeholder="Type Asset Code *"
+            class="border p-2 rounded"
+            autocomplete="off"
+          />
+
+          <datalist id="asset_list"></datalist>
+
+          <!-- Hidden actual asset code -->
+          <input type="hidden" id="asset_code">  
+          <input id="asset_description" placeholder="Asset Description" class="border p-2 rounded"readonly>
+          <select id="asset_package" class="border p-2 rounded">
+            <option value="">Package</option>
+            <option>Adabari</option>
+            <option>Birsing</option>
+            <option>Phulbari</option>
+          </select>  
+          <input id="own_hire" placeholder="OWN / HIRE" class="border p-2 rounded">
+        </div>
+      </section>
+
+      <!-- LOCATION (visible in both Create and Edit) -->
+      <section>
+        <h3 class="font-semibold mb-3">Location</h3>
+        <div>
+          <input id="location" placeholder="Location" class="border p-2 rounded w-full">
+        </div>
+      </section>
+
+      <!-- BREAKDOWN -->
+      <section>
+            <h3 class="font-semibold mb-3">Breakdown</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+
+                  <div class="flex flex-col">
+                    <label class="text-sm font-semibold mb-1">Breakdown Start</label>
+                    <input type="text" id="breakdown_start" class="border p-2 rounded fp-input">
+                  </div>
+
+                  <div class="flex flex-col edit-only">
+                    <label class="text-sm font-semibold mb-1">Breakdown End</label>
+                    <input type="text" id="breakdown_end" class="border p-2 rounded fp-input">
+                  </div>
+
+                  <div class="flex flex-col">
+                        <label class="text-sm font-semibold mb-1">Breakdown Type</label>
+                        <select id="breakdown_type" class="border p-2 rounded">
+                              <option value="">Breakdown Type</option>
+                              <option>Mechanical</option>
+                              <option>Electrical</option>
+                              <option>Hydraulics</option>
+                              <option>Operator</option>
+                              <option>Others</option>
+                        </select>
+                  </div>
+
+                  <div class="flex flex-col">
+                        <label class="text-sm font-semibold mb-1">Root Cause</label>
+                        <input id="root_cause" class="border p-2 rounded">
+                  </div>
+
+                  <div class="flex flex-col sm:col-span-4">
+                        <label class="text-sm font-semibold mb-1">Breakdown Description</label>
+                        <textarea
+                              id="breakdown_description"
+                              class="border p-2 rounded"></textarea>
+                  </div>
+
+            </div>
+      </section>
+
+
+
+      <!-- RESPONSIBILITY & EIP -->
+      <section>
+            <h3 class="font-semibold mb-3">Responsibility & EIP</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+
+                  <div class="flex flex-col">
+                        <label class="text-sm font-semibold mb-1">Responsible Person</label>
+                        <select id="responsible_person" class="border p-2 rounded">
+                              <option value="">Responsible Person</option>
+                        </select>
+                  </div>
+
+                  <div class="flex flex-col edit-only">
+                    <label class="text-sm font-semibold mb-1">Expected Commission Date</label>
+                    <input type="text" id="expected_commissioned_at" class="border p-2 rounded fp-input">
+                  </div>
+
+                  <div class="flex flex-col edit-only">
+                    <label class="text-sm font-semibold mb-1">EIP Commission Date</label>
+                    <input type="text" id="eip_commissioned_at" class="border p-2 rounded fp-input">
+                  </div>
+
+                  <div class="flex flex-col">
+                        <label class="text-sm font-semibold mb-1">Downtime (Hours)</label>
+                        <input
+                              id="downtime_hrs"
+                              readonly
+                              class="border p-2 rounded bg-gray-100">
+                  </div>
+
+            </div>
+      </section>
+
+      <!-- META -->
+      <section>
+            <h3 class="font-semibold mb-3">Other Details</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+
+                  <div class="flex flex-col">
+                        <label class="text-sm font-semibold mb-1">Reported By</label>
+                        <input id="reported_by" readonly class="border p-2 rounded bg-gray-100">
+                  </div>
+
+                  <div class="flex flex-col edit-only">
+                        <label class="text-sm font-semibold mb-1">Updated By</label>
+                        <input id="updated_by" readonly class="border p-2 rounded bg-gray-100">
+                  </div>
+
+            </div>
+      </section>
+
+      <div class="flex flex-col mt-3">
+            <label class="text-sm font-semibold mb-1">Current Status</label>
+            <textarea id="remarks" class="border p-2 rounded w-full"></textarea>
+      </div>
+
+      <!-- ✅ DO NOT CLOSE p-6 HERE -->
+      
+      <div class="flex justify-end gap-3 border-t px-6 py-3">
+            <button
+                  onclick="closeModal()"
+                  class="border px-4 py-2 rounded">
+                  Cancel
+            </button>
+
+            <button
+                  onclick="saveBreakdown()"
+                  class="bg-green-600 text-white px-4 py-2 rounded">
+                  Save
+            </button>
+
+            <button
+                  onclick="closeAsClosed()"
+                  class="bg-red-600 text-white px-4 py-2 rounded">
+                  Close
+            </button>
+      </div>
+
+    </div>
+</div>
+
+<style>
+  /* keep header titles single-line */
+  .tabulator .tabulator-col .tabulator-col-title{
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* keep cell content single-line with ellipsis */
+  .tabulator .tabulator-cell{
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    height: 32px; /* fixed single-line row height */
+    line-height: 32px;
+    vertical-align: middle;
+  }
+  /* autocomplete dropdown */
+  .autocomplete-list{
+    position: absolute;
+    background: white;
+    border: 1px solid #e5e7eb;
+    max-height: 220px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 60;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  }
+  .autocomplete-item{ padding:8px 10px; cursor:pointer; }
+  .autocomplete-item:hover{ background:#f3f4f6 }
+  .autocomplete-item.active{ background:#e6f0ff }
+  /* flatpickr inputs style tweak */
+  .fp-input{ min-width:220px }
+</style>
+
+<script>
+const API="/user/breakdown_reports";
+let table, editId=null;
+
+// ensure header and cell text wraps and rows auto-size to content
+
+/* ---------- TABLE LOAD ---------- */
+async function loadTable(){
+  const r = await fetch(API);
+  const data = await r.json();
+  if(table) table.destroy();
+  table = new Tabulator("#breakdownTable",{
+    data,
+    layout:"fitColumns",
+    height:"600px",
+    columns:[
+      {title:"ID", field:"id", width:60, formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {
+    title:"Status",
+    field:"status",
+    hozAlign:"center",
+    formatter:function(cell){
+      const v = (cell.getValue() || '').toString().trim();
+
+      if(v === 'Closed'){
+        return `<span class="px-2 py-1 text-xs font-semibold rounded bg-green-200 text-green-900">🔒 Closed</span>`;
+      }
+
+      return `<span class="px-2 py-1 text-xs font-semibold rounded bg-red-200 text-red-900">🔴 Active</span>`;
+    }
+  },
+      {title:"Asset Code", field:"asset_code", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Asset Description", field:"asset_description", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Package", field:"asset_package", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Own/Hire", field:"own_hire", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Location", field:"location", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Start", field:"breakdown_start", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"End", field:"breakdown_end", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Downtime (hrs)", field:"downtime_hrs", hozAlign:"center", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Type", field:"breakdown_type", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Root Cause", field:"root_cause", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Description", field:"breakdown_description", formatter:"textarea"}, 
+      {title:"Current Status", field:"current_status", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Responsible", field:"responsible_person", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Expected Commission", field:"expected_commissioned_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"EIP Commission", field:"eip_commissioned_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Reported By", field:"reported_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Created By", field:"created_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Updated By", field:"updated_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Created At", field:"created_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+      {title:"Remarks", field:"remarks", formatter:"textarea"},
+      {
+        title:"Edit",
+        width:60,
+        hozAlign:"center",
+        formatter:function(cell){
+          const row = cell.getRow().getData();
+          if((row.status || '').trim() === 'Closed'){
+            return '🔒';
+          }
+          return '✏️';
+        },
+        cellClick:function(e, cell){
+          const row = cell.getRow().getData();
+          if((row.status || '').trim() === 'Closed'){
+            alert("Closed breakdowns cannot be edited.");
+            return;
+          }
+          openEdit(row);
+        }
+      }
+    ],
+    placeholder:"No breakdown reports found",
+    pagination:false,
+  });
+  // fetch package-wise summary and render cards
+  try{
+    const s = await fetch('/user/breakdown_summary');
+    if(s.ok){
+      const json = await s.json();
+      renderPackageSummary(json);
+      try{
+        // Active downtime KPIs
+        const activeRows = data.filter(d => (d.status || '').toString().trim() !== 'Closed');
+        const activeDowntime = activeRows.reduce((sum, r) => sum + (parseFloat(r.downtime_hrs) || 0), 0);
+        document.getElementById("kpiActiveDowntime").innerText = activeDowntime.toFixed(1);
+        document.getElementById("kpiAvgDowntime").innerText = activeRows.length ? (activeDowntime / activeRows.length).toFixed(1) : "0";
+      }catch(ke){
+        console.warn('kpi computation failed', ke);
+        document.getElementById("kpiActiveDowntime").innerText = '0';
+        document.getElementById("kpiAvgDowntime").innerText = '0';
+      }
+    }else{
+      document.getElementById('packageSummary').innerText = '';
+      document.getElementById("kpiActiveDowntime").innerText = '0';
+      document.getElementById("kpiAvgDowntime").innerText = '0';
+    }
+  }catch(e){
+    console.warn('summary fetch failed', e);
+    document.getElementById('packageSummary').innerText = '';
+  }
+}
+loadTable();
+
+
+
+document.getElementById("filterAll").onclick = function(){
+  table.clearFilter();
+};
+
+document.getElementById("filterActive").onclick = function(){
+  table.setFilter(function(data){
+    return (data.status || "").trim() !== "Closed";
+  });
+};
+
+document.getElementById("filterClosed").onclick = function(){
+  table.setFilter(function(data){
+    return (data.status || "").trim() === "Closed";
+  });
+};
+
+function renderPackageSummary(payload){
+  const pkgBox = document.getElementById('packageSummary');
+  const overallBox = document.getElementById('overallSummary');
+  pkgBox.innerHTML = '';
+  overallBox.innerHTML = '';
+
+  let totalActive = 0;
+  let totalDowntime = 0;
+
+  ['Adabari','Birsing','Phulbari'].forEach(pkg=>{
+    const p = payload.packages?.[pkg] || {};
+    const active = p.ACTIVE_COUNT || 0;
+    const downtime = p.ACTIVE_DOWNTIME_HRS || 0;
+
+    totalActive += active;
+    totalDowntime += downtime;
+
+    pkgBox.innerHTML += `
+      <div class="border rounded p-3 flex justify-between text-sm">
+        <span class="font-semibold">${pkg}</span>
+        <span>Active: ${active}</span>
+        <span>Downtime: ${downtime.toFixed(2)} hrs</span>
+      </div>`;
+  });
+
+  const totalClosed =
+    (payload.totals?.TOTAL_COUNT || 0) - totalActive;
+
+  overallBox.innerHTML = `
+    Total Active: ${totalActive}
+    &nbsp; | &nbsp;
+    Total Closed: ${totalClosed}
+    &nbsp; | &nbsp;
+    Total Downtime: ${totalDowntime.toFixed(2)} hrs
+  `;
+}
+
+document.getElementById("btnCreate").onclick = openCreate;
+
+function openCreate(){
+  editId = null;
+  clearForm();
+  setModalMode(true);
+
+  initDatePickers(); 
+  setMinDate48Hours();
+  
+
+  const sess = document.getElementById('session_user');
+  const name = sess ? (sess.dataset.name || '') : '';
+
+  document.getElementById('reported_by').value = name;
+  document.getElementById('updated_by').value = '';
+
+  document.getElementById("modalTitle").innerText = "Create Breakdown";
+  document.getElementById("bdModal").classList.remove("hidden");
+}
+
+
+function openEdit(row){
+        if((row.status || '').trim() === 'Closed'){
+        alert("This breakdown is closed and cannot be edited.");
+        return;
+      }
+  editId=row.id;
+  Object.keys(row).forEach(k=>{
+    const el = document.getElementById(k);
+    if(!el) return;
+
+    // convert displayed datetime to ISO for datetime-local inputs
+    if(el.type === "datetime-local"){
+      el.value = toIsoIfNeeded(row[k] ?? "");
+    }else{
+      el.value = row[k] ?? "";
+    }
+  });
+  setModalMode(false);
+  
+  initDatePickers(); 
+  setMinDate48Hours();
+  // set updated_by to current user (if not present in row)
+  const sess = document.getElementById('session_user');
+  const name = sess ? (sess.dataset.name || '') : '';
+  if(document.getElementById('updated_by')) document.getElementById('updated_by').value = (row['updated_by'] || name);
+  // ensure reported_by shows original reporter but readonly
+  if(document.getElementById('reported_by')) document.getElementById('reported_by').value = row['reported_by'] || '';
+  document.getElementById("modalTitle").innerText="Edit Breakdown";
+  document.getElementById("bdModal").classList.remove("hidden");
+  document.getElementById("asset_input").value = row.asset_code || "";
+}
+
+function toggleCreateEdit(isCreate){
+  // Hide or show the create-only asset section instead of just making fields readOnly
+  document.querySelectorAll('.create-only').forEach(el=>{ el.style.display = isCreate ? '' : 'none'; });
+  // breakdown_start locked on edit
+  const bs = document.getElementById("breakdown_start"); if(bs) bs.readOnly = !isCreate;
+}
+
+function setModalMode(isCreate){
+
+  // show / hide edit-only fields
+  document.querySelectorAll('.edit-only')
+    .forEach(el => el.style.display = isCreate ? 'none' : '');
+
+  // Asset fields: editable ONLY in Create
+  ['asset_code','asset_description','asset_package','own_hire']
+    .forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+
+      if(el.tagName === 'SELECT'){
+        el.disabled = !isCreate;
+      }else{
+        el.readOnly = !isCreate;
+      }
+    });
+
+  // Location editable in both Create & Edit
+  const loc = document.getElementById('location');
+  if(loc) loc.readOnly = false;
+
+  // Breakdown start: editable ONLY in Create
+  const bs = document.getElementById('breakdown_start');
+  if(bs) bs.readOnly = !isCreate;
+
+
+}
+
+
+
+
+/* ---------- ASSET DROPDOWN (FROM ASSET MASTER) ---------- */
+
+// this variable MUST be injected from backend
+// const ASSET_MASTER = [...];
+
+/* ---------- ASSET LIVE AUTOCOMPLETE (LIKE SPARES) ---------- */
+
+const assetInput = document.getElementById("asset_input");
+const assetList  = document.getElementById("asset_list");
+
+let assetCache = [];
+
+async function fetchAssets(q){
+  if(!q || q.length < 1){
+    assetList.innerHTML = "";
+    return;
+  }
+  try{
+    const r = await fetch(`/user/assets_autocomplete?q=${encodeURIComponent(q)}`);
+    const d = await r.json();
+    assetCache = d || [];
+
+    assetList.innerHTML = "";
+    assetCache.forEach(a => {
+      const opt = document.createElement("option");
+      opt.value = a.asset_code;
+      assetList.appendChild(opt);
+    });
+  }catch(e){
+    console.error("asset autocomplete error", e);
+  }
+}
+
+if(assetInput){
+  // live typing
+  assetInput.addEventListener("input", function(){
+    fetchAssets(this.value.trim());
+  });
+
+  // when user selects
+  assetInput.addEventListener("change", function(){
+    const val = this.value;
+    const asset = assetCache.find(a => val.startsWith(a.asset_code));
+
+    if(!asset){
+      ["asset_code","asset_description","asset_package","own_hire","location"]
+        .forEach(id => document.getElementById(id).value = "");
+      return;
+    }
+
+    document.getElementById("asset_code").value        = asset.asset_code;
+    document.getElementById("asset_description").value = asset.asset_description || "";
+    document.getElementById("asset_package").value     = asset.package || "";
+    document.getElementById("own_hire").value          = asset.owner || "";
+    document.getElementById("location").value          = asset.location || "";
+  });
+}
+
+function closeModal(){
+  document.getElementById("bdModal").classList.add("hidden");
+}
+
+function clearForm(){
+  document.querySelectorAll("#bdModal input,#bdModal textarea,#bdModal select")
+    .forEach(e=>e.value="");
+}
+
+function toIsoIfNeeded(val){
+  if(!val) return val;
+
+  // already ISO (datetime-local)
+  if(val.includes("T")) return val;
+
+  // convert "DD/MM/YYYY hh:mm AM/PM" → ISO
+  const m = val.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}) (AM|PM)$/);
+  if(!m) return val;
+
+  let [,dd,mm,yyyy,hh,mi,ap] = m;
+  hh = parseInt(hh,10);
+  if(ap === "PM" && hh < 12) hh += 12;
+  if(ap === "AM" && hh === 12) hh = 0;
+
+  return `${yyyy}-${mm}-${dd}T${String(hh).padStart(2,'0')}:${mi}`;
+}
+
+// initialize flatpickr safely (no re-initialization crash)
+function initDatePickers(){
+  const fortyEightHoursAgo = new Date(Date.now() - (48 * 60 * 60 * 1000));
+  const now = new Date();
+
+  const opts = {
+    enableTime: true,
+    dateFormat: "d/m/Y h:i K",
+    time_24hr: false,
+
+    allowInput: false,
+    clickOpens: true,
+
+    onReady: function(_, __, instance){
+
+      // ⛔ stop mouse wheel changing value
+      instance.input.addEventListener("wheel", function(e){
+        e.preventDefault();
+      });
+
+      // 🔽 add custom footer buttons once
+      if(instance.calendarContainer.querySelector(".fp-footer")) return;
+
+      const footer = document.createElement("div");
+      footer.className = "fp-footer";
+      footer.style.display = "flex";
+      footer.style.justifyContent = "space-between";
+      footer.style.padding = "6px";
+      footer.style.borderTop = "1px solid #ddd";
+
+      // 🧹 Clear button
+      const btnClear = document.createElement("button");
+      btnClear.type = "button";
+      btnClear.textContent = "Clear";
+      btnClear.className = "px-2 py-1 text-sm border rounded";
+      btnClear.onclick = function(){
+        instance.clear();
+        instance.close();
+        try{ updateDowntime(); }catch(e){}
+      };
+
+      // 📍 Today button
+      const btnToday = document.createElement("button");
+      btnToday.type = "button";
+      btnToday.textContent = "Today";
+      btnToday.className = "px-2 py-1 text-sm border rounded";
+      btnToday.onclick = function(){
+        const now = new Date();
+        instance.setDate(now, true);
+        instance.close();
+        try{ updateDowntime(); }catch(e){}
+      };
+
+      // ✅ OK button
+      const btnOk = document.createElement("button");
+      btnOk.type = "button";
+      btnOk.textContent = "OK";
+      btnOk.className = "px-3 py-1 text-sm bg-green-600 text-white rounded";
+      btnOk.onclick = function(){
+        instance.close();
+        try{ updateDowntime(); }catch(e){}
+      };
+
+      footer.appendChild(btnClear);
+      footer.appendChild(btnToday);
+      footer.appendChild(btnOk);
+
+      instance.calendarContainer.appendChild(footer);
+    },
+
+    onClose: function(){
+      try{ updateDowntime(); }catch(e){}
+    }
+  };
+
+  window._fp = window._fp || {};
+
+  [
+    "breakdown_start",
+    "breakdown_end",
+    "expected_commissioned_at",
+    "eip_commissioned_at"
+  ].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+
+    if(window._fp[id]){
+      window._fp[id].set("minDate", fortyEightHoursAgo);
+      window._fp[id].set("maxDate", now);
+    }else{
+      window._fp[id] = flatpickr(el, Object.assign({}, opts, {
+        minDate: fortyEightHoursAgo,
+        maxDate: now
+      }));
+    }
+  });
+}
+
+
+function updateDowntime(){
+  const start = document.getElementById('breakdown_start')?.value;
+  const end = document.getElementById('breakdown_end')?.value;
+  if(!start || !end) return;
+  const s = new Date(start);
+  const e = new Date(end);
+  if(isNaN(s) || isNaN(e)) return;
+  const hrs = Math.max(0, (e - s) / (1000*3600));
+  document.getElementById('downtime_hrs').value = hrs.toFixed(2);
+}
+
+/* ---------- SAVE ---------- */
+async function saveBreakdown(fromClose = false){
+  const payload = {};
+  // Collect form values into payload
+  [
+    "asset_code",
+    "location",
+    "breakdown_start",
+    "breakdown_end",
+    "breakdown_type",
+    "root_cause",
+    "breakdown_description",
+    "responsible_person",
+    "expected_commissioned_at",
+    "eip_commissioned_at",
+    "remarks",
+    "status"
+  ].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && el.value){
+      payload[id] = toIsoIfNeeded(el.value);
+    }
+  });
+  // Ensure asset_code is set from visible input in Create mode
+  if(!editId){
+    const ai = document.getElementById("asset_input");
+    const ac = document.getElementById("asset_code");
+
+    if(ai && ac && !ac.value){
+      ac.value = ai.value.trim();
+      payload.asset_code = ac.value;
+    }
+  }
+
+  if(!payload.asset_code && !editId){
+    alert("Asset Code required");
+    return;
+  }
+
+  // Client-side validation: if end/eip provided, ensure > start and not in future
+  const startIso = payload.breakdown_start || document.getElementById('breakdown_start')?.value || '';
+  const endIso = payload.breakdown_end || document.getElementById('breakdown_end')?.value || '';
+  const eipIso = payload.eip_commissioned_at || document.getElementById('eip_commissioned_at')?.value || '';
+  const now = new Date();
+
+  if(endIso){
+    const s = new Date(startIso);
+    const e = new Date(endIso);
+    if(e <= s){ alert('Breakdown End Date must be AFTER Breakdown Start.'); return; }
+    if(e > now){ alert('Breakdown End Date cannot be in the future.'); return; }
+  }
+
+  if(eipIso){
+    const s = new Date(startIso);
+    const eipd = new Date(eipIso);
+    if(eipd <= s){ alert('EIP Commission Date must be AFTER Breakdown Start.'); return; }
+    if(eipd > now){ alert('EIP Commission Date cannot be in the future.'); return; }
+  }
+
+  // 🚫 BLOCK SAVE if EIP Commission Date is already given (Edit mode only)
+  // ✅ Allow if coming from CLOSE action
+  if(editId && !fromClose){
+    const eipVal = document.getElementById("eip_commissioned_at")?.value || "";
+    if(eipVal){
+      alert("The Details Cant Save After Giving EIP Comminised Date, Please Close The Breakdown");
+      return;
+    }
+  }
+
+  const res = await fetch(editId ? `${API}/${editId}` : API, {
+    method: editId ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  let result = {};
+  try {
+    result = await res.json();
+  } catch(e) {}
+
+  if (!res.ok || result.success === false) {
+    alert(result.error || "Failed to save breakdown");
+    return;
+  }
+
+  closeModal();
+  loadTable();
+}
+
+function setMinDate48Hours(){
+  const now = new Date();
+  const minDate = new Date(now.getTime() - (48 * 60 * 60 * 1000));
+
+  [
+    "breakdown_start",
+    "breakdown_end",
+    "expected_commissioned_at",
+    "eip_commissioned_at"
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if(el && el._flatpickr){
+      el._flatpickr.set("minDate", minDate);
+      el._flatpickr.set("maxDate", now);
+    }
+  });
+}
+
+function closeAsClosed(){
+  if(!editId) return;
+
+  const start = document.getElementById("breakdown_start")?.value;
+  const end   = document.getElementById("breakdown_end")?.value;
+  const eip   = document.getElementById("eip_commissioned_at")?.value;
+
+  if(!end || !eip){
+    alert("To close a breakdown, Breakdown End Date and EIP Commission Date are mandatory.");
+    return;
+  }
+
+  const startIso = toIsoIfNeeded(start);
+  const endIso   = toIsoIfNeeded(end);
+  const eipIso   = toIsoIfNeeded(eip);
+
+  if(new Date(endIso) <= new Date(startIso)){
+    alert("Breakdown End Date must be AFTER Breakdown Start.");
+    return;
+  }
+
+  if(new Date(eipIso) <= new Date(startIso)){
+    alert("EIP Commission Date must be AFTER Breakdown Start.");
+    return;
+  }
+
+  // Do not allow future dates
+  const now = new Date();
+  if(new Date(endIso) > now){
+    alert("Breakdown End Date cannot be in the future.");
+    return;
+  }
+  if(new Date(eipIso) > now){
+    alert("EIP Commission Date cannot be in the future.");
+    return;
+  }
+
+  if(!confirm("Are you sure you want to CLOSE this breakdown? Once closed, it cannot be edited.")){
+    return;
+  }
+
+  const hidden = document.createElement("input");
+  hidden.type = "hidden";
+  hidden.id = "status";
+  hidden.value = "Closed";
+  document.getElementById("bdModal").appendChild(hidden);
+
+  saveBreakdown(true);
+}
+
+</script>
 {% endblock %}

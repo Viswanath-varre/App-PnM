@@ -1,8 +1,1331 @@
 {% extends 'user_base.html' %}
-{% block title %}User Spares Requirements{% endblock %}
+{% block title %}User — Spares Requirements{% endblock %}
+
 {% block content %}
-<div class="p-6">
-  <h1 class="text-2xl font-bold mb-4">User Spares Requirements</h1>
-  <p class="text-gray-600">Coming Soon...</p>
-</div>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      box-sizing: border-box;
+      background: #faf8f5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #ffc107;
+      box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+    }
+
+    .yellow-glow {
+      box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+    }
+
+    .btn-primary {
+      background: #ffc107;
+      color: #000000;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      min-height: 44px;
+      border: 2px solid #ffc107;
+    }
+
+    .btn-primary:hover, .btn-primary:active {
+      background: #000000;
+      color: #ffc107;
+      border: 2px solid #ffc107;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid #ffc107;
+      color: #ffc107;
+      transition: all 0.3s ease;
+      min-height: 44px;
+    }
+
+    .btn-secondary:hover, .btn-secondary:active {
+      background: #ffc107;
+      color: #000000;
+      transform: translateY(-1px);
+    }
+
+    .input-field {
+      background: #ffffff;
+      border: 1px solid #ffc107;
+      color: #333333;
+      transition: all 0.3s ease;
+    }
+
+    .input-field:focus {
+      border-color: #ffc107;
+      box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
+      background: #ffffff;
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 193, 7, 0.6);
+    }
+
+    .tabulator {
+      background: #ffffff;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tabulator .tabulator-header {
+      background: #ffc107;
+      color: #000000;
+      font-weight: 600;
+    }
+
+    .tabulator .tabulator-row {
+      background: #ffffff;
+      border-bottom: 1px solid rgba(255, 193, 7, 0.3);
+      color: #333333;
+    }
+
+    .tabulator .tabulator-row:hover {
+      background: rgba(255, 193, 7, 0.1);
+    }
+
+    .tabulator .tabulator-row.tabulator-row-even {
+      background: rgba(255, 193, 7, 0.05);
+    }
+
+    .tabulator .tabulator-cell {
+      border-right: 1px solid rgba(255, 193, 7, 0.3);
+    }
+
+    .tabulator-cell .single-line-info {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block;
+      max-width: 420px;
+    }
+
+    /* Ensure the Tabulator container allows horizontal scrolling when columns exceed width */
+    #spares-table .tabulator,
+    #spares-table .tabulator .tabulator-tableholder {
+      overflow-x: auto !important;
+    }
+    /* Prevent header cells from wrapping so columns keep their width */
+    #spares-table .tabulator .tabulator-header .tabulator-col {
+      white-space: nowrap;
+    }
+
+    .status-active {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-closed {
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .priority-critical {
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .priority-high {
+      background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .priority-medium {
+      background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+      color: #1a1a1a;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .priority-low {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .modal-backdrop {
+      background: rgba(0, 0, 0, 0.9);
+    }
+
+    .modal-content {
+      background: #ffffff;
+      border: 2px solid #ffc107;
+      box-shadow: 0 0 30px rgba(255, 193, 7, 0.3);
+    }
+
+    .dashboard-card {
+      background: #ffffff;
+      border: 2px solid #ffc107;
+      transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(255, 193, 7, 0.4);
+    }
+
+    .section-title {
+      color: #b8860b;
+    }
+
+    .filter-container {
+      background: #ffffff;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .btn-edit {
+      background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-edit:hover {
+      background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-close {
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-close:hover {
+      background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+      transform: translateY(-1px);
+    }
+
+    .form-label {
+      color: #b8860b;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .readonly-field {
+      background: #f8f9fa;
+      border: 1px solid #ffc107;
+      color: #666666;
+      opacity: 0.8;
+    }
+
+    .checkbox-custom {
+      accent-color: #ffc107;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-header {
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 2px solid #ffc107;
+      padding: 24px 0;
+      margin-bottom: 24px;
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      .page-header {
+        padding: 16px 0;
+        margin-bottom: 16px;
+      }
+
+      .dashboard-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 16px !important;
+        gap: 12px !important;
+      }
+
+      .dashboard-card .w-12 {
+        width: 48px;
+        height: 48px;
+      }
+
+      .filter-container {
+        padding: 16px;
+      }
+
+      .filter-container .flex {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .filter-container input,
+      .filter-container select {
+        min-width: 100% !important;
+      }
+
+      .modal-content {
+        margin: 8px;
+        padding: 20px;
+        max-height: 95vh;
+        width: calc(100% - 16px);
+      }
+
+      .modal-content h2 {
+        font-size: 1.5rem;
+      }
+
+      .grid.md\:grid-cols-2,
+      .grid.md\:grid-cols-3 {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .btn-edit,
+      .btn-close {
+        padding: 8px 12px;
+        font-size: 11px;
+        margin: 2px;
+        display: block;
+        width: 100%;
+        margin-bottom: 4px;
+      }
+
+      .tabulator {
+        font-size: 12px;
+      }
+
+      .tabulator .tabulator-cell {
+        padding: 8px 4px;
+      }
+
+      .input-field {
+        font-size: 16px;
+        padding: 12px;
+      }
+
+      .btn-primary,
+      .btn-secondary {
+        padding: 12px 16px;
+        font-size: 14px;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .flex.justify-end {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .flex.justify-end button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-header .flex {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+
+      .page-header h1 {
+        font-size: 1.75rem;
+      }
+
+      .dashboard-card {
+        width: 100%;
+      }
+
+      .tabulator {
+        font-size: 11px;
+      }
+
+      .single-line-info {
+        max-width: 150px !important;
+      }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      .btn-primary:hover,
+      .btn-secondary:hover,
+      .btn-edit:hover,
+      .btn-close:hover {
+        transform: none;
+      }
+
+      .dashboard-card:hover {
+        transform: none;
+      }
+    }
+  </style>
+
+  <div class="min-h-full text-gray-800">
+    <div class="page-header">
+      <div class="p-4 md:p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center">
+              <i class="fas fa-cogs text-black text-xl"></i>
+            </div>
+            <div>
+              <h1 class="text-3xl font-bold section-title">Spares Requirements</h1>
+              <p class="text-gray-600 text-sm">Manage and track spare parts requirements</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <div id="card-active" class="dashboard-card glass-card rounded-xl px-6 py-4 flex items-center gap-4 animate-fade-in">
+              <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                <i class="fas fa-check-circle text-white text-xl"></i>
+              </div>
+              <div>
+                <div class="text-xs text-gray-600 uppercase tracking-wide">Active Requirements</div>
+                <div id="activeCount" class="text-2xl font-bold text-gray-800">--</div>
+                <div id="activeUpdated" class="text-xs text-gray-600">Last updated: --</div>
+              </div>
+              <button id="filterActiveBtn" class="btn-secondary px-4 py-2 rounded-lg text-sm font-semibold">
+                <i class="fas fa-filter mr-2"></i>Show Active
+              </button>
+            </div>
+            <button id="btnAdd" data-feature="user_spares_requirements:add" class="btn-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 yellow-glow">
+              <i class="fas fa-plus"></i> Create Requirement
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 md:p-6">
+      <div class="filter-container mb-6 animate-fade-in"
+        data-feature="user_spares_requirements:filter">
+        <div class="flex items-center gap-2 mb-4">
+          <i class="fas fa-search text-gray-700"></i>
+          <h3 class="text-lg font-semibold text-gray-700">Search & Filters</h3>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <div class="flex-grow min-w-64">
+            <input id="filterRef" placeholder="🔍 Search Ref / Asset / Requirement..." class="input-field p-3 rounded-lg w-full text-sm">
+          </div>
+      <select id="filterFor"
+        data-subfeature="user_spares_requirements:filter"
+        data-label="For"
+        class="input-field p-3 rounded-lg text-sm min-w-32">
+            <option value="">All Types</option>
+            <option value="General">General</option>
+            <option value="Asset">Asset</option>
+          </select>
+          <select id="filterStatus" data-subfeature="user_spares_requirements:filter" data-label="Status" class="input-field p-3 rounded-lg text-sm min-w-32">
+            <option value="">All Status</option>
+            <option>Active</option>
+            <option>Closed</option>
+          </select>
+          <select id="filterPriority" class="input-field p-3 rounded-lg text-sm min-w-40">
+            <option value="">All Priority</option>
+            <option>Critical</option>
+            <option>High Priority</option>
+            <option>Medium Priority</option>
+            <option>Low Priority</option>
+          </select>
+          <button id="btnRefresh" class="btn-secondary px-4 py-3 rounded-lg text-sm font-semibold flex items-center gap-2">
+            <i class="fas fa-sync-alt"></i>Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-1 animate-fade-in">
+        <div id="spares-table"
+            data-feature="user_spares_requirements:view"
+            class="overflow-x-auto">Loading spares table…
+          </div>
+          <!-- Hidden markers so feature scanner detects action features generated by JS/Tabulator -->
+          <div id="spares_feature_markers" style="display:none" aria-hidden="true">
+            <!-- Top-level action features (detected as parent features) -->
+            <div data-feature="user_spares_requirements:edit" data-label="Edit"></div>
+            <div data-feature="user_spares_requirements:close" data-label="Close"></div>
+            <div data-feature="user_spares_requirements:delete" data-label="Delete"></div>
+            <div data-feature="user_spares_requirements:download" data-label="Download"></div>
+            <div data-feature="user_spares_requirements:refresh" data-label="Refresh"></div>
+
+            <!-- Subfeatures for the Add (Create) feature -->
+            <div data-subfeature="user_spares_requirements:add" data-label="Open Create Modal"></div>
+            <div data-subfeature="user_spares_requirements:add" data-label="Spares Details Field"></div>
+            <div data-subfeature="user_spares_requirements:add" data-label="Expected Date Field"></div>
+            <div data-subfeature="user_spares_requirements:add" data-label="Required By Field"></div>
+            <div data-subfeature="user_spares_requirements:add" data-label="Quantity Fields"></div>
+
+            <!-- Subfeatures for the Edit feature -->
+            <div data-subfeature="user_spares_requirements:edit" data-label="Edit Spares Details"></div>
+            <div data-subfeature="user_spares_requirements:edit" data-label="Allow Past Dates"></div>
+
+            <!-- Subfeatures for Filter (already present but ensure labels) -->
+            <div data-subfeature="user_spares_requirements:filter" data-label="For"></div>
+            <div data-subfeature="user_spares_requirements:filter" data-label="Status"></div>
+          </div>
+      </div>
+
+      <div id="modal" class="fixed inset-0 hidden items-center justify-center z-50">
+        <div class="modal-backdrop absolute inset-0"></div>
+        <div class="modal-content rounded-2xl shadow-2xl w-full max-w-4xl z-10 p-8 overflow-y-auto max-h-[90vh] m-4 animate-fade-in">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
+              <i class="fas fa-edit text-black"></i>
+            </div>
+            <h2 id="modalTitle" class="text-2xl font-bold section-title">Create Spares Requirement</h2>
+          </div>
+
+          <form id="spareForm" class="space-y-6">
+            <div class="grid md:grid-cols-3 gap-4">
+              <div>
+                <label class="block form-label">Reference Number</label>
+                <input id="ref_no" name="ref_no" class="input-field p-3 w-full rounded-lg readonly-field" readonly>
+              </div>
+              <div>
+                <label class="block form-label">Category (Priority)</label>
+                <select id="priority" name="priority" class="input-field p-3 w-full rounded-lg">
+                  <option>Critical</option>
+                  <option>High Priority</option>
+                  <option>Medium Priority</option>
+                  <option>Low Priority</option>
+                </select>
+              </div>
+              <div>
+                <label class="block form-label">Status</label>
+                <select id="status" name="status" class="input-field p-3 w-full rounded-lg readonly-field" disabled>
+                  <option>Active</option>
+                  <option>Closed</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block form-label">Requirement For</label>
+                <select id="for_type" name="for_type" class="input-field p-3 w-full rounded-lg">
+                  <option value="General">General</option>
+                  <option value="Asset">Asset</option>
+                </select>
+              </div>
+              <div id="assetBlock" class="hidden">
+                <label class="block form-label">Asset (code - description)</label>
+                <input id="asset_input" list="asset_list" class="input-field p-3 w-full rounded-lg" placeholder="Type code or description">
+                <datalist id="asset_list"></datalist>
+                <input type="hidden" id="asset_code" name="asset_code">
+                <input type="hidden" id="asset_description" name="asset_description">
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4">
+              <div>
+                <label class="block form-label">Required By (Date)</label>
+                <input id="required_by" name="required_by" type="date" class="input-field p-3 w-full rounded-lg">
+              </div>
+              <div>
+                <label class="block form-label">Expected Date</label>
+                <input id="expected_date" name="expected_date" type="date" class="input-field p-3 w-full rounded-lg">
+              </div>
+              <div>
+                <label class="block form-label">Requisition (Created By)</label>
+                <input id="requisition" name="requisition" class="input-field p-3 w-full rounded-lg readonly-field" readonly>
+              </div>
+            </div>
+
+            <div>
+              <label class="block form-label">Spares Requirement (Details)</label>
+              <textarea id="spares_req" name="spares_req" class="input-field p-3 w-full rounded-lg" rows="4" placeholder="Enter detailed requirements..."></textarea>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block form-label">Quantity Required</label>
+                <input id="qty_required" name="qty_required" type="number" min="0" step="1" class="input-field p-3 w-full rounded-lg" placeholder="0">
+              </div>
+              <div>
+                <label class="block form-label">Quantity Available</label>
+                <input id="qty_available" name="qty_available" type="number" min="0" step="1" class="input-field p-3 w-full rounded-lg" placeholder="0">
+              </div>
+            </div>
+
+            <div id="editOnlyFields" class="hidden space-y-4 border-t border-yellow-400/20 pt-6">
+              <div class="flex items-center gap-2 mb-4">
+                <i class="fas fa-edit text-gray-700"></i>
+                <h3 class="text-lg font-semibold text-gray-700">Edit Mode Fields</h3>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block form-label">Current Status</label>
+                  <input id="current_status" name="current_status" class="input-field p-3 w-full rounded-lg" placeholder="Update current status...">
+                </div>
+                <div>
+                  <label class="inline-flex items-center gap-3 mb-3">
+                    <input id="dc_required" type="checkbox" class="checkbox-custom w-5 h-5">
+                    <span class="form-label">DC Required</span>
+                  </label>
+
+                  <div id="dcBox" class="hidden w-full">
+                    <label class="block form-label">DC Number</label>
+                    <input id="dc_number" name="dc_number" class="input-field p-3 w-full rounded-lg" placeholder="Enter DC number...">
+                    <div class="text-xs text-gray-400 mt-1">DC number appears/added when edited by actioner.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block form-label">Actioner</label>
+                  <input id="actioner" name="actioner" class="input-field p-3 w-full rounded-lg readonly-field" readonly>
+                  <div class="text-xs text-gray-400 mt-1">Automatically set to current user when saved</div>
+                </div>
+                <div>
+                  <label class="block form-label">Last Updated By</label>
+                  <input id="last_updated_by" name="last_updated_by" class="input-field p-3 w-full rounded-lg readonly-field" readonly>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 text-sm border-t border-yellow-400/20 pt-6">
+              <div class="glass-card p-4 rounded-lg">
+                <label class="block form-label text-xs">Created On</label>
+                <div id="created_at_display" class="text-gray-600 font-mono"> - </div>
+                <div id="created_by_display" class="text-gray-500 text-xs mt-1"> - </div>
+              </div>
+              <div class="glass-card p-4 rounded-lg">
+                <label class="block form-label text-xs">Updated At</label>
+                <div id="updated_at_display" class="text-gray-600 font-mono"> - </div>
+                <div id="updated_by_display" class="text-gray-500 text-xs mt-1"> - </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-6 border-t border-yellow-400/20">
+              <button type="button" id="btnCancel" class="btn-secondary px-6 py-3 rounded-lg font-semibold">
+                <i class="fas fa-times mr-2"></i>Cancel
+              </button>
+              <button type="submit" id="btnSave" class="btn-primary px-8 py-3 rounded-lg font-semibold yellow-glow">
+                <i class="fas fa-save mr-2"></i>Save
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Move user data into a data-attribute to avoid editor/JS parser
+         confusion from raw Jinja tags inside script blocks. This is
+         functionally identical at runtime but prevents static syntax
+         errors in editors that don't understand Jinja templating. -->
+    <div id="app-data" data-user-name="{{ (user.get_full_name or user.username) | e }}" style="display:none"></div>
+    <script>
+      // Read the username from the DOM (safe for editors and runtime)
+      const _appDataEl = document.getElementById('app-data');
+      const USER_NAME = _appDataEl ? (_appDataEl.dataset.userName || '') : '';
+    </script>
+
+    <script>
+      const API = "/user";
+            // Register service worker for notifications (optional but recommended)
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.register('/static/sw.js').then(reg => {
+          console.log('ServiceWorker registered for notifications:', reg.scope);
+        }).catch(err => {
+          console.warn('ServiceWorker register failed:', err);
+        });
+      }
+      let table = null;
+      let assets = [];
+      let _editingSnapshot = null;
+
+      // Utilities for date formatting to DD/MM/YYYY HH:MM AM/PM
+      function fmtDateOnlyISO(iso){
+        if(!iso) return "";
+        try{
+          const d = new Date(iso);
+          if(isNaN(d)) return iso;
+          const dd = String(d.getDate()).padStart(2,'0');
+          const mm = String(d.getMonth()+1).padStart(2,'0');
+          const yyyy = d.getFullYear();
+          return `${dd}/${mm}/${yyyy}`;
+        }catch(e){ return iso; }
+      }
+      function fmtDateTimeISO(iso){
+        if(!iso) return "";
+        try{
+          const d = new Date(iso);
+          if(isNaN(d)) return iso;
+          let hh = d.getHours();
+          const mins = String(d.getMinutes()).padStart(2,'0');
+          const dd = String(d.getDate()).padStart(2,'0');
+          const mo = String(d.getMonth()+1).padStart(2,'0');
+          const yyyy = d.getFullYear();
+          const ampm = hh >= 12 ? 'PM' : 'AM';
+          hh = ((hh + 11) % 12) + 1;
+          return `${dd}/${mo}/${yyyy} ${String(hh).padStart(2,'0')}:${mins} ${ampm}`;
+        }catch(e){ return iso; }
+      }
+
+      function setMinDateInputs(){
+            // set min attribute for required_by and expected_date to today (YYYY-MM-DD)
+            try{
+                  const today = new Date();
+                  const yyyy = today.getFullYear();
+                  const mm = String(today.getMonth()+1).padStart(2,'0');
+                  const dd = String(today.getDate()).padStart(2,'0');
+                  const todayStr = `${yyyy}-${mm}-${dd}`;
+                  const reqEl = document.getElementById('required_by');
+                  const expEl = document.getElementById('expected_date');
+                  if(reqEl) reqEl.setAttribute('min', todayStr);
+                  if(expEl) expEl.setAttribute('min', todayStr);
+                  return todayStr;
+            }catch(e){
+                  console.error('setMinDateInputs error', e);
+                  return null;
+            }
+      }      
+
+      // ------------------- Load active counts -------------------
+      async function loadCounts(){
+        try{
+          const resp = await fetch(API + "/get_spares_counts");
+          if(!resp.ok){
+            console.error('get_spares_counts returned', resp.status, resp.statusText);
+            return;
+          }
+          const body = await resp.json();
+          const active = body.counts ? body.counts.active || 0 : 0;
+          document.getElementById("activeCount").innerText = active;
+          const updated = body.updated_at || new Date().toISOString();
+          document.getElementById("activeUpdated").innerText = "Last updated: " + fmtDateTimeISO(updated);
+        }catch(e){
+          console.error("Failed loading counts", e);
+        }
+      }
+
+      async function onActionClick(e, cell){
+      }
+
+      // Load assets
+      async function loadAssets(){
+        try{
+          const r = await fetch(API + "/get_assets");
+          if(!r.ok){
+            console.error('get_assets returned', r.status, r.statusText);
+            assets = [];
+            return;
+          }
+          const d = await r.json();
+          assets = d || [];
+          const list = document.getElementById("asset_list");
+          if(list){
+            list.innerHTML = "";
+            assets.forEach(a=>{
+              const opt = document.createElement("option");
+              opt.value = `${a.asset_code}${a.asset_description ? ' - ' + a.asset_description : ''}`;
+              list.appendChild(opt);
+            });
+          }
+        }catch(e){
+          console.error("loadAssets", e);
+          assets = [];
+        }
+      }
+
+      function renderFallbackTable(data){
+        // Simple fallback HTML table when Tabulator is not available
+        const container = document.getElementById('spares-table');
+        if(!container) return;
+        if(!data || data.length === 0){
+          container.innerHTML = '<div class="p-4">No records found.</div>';
+          return;
+        }
+        const cols = ['ref_no','status','priority','for_type','asset_display','spares_req','qty_required','qty_available','required_by_display','expected_date_display','requisition'];
+        let html = '<div style="overflow:auto"><table class="min-w-full text-sm"><thead><tr>' + cols.map(c=>`<th style="padding:8px;border-bottom:1px solid #eee">${c}</th>`).join('') + '</tr></thead><tbody>';
+        data.forEach(r=>{
+          html += '<tr>' + cols.map(c=>`<td style="padding:8px;border-bottom:1px solid #f3f3f3">${(r[c]!==undefined && r[c] !== null)? r[c] : ''}</td>`).join('') + '</tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+      }
+
+      function buildTable(data){
+        const container = document.getElementById('spares-table');
+        if(!container){ console.error('Missing #spares-table element'); return; }
+        if(typeof Tabulator === 'undefined'){
+          console.warn('Tabulator not found, rendering fallback table');
+          renderFallbackTable(data);
+          return;
+        }
+        table = new Tabulator("#spares-table", {
+          data: data,
+          height: window.innerWidth <= 768 ? "400px" : "520px",
+          // Use fitData so columns keep their defined widths and allow horizontal scrolling
+          layout: "fitData",
+          // Disable Tabulator responsive collapse so columns aren't hidden on smaller screens
+          responsiveLayout: false,
+          pagination: "local",
+          paginationSize: window.innerWidth <= 768 ? 10 : 20,
+          movableColumns: true,
+          resizableColumns: true,
+          columnVertAlign: "middle",
+          columns: [
+                    {title:"Ref No", field:"ref_no", headerFilter:"input", width:110},
+                    {title:"Status", field:"status", headerFilter:"input", width:110, hozAlign:"center",
+                      formatter: cell => {
+                        const v = cell.getValue();
+                        if(v === "Closed") return `<span class="status-closed">🔴 ${v}</span>`;
+                        return `<span class="status-active">🟢 ${v || "Active"}</span>`;
+                      }
+                    },
+                    {title:"Priority", field:"priority", headerFilter:"input", width:140,
+                      formatter: cell => {
+                        const v = cell.getValue();
+                        if(v === "Critical") return `<span class="priority-critical">${v}</span>`;
+                        if(v === "High Priority") return `<span class="priority-high">${v}</span>`;
+                        if(v === "Medium Priority") return `<span class="priority-medium">${v}</span>`;
+                        if(v === "Low Priority") return `<span class="priority-low">${v}</span>`;
+                        return v || "";
+                      }
+                    },
+                    {title:"For", field:"for_type", headerFilter:"input", width:90},
+                    {title:"Asset", field:"asset_display", headerFilter:"input", width:220},
+                    {title:"Spares Required", field:"spares_req", headerFilter:"input"},
+                    {title:"Qty Req", field:"qty_required", hozAlign:"right", width:90, headerFilter:"input"},
+                    {title:"Qty Avail", field:"qty_available", hozAlign:"right", width:90, headerFilter:"input"},
+                    {title:"Required By", field:"required_by_display", headerFilter:"input", width:120},
+                    {title:"Expected", field:"expected_date_display", headerFilter:"input", width:120},
+                    {title:"DC Required", field:"dc_required", hozAlign:"center", width:110,
+                      formatter: cell => cell.getValue() ? "Yes" : "No"
+                    },
+                    {title:"DC No.", field:"dc_number", headerFilter:"input", width:120},
+                    {title:"Requisition", field:"requisition", headerFilter:"input", width:160},
+                    {title:"Current Status", field:"current_status", headerFilter:"input", width:140},
+                    {title:"Actioner", field:"actioner", headerFilter:"input", width:140},
+                    {title:"Last Updated By", field:"last_updated_by", headerFilter:"input", width:160},
+                    {title:"Created On", field:"created_at_display", headerFilter:"input", width:160},
+                    {title:"Updated At", field:"updated_at_display", headerFilter:"input", width:160},
+                    {title:"Actions", field:"__actions", hozAlign:"center", width:150, responsive:0,
+                      formatter: function(){
+                        return `<button class="btn-edit mr-2">Edit</button><button class="btn-close">Close</button>`;
+                      },
+                      cellClick: onActionClick
+                    }
+          ]
+        });
+      }
+
+      async function loadSpares(){
+        try{
+          const r = await fetch(API + "/get_spares");
+          if(!r.ok){
+            console.error('get_spares returned', r.status, r.statusText);
+            // show fallback empty state
+            renderFallbackTable([]);
+            return;
+          }
+          const d = await r.json();
+
+          const adapted = (d || []).map(row => {
+            const createdIso = row.created_at_iso || row.created_at || row.created_at_iso;
+            const lastUpdatedIso = row.last_updated_at_iso || row.last_updated_at || row.last_updated_at_iso;
+            const expectedIso = row.expected_date || row.expected_date_iso;
+
+            return {
+              ...row,
+              asset_display: row.asset_code ? `${row.asset_code}${row.asset_description ? ' - ' + row.asset_description : ''}` : "",
+              required_by_display: row.required_by ? fmtDateOnlyISO(row.required_by) : "",
+              expected_date_display: expectedIso ? fmtDateOnlyISO(expectedIso) : "",
+              created_at_display: createdIso ? fmtDateTimeISO(createdIso) : (row.created_at_display || ""),
+              updated_at_display: lastUpdatedIso ? fmtDateTimeISO(lastUpdatedIso) : (row.last_updated_at_display || ""),
+              created_at_iso: createdIso || null,
+              last_updated_at_iso: lastUpdatedIso || null,
+              qty_required: (row.qty_required === null || row.qty_required === undefined) ? 0 : row.qty_required,
+              qty_available: (row.qty_available === null || row.qty_available === undefined) ? 0 : row.qty_available
+            };
+          });
+
+          if(!table) buildTable(adapted);
+          else if(table && typeof table.setData === 'function') table.setData(adapted);
+
+          loadCounts();
+        }catch(e){
+          console.error("loadSpares", e);
+          renderFallbackTable([]);
+        }
+      }
+
+      // Modal & DOM elements
+      const modal = document.getElementById("modal");
+      const form = document.getElementById("spareForm");
+      const assetBlock = document.getElementById("assetBlock");
+      const assetInput = document.getElementById("asset_input");
+      const dcBox = document.getElementById("dcBox");
+      const createdAtDisplay = document.getElementById("created_at_display");
+      const updatedAtDisplay = document.getElementById("updated_at_display");
+      const createdByDisplay = document.getElementById("created_by_display");
+      const updatedByDisplay = document.getElementById("updated_by_display");
+      const actionerEl = document.getElementById("actioner");
+      const statusEl = document.getElementById("status");
+      const currentStatusEl = document.getElementById("current_status");
+      const priorityEl = document.getElementById("priority");
+      const editOnlyFields = document.getElementById("editOnlyFields");
+
+      function resetForm(){
+        form.reset();
+        editOnlyFields.classList.add("hidden");
+        dcBox.classList.add("hidden");
+        if(actionerEl) actionerEl.value = USER_NAME || "";
+        if(document.getElementById("requisition")) document.getElementById("requisition").value = USER_NAME || "";
+        createdAtDisplay.innerText = "-";
+        updatedAtDisplay.innerText = "-";
+        createdByDisplay.innerText = "-";
+        updatedByDisplay.innerText = "-";
+        currentStatusEl.value = "";
+        document.getElementById("qty_required").value = 0;
+        document.getElementById("qty_available").value = 0;
+      }
+
+      function openModal(mode, row=null, nextRef=null){
+        if(!modal) return;
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        form.dataset.mode = mode;
+        if(mode === "create"){
+          document.getElementById("modalTitle").innerText = "Create Requirement";
+          resetForm();
+          document.getElementById("ref_no").value = nextRef || "";
+          Array.from(form.elements).forEach(i => i.removeAttribute("disabled"));
+
+          // set min attributes to today for date inputs
+          const todayStr = setMinDateInputs();
+
+          // In Create: expected_date should not be editable (will be edited later in Edit)
+          // Disable expected_date input and set it to required_by (if present) or today.
+          const reqEl = document.getElementById("required_by");
+          const expEl = document.getElementById("expected_date");
+
+          // Ensure required_by cannot be earlier than today (UI min already set)
+          if(reqEl) reqEl.removeAttribute('max');
+
+          if(expEl){
+            expEl.setAttribute("disabled", "disabled");   // disable editing in Create
+            expEl.setAttribute("readonly", "readonly");
+            // Default expected_date to required_by if user sets it, otherwise to today
+            if(reqEl && reqEl.value){
+              expEl.value = reqEl.value;
+            }else if(todayStr){
+              expEl.value = todayStr;
+            }
+          }
+
+          // status should be Active on create
+          statusEl.value = "Active";
+          statusEl.setAttribute("disabled", "disabled");
+
+          if(actionerEl) actionerEl.setAttribute("readonly","readonly");
+          document.getElementById("requisition").setAttribute("readonly","readonly");
+          createdAtDisplay.innerText = fmtDateTimeISO(new Date().toISOString());
+          createdByDisplay.innerText = USER_NAME || "";
+          updatedAtDisplay.innerText = "-";
+        } else if(mode === "edit"){
+          if(!row) return alert("No row provided for edit");
+          document.getElementById("modalTitle").innerText = "Edit Requirement";
+          _editingSnapshot = JSON.parse(JSON.stringify(row));
+
+          // populate fields
+          document.getElementById("ref_no").value = row.ref_no || "";
+          priorityEl.value = row.priority || priorityEl.value;
+          document.getElementById("for_type").value = row.for_type || "General";
+          if(row.for_type === "Asset"){
+            assetBlock.classList.remove("hidden");
+            document.getElementById("asset_input").value = row.asset_display || "";
+            document.getElementById("asset_code").value = row.asset_code || "";
+            document.getElementById("asset_description").value = row.asset_description || "";
+          } else {
+            assetBlock.classList.add("hidden");
+            document.getElementById("asset_input").value = "";
+            document.getElementById("asset_code").value = "";
+            document.getElementById("asset_description").value = "";
+          }
+          document.getElementById("required_by").value = row.required_by ? row.required_by.split('T')[0] : "";
+          document.getElementById("expected_date").value = row.expected_date ? row.expected_date.split('T')[0] : "";
+          document.getElementById("requisition").value = row.requisition || USER_NAME;
+          // ensure we read the field that comes from the table (spares_req)
+          document.getElementById("spares_req").value = row.spares_req || "";
+          document.getElementById("qty_required").value = row.qty_required || 0;
+          document.getElementById("qty_available").value = row.qty_available || 0;
+          currentStatusEl.value = row.current_status || "";
+          if(actionerEl) actionerEl.value = row.actioner || USER_NAME;
+          statusEl.value = row.status || "Active";
+          if(row.dc_required){
+            document.getElementById("dc_required").checked = true;
+            dcBox.classList.remove("hidden");
+            document.getElementById("dc_number").value = row.dc_number || "";
+          } else {
+            document.getElementById("dc_required").checked = false;
+            dcBox.classList.add("hidden");
+            document.getElementById("dc_number").value = "";
+          }
+
+          createdAtDisplay.innerText = row.created_at_display || "";
+          createdByDisplay.innerText = row.created_by || row.created_by_display || "";
+          updatedAtDisplay.innerText = row.updated_at_display || "";
+          updatedByDisplay.innerText = row.last_updated_by || row.updated_by_display || "";
+
+          editOnlyFields.classList.remove("hidden");
+
+          // allow selecting past dates in edit mode as well
+          try{ document.getElementById("required_by").removeAttribute('min'); }catch(e){}
+          try{ document.getElementById("required_by").removeAttribute('max'); }catch(e){}
+          try{ document.getElementById("expected_date").removeAttribute('min'); }catch(e){}
+          try{ document.getElementById("expected_date").removeAttribute('max'); }catch(e){}
+
+          // Allowed editable fields in EDIT mode
+          const allowedIds = [
+            "current_status",
+            "dc_required",
+            "dc_number",
+            "priority",
+            "status",
+            "qty_available",
+            "expected_date",
+            "required_by"
+          ];
+
+          // ensure date inputs cannot be set to past dates
+          setMinDateInputs();
+
+          Array.from(form.elements).forEach(el => {
+            const tag = (el.tagName || "").toUpperCase();
+            if (["INPUT","SELECT","TEXTAREA"].includes(tag)) {
+              if (el.type && el.type.toLowerCase() === "hidden") return;
+              // Always allow the spares details textarea and date inputs to be editable in edit mode
+              if (allowedIds.includes(el.id)) {
+                el.removeAttribute("disabled");
+                // also remove readonly if present (safety)
+                el.removeAttribute("readonly");
+                return;
+              }
+              // everything else becomes read-only/disabled
+              el.setAttribute("disabled", "disabled");
+            }
+          });
+
+          // Debug logging: print current attributes for key inputs so you can inspect in DevTools console
+          try{
+            console.log('modal-open: required_by=', document.getElementById('required_by')?.outerHTML);
+            console.log('modal-open: expected_date=', document.getElementById('expected_date')?.outerHTML);
+            console.log('modal-open: spares_req=', document.getElementById('spares_req')?.outerHTML);
+          }catch(e){/* ignore */}
+
+          if(actionerEl){
+            actionerEl.setAttribute("readonly", "readonly");
+            actionerEl.value = USER_NAME || actionerEl.value;
+          }
+        }
+      }
+
+      document.getElementById("btnCancel").onclick = function(){
+        const mode = form.dataset.mode;
+        _editingSnapshot = null;
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      };
+
+      document.getElementById("for_type").onchange = function(){
+        if(this.value === "Asset") assetBlock.classList.remove("hidden");
+        else assetBlock.classList.add("hidden");
+      };
+
+      document.getElementById("dc_required").onchange = function(){
+        if(this.checked) dcBox.classList.remove("hidden");
+        else dcBox.classList.add("hidden");
+      };
+
+      assetInput && (assetInput.onchange = function(){
+        const p = this.value.split(" - ");
+        document.getElementById("asset_code").value = p[0] ? p[0].trim() : "";
+        document.getElementById("asset_description").value = p.slice(1).join(" - ").trim();
+      });
+
+      document.getElementById("btnAdd").onclick = async function(){
+        try{
+          const r = await fetch(API + "/get_spares_next_ref");
+          const j = await r.json();
+          openModal("create", null, j.next_ref || j.nextRef || "0001");
+        }catch(e){
+          console.error("next ref error", e);
+          openModal("create", null, "0001");
+        }
+      };
+
+      form.onsubmit = async function(e){
+        e.preventDefault();
+        const mode = form.dataset.mode;
+        if(mode === "create"){
+          // front-end validation
+          const sparesReqText = document.getElementById("spares_req").value && document.getElementById("spares_req").value.trim();
+          const qtyReqVal = Number(document.getElementById("qty_required").value || 0);
+          if(!sparesReqText){
+            return showNotification("Please enter spares requirement details.", "error");
+          }
+          if(isNaN(qtyReqVal) || qtyReqVal < 0){
+            return showNotification("Quantity required must be a non-negative number.", "error");
+          }
+
+          // Date validation: required_by and expected_date must not be less than today
+          const reqByVal = document.getElementById("required_by").value;
+          let expVal = document.getElementById("expected_date").value;
+          const today = new Date();
+          const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+          if(reqByVal && reqByVal < todayStr){
+            return showNotification("Required By date cannot be earlier than today.", "error");
+          }
+
+          // expected_date is disabled in create UI — ensure payload still has a valid date:
+          if(!expVal){
+            // prefer required_by if set, otherwise today
+            expVal = reqByVal || todayStr;
+          }
+          if(expVal && expVal < todayStr){
+            return showNotification("Expected Date cannot be earlier than today.", "error");
+          }
+
+          const payload = {
+            ref_no: document.getElementById("ref_no").value,
+            status: "Active",
+            priority: priorityEl.value,
+            for_type: document.getElementById("for_type").value,
+            asset_code: document.getElementById("asset_code").value || null,
+            asset_description: document.getElementById("asset_description").value || null,
+            spares_req: sparesReqText,
+            qty_required: qtyReqVal,
+            qty_available: Number(document.getElementById("qty_available").value || 0),
+            required_by: (reqByVal && reqByVal.trim() !== "") ? reqByVal : null,
+            expected_date: (expVal && expVal.trim() !== "") ? expVal : null,
+            requisition: document.getElementById("requisition").value || USER_NAME,
+            created_by: USER_NAME
+          };
+          try{
+            const r = await fetch(API + "/create_spare", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+            const j = await r.json();
+            if(r.ok){
+              showNotification("Requirement created successfully!", "success");
+              // native-like push notification
+              showPushNotification("New Requirement created", `Requirement ${payload.ref_no || ''} requested`);
+              modal.classList.add("hidden");
+              loadSpares();
+            }
+            else showNotification("Create failed: " + (j.error || JSON.stringify(j)), "error");
+          }catch(err){
+            console.error("create error", err);
+            showNotification("Create failed: " + err.message, "error");
+          }
+        } else if(mode === "edit"){
+          const ref = document.getElementById("ref_no").value;
+          const row = table.getData().find(x => x.ref_no === ref);
+          if(!row) return showNotification("Row not found for update", "error");
+
+          // Date check in edit: required_by and expected_date must not be less than today
+          const reqByVal = document.getElementById("required_by").value;
+          const expVal = document.getElementById("expected_date").value;
+          const today = new Date();
+          const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+          if(reqByVal && reqByVal < todayStr){
+            return showNotification("Required By date cannot be earlier than today.", "error");
+          }
+          if(expVal && expVal < todayStr){
+            return showNotification("Expected Date cannot be earlier than today.", "error");
+          }
+
+          const payload = {
+            current_status: document.getElementById("current_status").value || null,
+            dc_required: document.getElementById("dc_required").checked,
+            dc_number: document.getElementById("dc_number").value || null,
+            priority: priorityEl.value,
+            status: document.getElementById("status").value || row.status,
+            qty_available: Number(document.getElementById("qty_available").value || row.qty_available || 0),
+            expected_date: (expVal && expVal.trim() !== "") ? expVal : null,
+            actioner: USER_NAME
+          };
+          try{
+            const r = await fetch(`${API}/update_spare/${row.id}`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+            const j = await r.json();
+            if(r.ok){
+              showNotification("Requirement updated successfully!", "success");
+              showPushNotification("Requirement Updated", `Requirement ${ref || ''} updated`);
+              modal.classList.add("hidden");
+              _editingSnapshot = null;
+              loadSpares();
+            }
+
+            else showNotification("Update failed: " + (j.error || JSON.stringify(j)), "error");
+          }catch(err){
+            console.error("update error", err);
+            showNotification("Update failed: " + err.message, "error");
+          }
+        }
+
+      };
+
+      async function onActionClick(e, cell){
+        const row = cell.getRow().getData();
+        if(e.target.classList.contains("btn-edit")){
+          openModal("edit", row);
+        }
+        if(e.target.classList.contains("btn-close")){
+          if(!showConfirmation("Close this requirement?")) return;
+          try{
+            const r = await fetch(`${API}/close_spare/${row.id}`, { method: "POST", headers: {"Content-Type":"application/json"} });
+            const j = await r.json();
+            if(r.ok){
+              showNotification("Requirement closed successfully!", "success");
+              showPushNotification("Requirement Closed", `Requirement ${row.ref_no || ''} closed`);
+              loadSpares();
+            }
+            else showNotification("Close failed: " + (j.error || JSON.stringify(j)), "error");
+          }catch(err){
+            console.error("close error", err);
+            showNotification("Close failed: " + err.message, "error");
+          }
+        }
+      }
+
+      document.getElementById("filterRef").addEventListener("input", function(){
+        const v = this.value.trim().toLowerCase();
+        if(!v) table.clearFilter(true);
+        else table.setFilter([
+          ["ref_no","like",v],
+          ["asset_display","like",v],
+          ["spares_req","like",v],
+          ["requisition","like",v]
+        ]);
+      });
+      document.getElementById("filterFor").addEventListener("change", function(){
+        const v = this.value; if(!v) table.removeFilter("for_type"); else table.setFilter("for_type","=",v);
+      });
+      document.getElementById("filterStatus").addEventListener("change", function(){
+        const v = this.value; if(!v) table.removeFilter("status"); else table.setFilter("status","=",v);
+      });
+      document.getElementById("filterPriority").addEventListener("change", function(){
+        const v = this.value; if(!v) table.removeFilter("priority"); else table.setFilter("priority","=",v);
+      });
+      document.getElementById("btnRefresh").onclick = loadSpares;
+
+      document.getElementById("filterActiveBtn").addEventListener("click", function(){
+        table.setFilter("status", "=", "Active");
+      });
+
+      function showPushNotification(title, body){
+        // Tries Service Worker first (recommended), falls back to Notification API.
+        try{
+          // If browser doesn't support notifications, do nothing.
+          if(!("Notification" in window)){
+            console.warn("Notifications not supported in this browser.");
+            return;
+          }
+
+          // Helper to actually display using Notification constructor
+          const displayDirect = () => {
+            try{
+              // Direct Notification (works when page is open and permission granted)
+              new Notification(title, { body });
+            }catch(e){
+              console.warn("Direct Notification failed:", e);
+            }
+          };
+
+          // If service worker is registered, use it to show notification (more reliable)
+          if(navigator.serviceWorker && navigator.serviceWorker.controller){
+            // Ensure permission
+            if(Notification.permission === "granted"){
+              navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification(title, { body, tag: title, renotify: true });
+              }).catch(e => {
+                console.warn("Service worker showNotification failed:", e);
+                displayDirect();
+              });
+            }else if(Notification.permission !== "denied"){
+              Notification.requestPermission().then(p => {
+                if(p === "granted"){
+                  navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification(title, { body, tag: title, renotify: true });
+                  }).catch(e => {
+                    console.warn("Service worker showNotification failed:", e);
+                    displayDirect();
+                  });
+                }
+              });
+            }
+            return;
+          }
+
+          // No service worker — request permission then display directly
+          if(Notification.permission === "granted"){
+            displayDirect();
+          }else if(Notification.permission !== "denied"){
+            Notification.requestPermission().then(p => { if(p === "granted") displayDirect(); });
+          }
+        }catch(e){
+          console.error("showPushNotification error", e);
+        }
+      }
+
+      function showConfirmation(message) {
+        return confirm(message);
+      }
+
+      (async function(){
+        await loadAssets();
+        await loadSpares();
+      })();
+    </script>
+
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9973546c61d77e2c',t:'MTc2MTkxNTU2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+  </div>
 {% endblock %}

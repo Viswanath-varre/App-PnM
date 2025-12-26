@@ -4,3 +4,4 @@ python-dotenv
 bcrypt
 pandas
 gunicorn
+openpyxl

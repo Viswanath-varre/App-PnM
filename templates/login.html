@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plant & Machinery Department - Data Management System</title>
+  <title></title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -162,6 +162,57 @@
         padding-right: 0 !important;
       }
     }
+       /* ===============================
+       InfraMinds Text Branding
+       =============================== */
+    .brand-wrap {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .brand-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-subtitle {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      color: #FFD700;
+      opacity: 0.9;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Tablet */
+    @media (max-width: 1024px) {
+      .brand-title {
+        font-size: 1.4rem;
+      }
+      .brand-subtitle {
+        font-size: 0.7rem;
+      }
+    }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      .brand-title {
+        font-size: 1.2rem;
+      }
+      .brand-subtitle {
+        font-size: 0.65rem;
+        letter-spacing: 1.5px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -169,16 +220,30 @@
 
   <!-- Banner -->
   <div class="department-banner fixed top-0 left-0 right-0 z-50">
-    <div class="flex items-center justify-between px-4 md:px-8 py-3 md:py-4">
-      <div class="text-left">
-        <p class="construction-motto text-xs md:text-sm">"P&M SmartOps"</p>
+    <div class="flex items-center justify-between px-4 md:px-8 py-4 md:py-5">
+
+      <!-- Left: InfraMinds Text Brand -->
+      <div class="brand-wrap">
+        <div class="brand-title">InfraMinds</div>
+        <div class="brand-subtitle">
+          Plant & Machinery Intelligence Platform
+        </div>
       </div>
+
+      <!-- Right: Department Title -->
       <div class="text-right">
-        <h1 class="construction-title text-xl md:text-2xl lg:text-3xl">PLANT & MACHINERY DEPARTMENT</h1>
-        <p class="construction-subtitle text-xs md:text-sm lg:text-base mt-1">Data Management System</p>
+        <h1 class="construction-title text-xl md:text-2xl lg:text-3xl">
+          
+        </h1>
+        <p class="construction-subtitle text-xs md:text-sm lg:text-base mt-1">
+          
+        </p>
       </div>
+
     </div>
   </div>
+
+
 
   <!-- Login Box -->
   <div class="fixed top-24 md:top-28 right-4 z-40">

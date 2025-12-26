@@ -2,8 +2,50 @@
 from flask import Blueprint, render_template, request, redirect, session, current_app, flash, url_for
 from services import require_role
 import re
+import os
+import time
+from httpx import ConnectTimeout
 
 auth_bp = Blueprint("auth", __name__)
+
+
+# --- Helpers to support different supabase-py return shapes (dict vs object) ---
+def _extract_user_from_auth(resp):
+    """Normalize supabase auth response to a user mapping or None."""
+    if not resp:
+        return None
+    # If it's a dict-style response (newer clients)
+    try:
+        if isinstance(resp, dict):
+            data = resp.get("data") or {}
+            # data could be {'user': {...}, 'session': {...}}
+            user = data.get("user") or data.get("user", None)
+            if user:
+                return user
+            # fallback when sign_in_with_password returns {'user': {...}}
+            return resp.get("user")
+    except Exception:
+        pass
+
+    # If it's an object with attributes
+    try:
+        return getattr(resp, "user", None) or getattr(resp, "data", None)
+    except Exception:
+        return None
+
+
+def _get_user_meta_field(user, field, default=None):
+    if not user:
+        return default
+    if isinstance(user, dict):
+        meta = user.get("user_metadata") or user.get("user_metadata", {})
+        return meta.get(field, default) if isinstance(meta, dict) else default
+    # object-style
+    try:
+        meta = getattr(user, "user_metadata", {})
+        return meta.get(field, default) if isinstance(meta, dict) else getattr(meta, field, default)
+    except Exception:
+        return default
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -26,18 +68,48 @@ def login():
             else:
                 email = identifier  # treat as email
 
-            # ✅ Step 2: Authenticate with Supabase Auth
-            auth = supabase.auth.sign_in_with_password({
-                'email': email,
-                'password': password
-            })
-            user = getattr(auth, 'user', None)
+            # ✅ Step 2: Authenticate with Supabase Auth (with retries for transient network/TLS errors)
+            retries = int(current_app.config.get('SUPABASE_HTTP_RETRIES', int(os.getenv('SUPABASE_HTTP_RETRIES', '3'))))
+            backoff = 1.0
+            auth = None
+            last_exc = None
+            for attempt in range(1, retries + 1):
+                try:
+                    auth = supabase.auth.sign_in_with_password({
+                        'email': email,
+                        'password': password
+                    })
+                    if auth is not None:
+                        break
+                except ConnectTimeout as ct:
+                    last_exc = ct
+                    current_app.logger.warning("Supabase auth handshake timeout (attempt %s/%s): %s", attempt, retries, ct)
+                except Exception as ex:
+                    last_exc = ex
+                    current_app.logger.warning("Supabase auth error (attempt %s/%s): %s", attempt, retries, ex)
+
+                if attempt < retries:
+                    time.sleep(backoff)
+                    backoff *= 2
+
+            print("--- raw auth response:", auth)
+            user = _extract_user_from_auth(auth)
+            # detect common error message
+            auth_error = None
+            if isinstance(auth, dict):
+                auth_error = auth.get('error') or (auth.get('data') or {}).get('error')
+
             if not user:
-                return render_template('login.html', error="Invalid credentials")
+                # Prefer last exception message if network error occurred
+                if last_exc:
+                    return render_template('login.html', error=f"Login failed: {str(last_exc)}")
+                err_msg = auth_error or "Invalid credentials"
+                return render_template('login.html', error=err_msg)
 
             # ✅ Step 3: Save base session info
             session['user'] = email
-            session['role'] = user.user_metadata.get('role', 'user')
+            session['role'] = _get_user_meta_field(user, 'role', 'user')
+            print(f"+++ login ok: user={session.get('user')} role={session.get('role')}")
 
             # ✅ Step 4: Fetch name & permissions from users_meta
             meta = supabase_admin.table("users_meta") \
@@ -45,9 +117,10 @@ def login():
                 .eq("email", email) \
                 .single() \
                 .execute()
+            print("+++ users_meta query result:", getattr(meta, 'data', None))
 
             if meta.data:
-                session['name'] = meta.data.get("full_name") or user.user_metadata.get('full_name', email)
+                session['name'] = meta.data.get("full_name") or _get_user_meta_field(user, 'full_name', email)
 
                 # --- Original user accesses fetched from Supabase ---
                 user_accesses = meta.data.get("accesses", [])
@@ -78,9 +151,24 @@ def login():
 
                 print("🧭 Ordered session accesses:", session['accesses'])
             else:
-                session['name'] = user.user_metadata.get('full_name', email)
+                session['name'] = _get_user_meta_field(user, 'full_name', email)
                 session['accesses'] = []
                 session['feature_accesses'] = {}
+
+            # ✅ Cache dropdown_config at login to avoid repeated Supabase calls on page load
+            try:
+                supabase_admin_cfg = supabase_admin
+                if supabase_admin_cfg:
+                    # reuse user_routes logic: fetch, group and store
+                    dc_res = supabase_admin_cfg.table("dropdown_config").select("*").execute()
+                    dc_data = sorted(dc_res.data or [], key=lambda x: (x.get("list_name", ""), x.get("value", "")))
+                    dc_grouped = {}
+                    for row in dc_data:
+                        name = row.get("list_name") or "default"
+                        dc_grouped.setdefault(name, []).append(row.get("value"))
+                    session['dropdown_config'] = dc_grouped
+            except Exception as e:
+                current_app.logger.warning("Could not pre-cache dropdown_config at login: %s", e)
 
             # ✅ Step 5: Admin override (see everything)
             if session['role'] == 'admin':
@@ -129,11 +217,12 @@ def change_password():
                 'email': user_email,
                 'password': old_password
             })
-
-            if not auth.user:
+            user = _extract_user_from_auth(auth)
+            if not user:
                 return render_template('change_password.html', error="Incorrect current password")
 
             # Update password
+            # newer clients expect dict payload; admin update handled elsewhere
             supabase.auth.update_user({"password": new_password})
 
             # Redirect based on role
@@ -173,7 +262,8 @@ def admin_change_password():
                 'email': user_email,
                 'password': old_password
             })
-            if not getattr(auth, "user", None):
+            user = _extract_user_from_auth(auth)
+            if not user:
                 return render_template('admin_change_password.html', error="Incorrect current password.")
 
             # Step 2: Retrieve admin's auth_id from users_meta
