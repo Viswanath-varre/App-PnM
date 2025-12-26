@@ -743,8 +743,15 @@ def get_breakdown_summary():
 
                 packages[pkg]["TOTAL_COUNT"] += 1
 
-                status = (r.get("status") or "").strip()
-                is_active = status.lower() != "closed"
+                status = (r.get("status") or "").strip().lower()
+                current_status = (r.get("current_status") or "").strip().lower()
+
+                is_closed = (
+                        status == "closed"
+                        or "closed" in current_status
+                )
+
+                is_active = not is_closed
 
                 if is_active:
                         packages[pkg]["ACTIVE_COUNT"] += 1
@@ -788,8 +795,12 @@ def get_breakdown_summary():
         ui_totals["ALL"] = ui_totals["OWN"] + ui_totals["HIRE"]
 
         return jsonify({
-            "packages": ui_packages,
-            "totals": ui_totals
+                "packages": packages,
+                "totals": totals,
+                "own_hire": {
+                        "packages": ui_packages,
+                        "totals": ui_totals
+                }
         }), 200
 
     except Exception as e:

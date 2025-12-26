@@ -19,55 +19,189 @@
 <div class="space-y-6">
 
   <!-- session user for client-side defaulting -->
-  <div id="session_user" data-name="{{ session.get('name', session.get('user')) }}" style="display:none"></div>
+  <div id="session_user"
+       data-name="{{ session.get('name', session.get('user')) }}"
+       style="display:none"></div>
 
   <!-- HEADER -->
   <div class="flex justify-between items-center">
     <div>
       <h1 class="text-2xl font-bold">Breakdown Report</h1>
-      <p class="text-sm text-gray-500">Active & historical breakdown tracking</p>
+      <p class="text-sm text-gray-500">
+        Active & historical breakdown tracking
+      </p>
     </div>
+
     <div class="flex gap-3">
-      <button id="btnCreate" class="px-4 py-2 bg-yellow-400 rounded font-semibold">
+      <button id="btnCreate"
+              class="px-4 py-2 bg-yellow-400 rounded font-semibold">
         ➕ Create Breakdown
       </button>
-      <a id="btnExportXlsx" href="/user/breakdown_reports/export_xlsx" class="px-4 py-2 bg-blue-600 text-white rounded font-semibold">⬇️ Download Excel</a>
-      <a id="btnExportCsv" href="/user/breakdown_reports/export" class="px-4 py-2 bg-gray-700 text-white rounded font-semibold">⬇️ Download CSV</a>
+
+      <a id="btnExportXlsx"
+         href="/user/breakdown_reports/export_xlsx"
+         class="px-4 py-2 bg-blue-600 text-white rounded font-semibold">
+        ⬇️ Download Excel
+      </a>
+
+      <a id="btnExportCsv"
+         href="/user/breakdown_reports/export"
+         class="px-4 py-2 bg-gray-700 text-white rounded font-semibold">
+        ⬇️ Download CSV
+      </a>
     </div>
   </div>
 
-  <!-- TABLE -->
-  <!-- Package-wise summary (dashboard) -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
-    <div class="border rounded p-4">
-      <div class="text-sm text-gray-500">Active Downtime (Hrs)</div>
-      <div id="kpiActiveDowntime" class="text-3xl font-bold">0</div>
-    </div>
-    <div class="border rounded p-4">
-      <div class="text-sm text-gray-500">Avg Downtime / Active</div>
-      <div id="kpiAvgDowntime" class="text-3xl font-bold">0</div>
-    </div>
-    <div id="overallSummary" class="border rounded p-3 text-sm font-semibold bg-gray-50"></div>
-  </div>
-  <div id="packageSummary" class="grid grid-cols-1 gap-2 mb-2"></div>
+  <!-- ================= SPEED & RECOVERY DASHBOARD ================= -->
+  <div id="breakdownDashboard" class="space-y-4 mb-6">
 
-  <!-- FILTER BAR -->
+    <!-- MONTH SELECTOR -->
+    <div class="flex gap-2 overflow-x-auto">
+      <button class="month-card active px-3 py-1 border rounded">
+        Current Month
+      </button>
+    </div>
+
+    <!-- FILTER BAR (Dashboard Filters) -->
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+
+      <select id="filterPackage" class="border p-2 rounded">
+        <option value="ALL">All Packages</option>
+        <option value="Adabari">Adabari</option>
+        <option value="Birsing">Birsing</option>
+        <option value="Phulbari">Phulbari</option>
+      </select>
+
+      <select id="filterOwnership" class="border p-2 rounded">
+        <option value="ALL">OWN + HIRE</option>
+        <option value="OWN">OWN</option>
+        <option value="HIRE">HIRE</option>
+      </select>
+
+      <select id="filterStatusDash" class="border p-2 rounded">
+        <option value="ALL">Active + Closed</option>
+        <option value="ACTIVE">Active</option>
+        <option value="CLOSED">Closed</option>
+      </select>
+
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+      <div class="border rounded p-3">
+        <div class="text-sm text-gray-500">Active Breakdowns</div>
+        <div id="kpiActive" class="text-2xl font-bold">0</div>
+      </div>
+
+      <div class="border rounded p-3">
+        <div class="text-sm text-gray-500">Closed Breakdowns</div>
+        <div id="kpiClosed" class="text-2xl font-bold">0</div>
+      </div>
+
+      <div class="border rounded p-3">
+        <div class="text-sm text-gray-500">Avg Repair Time (hrs)</div>
+        <div id="kpiAvgRepair" class="text-2xl font-bold">0.00</div>
+      </div>
+
+      <div class="border rounded p-3">
+        <div class="text-sm text-gray-500">Avg Active Delay (hrs)</div>
+        <div id="kpiAvgActiveDelay"
+             class="text-2xl font-bold text-red-600">
+          0.00
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CHART PLACEHOLDERS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+      <div class="border rounded p-3">
+        <h3 class="font-semibold mb-2">
+          Avg Repair Time (Closed)
+        </h3>
+        <canvas id="chartRepairSpeed"></canvas>
+      </div>
+
+      <div class="border rounded p-3">
+        <h3 class="font-semibold mb-2">
+          Active Breakdown Ageing
+        </h3>
+        <canvas id="chartAgeing"></canvas>
+      </div>
+
+      <div class="border rounded p-3">
+        <h3 class="font-semibold mb-2">
+          OWN vs HIRE Repair Speed
+        </h3>
+        <canvas id="chartOwnHire"></canvas>
+      </div>
+
+    </div>
+
+    <!-- PACKAGE SPEED CARDS -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+      <div class="border rounded p-3">
+        <h3 class="font-semibold">Adabari</h3>
+        <div>Active: <span id="adbActive">0</span></div>
+        <div>Avg Repair: <span id="adbRepair">0.00</span> hrs</div>
+        <div>Avg Active Delay: <span id="adbDelay">0.00</span> hrs</div>
+      </div>
+
+      <div class="border rounded p-3">
+        <h3 class="font-semibold">Birsing</h3>
+        <div>Active: <span id="birActive">0</span></div>
+        <div>Avg Repair: <span id="birRepair">0.00</span> hrs</div>
+        <div>Avg Active Delay: <span id="birDelay">0.00</span> hrs</div>
+      </div>
+
+      <div class="border rounded p-3">
+        <h3 class="font-semibold">Phulbari</h3>
+        <div>Active: <span id="phuActive">0</span></div>
+        <div>Avg Repair: <span id="phuRepair">0.00</span> hrs</div>
+        <div>Avg Active Delay: <span id="phuDelay">0.00</span> hrs</div>
+      </div>
+
+            <!-- TOTAL CARD -->
+      <div class="border rounded p-3 bg-gray-50">
+        <h3 class="font-semibold">Total</h3>
+        <div>Active: <span id="totActive">0</span></div>
+        <div>Avg Repair: <span id="totRepair">0.00</span> hrs</div>
+        <div>Avg Active Delay: <span id="totDelay">0.00</span> hrs</div>
+      </div>
+
+    </div>
+
+  </div>
+  <!-- ================= END SPEED & RECOVERY DASHBOARD ================= -->
+
+  <!-- EXISTING TABLE FILTER BAR (KEEP) -->
   <div class="flex gap-2 mb-2">
-    <button id="filterAll" class="px-3 py-1 border rounded font-semibold bg-gray-100">
+    <button id="filterAll"
+            class="px-3 py-1 border rounded font-semibold bg-gray-100">
       All
     </button>
-    <button id="filterActive" class="px-3 py-1 border rounded font-semibold bg-red-100 text-red-800">
+
+    <button id="filterActive"
+            class="px-3 py-1 border rounded font-semibold bg-red-100 text-red-800">
       🔴 Active
     </button>
-    <button id="filterClosed" class="px-3 py-1 border rounded font-semibold bg-green-100 text-green-800">
+
+    <button id="filterClosed"
+            class="px-3 py-1 border rounded font-semibold bg-green-100 text-green-800">
       🟢 Closed
     </button>
   </div>
 
+  <!-- TABLE -->
   <div class="border rounded p-2">
     <div id="breakdownTable"></div>
   </div>
+
 </div>
+
 
 <!-- MODAL -->
 <div id="bdModal" class="hidden fixed inset-0 bg-black/60 z-50">
@@ -233,7 +367,7 @@
 
             <button
                   onclick="closeAsClosed()"
-                  class="bg-red-600 text-white px-4 py-2 rounded">
+                  class="edit-only bg-red-600 text-white px-4 py-2 rounded">
                   Close
             </button>
       </div>
@@ -358,7 +492,17 @@ async function loadTable(){
       renderPackageSummary(json);
       try{
         // Active downtime KPIs
-        const activeRows = data.filter(d => (d.status || '').toString().trim() !== 'Closed');
+                const activeRows = data.filter(d => {
+                    const status = (d.status || '').toString().toLowerCase().trim();
+                    const currentStatus = (d.current_status || '').toString().toLowerCase();
+
+                    const isClosed =
+                        status === 'closed' ||
+                        currentStatus.includes('closed');
+
+                    return !isClosed;
+                });
+
         const activeDowntime = activeRows.reduce((sum, r) => sum + (parseFloat(r.downtime_hrs) || 0), 0);
         document.getElementById("kpiActiveDowntime").innerText = activeDowntime.toFixed(1);
         document.getElementById("kpiAvgDowntime").innerText = activeRows.length ? (activeDowntime / activeRows.length).toFixed(1) : "0";
