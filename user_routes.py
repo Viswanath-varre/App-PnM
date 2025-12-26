@@ -56,6 +56,11 @@ def ist_to_utc(val):
     except Exception as e:
         raise ValueError(f"Invalid datetime value: {val}") from e
 
+# ⬇⬇⬇ PASTE THIS EXACTLY HERE ⬇⬇⬇
+def json_safe(val):
+    if isinstance(val, datetime):
+        return val.isoformat()
+    return val
 
 def utc_to_ist(dt):
     if not dt:
@@ -686,11 +691,11 @@ def update_breakdown_report(report_id):
       payload["status"] = "Closed"
       payload["current_status"] = "Breakdown Closed"
       payload["closed_by"] = session.get("name") or session.get("user")
-      payload["closed_at"] = datetime.now(UTC)
+      payload["closed_at"] = datetime.now(UTC).isoformat()
 
     # ---- Audit fields ----
     payload["updated_by"] = session.get("name", session.get("user"))
-    payload["updated_at"] = datetime.now(UTC)
+    payload["updated_at"] = datetime.now(UTC).isoformat()
 
     supabase_admin.table("breakdown_reports") \
       .update(payload) \
