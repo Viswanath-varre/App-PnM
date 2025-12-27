@@ -228,6 +228,323 @@
     <div class="border rounded p-2">
       <div id="breakdownTable"></div>
     </div>
+  
+      <!-- ================= REPEATED / CHRONIC BREAKDOWN ANALYSIS ================= -->
+    <div id="repeatedAnalysis" class="space-y-6 mt-8">
+
+      <!-- SECTION HEADER -->
+      <div>
+        <h2 class="text-xl font-bold">
+          🔁 Repeated / Chronic Breakdown Analysis (Overall)
+        </h2>
+        <p class="text-sm text-gray-500">
+          Assets with breakdowns repeating across multiple months (Active + Closed)
+        </p>
+      </div>
+
+      <!-- KPI SUMMARY CARDS -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+        <div class="border rounded p-3">
+          <div class="text-sm text-gray-500">Chronic Assets</div>
+          <div id="kpiChronicAssets" class="text-2xl font-bold"></div>
+        </div>
+
+        <div class="border rounded p-3">
+          <div class="text-sm text-gray-500">Total Assets</div>
+          <div id="kpiTotalAssets" class="text-2xl font-bold"></div>
+        </div>
+
+        <div class="border rounded p-3">
+          <div class="text-sm text-gray-500">Chronic / Total</div>
+          <div id="kpiChronicRatio" class="text-2xl font-bold"></div>
+        </div>
+
+        <div class="border rounded p-3 bg-red-50">
+          <div class="text-sm text-gray-500">Asset with Most Breakdowns</div>
+          <div id="kpiWorstAsset" class="text-lg font-bold text-red-700"></div>
+          <div id="kpiWorstAssetMeta" class="text-xs text-gray-500"></div>  
+        </div>
+
+      </div>
+
+      <!-- OWN vs HIRE SUMMARY -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div class="border rounded p-3">
+          <h3 class="font-semibold mb-2">🟢 OWN Assets</h3>
+          <div>Chronic / Total: <span id="ownChronicRatio"></span></div>
+          <div>Avg Breakdowns: <span id="ownAvgBreakdowns"></span></div>
+          <div>Avg Months Affected: <span id="ownAvgMonths"></span></div>
+        </div>
+
+        <div class="border rounded p-3">
+          <h3 class="font-semibold mb-2">🔵 HIRE Assets</h3>
+          <div>Chronic / Total: <span id="hireChronicRatio"></span></div>
+          <div>Avg Breakdowns: <span id="hireAvgBreakdowns"></span></div>
+          <div>Avg Months Affected: <span id="hireAvgMonths"></span></div>
+        </div>
+
+      </div>
+
+        <!-- ACTION BAR -->
+        <div class="flex flex-wrap gap-3 items-center justify-between mb-3">
+
+          <div class="flex gap-2 items-center text-sm">
+            <span class="font-semibold">View:</span>
+
+            <select id="chronicViewLimit" class="border p-1 rounded">
+              <option value="10">Top 10 Assets</option>
+              <option value="15">Top 15 Assets</option>
+              <option value="20">Top 20 Assets</option>
+            </select>
+          </div>
+
+          <div class="flex gap-2">
+            <button
+              id="btnToggleAllAssets"
+              class="px-3 py-1 border rounded text-sm font-semibold">
+              Show All Breakdown Assets
+            </button>
+
+            <button
+              id="btnExportChronicExcel"
+              class="px-3 py-1 bg-green-600 text-white rounded text-sm font-semibold">
+              ⬇️ Download Excel
+            </button>
+          </div>
+
+        </div>
+
+        <!-- TOP CHRONIC ASSETS TABLE -->
+        <div class="overflow-x-auto border rounded">
+
+          <table class="min-w-full border-collapse text-sm text-center">
+                <thead class="bg-gray-100 sticky top-0">
+                <tr id="chronicAssetsHeaderRow">
+                <th class="border px-2 py-1 text-left">
+                Asset Code
+                </th>
+
+                <!-- dynamic month columns injected here -->
+
+                <th class="border px-2 py-1">
+                Max / Month
+                </th>
+                </tr>
+                </thead>
+
+            <tbody id="topChronicAssetsBody"></tbody>
+            
+
+
+          </table>
+
+        </div>
+
+        <!-- ACTION BAR — BREAKDOWN TYPE MATRIX -->
+        <div class="flex flex-wrap gap-3 items-center justify-between mb-3 mt-4">
+
+                <div class="flex gap-2 items-center text-sm">
+                        <span class="font-semibold">View:</span>
+
+                        <select id="typeMatrixViewLimit" class="border p-1 rounded">
+                                <option value="10">Top 10 Assets</option>
+                                <option value="15">Top 15 Assets</option>
+                                <option value="20">Top 20 Assets</option>
+                                <option value="ALL">All Assets</option>
+                        </select>
+                </div>
+
+                <div class="flex gap-2">
+                        <button
+                                id="btnShowAllTypeMatrix"
+                                class="px-3 py-1 border rounded text-sm font-semibold">
+                                Show All Breakdown Assets
+                        </button>
+
+                        <button
+                                id="btnExportTypeMatrixExcel"
+                                class="px-3 py-1 bg-green-600 text-white rounded text-sm font-semibold">
+                                ⬇️ Download Excel
+                        </button>
+                </div>
+
+        </div>
+
+        <!-- ================= BREAKDOWN TYPE MATRIX (STEP-B3) ================= -->
+          <div class="mt-6 overflow-x-auto border rounded">
+
+            <table class="min-w-full border-collapse text-sm text-center">
+              <thead class="bg-gray-100 sticky top-0">
+                <tr>
+                  <th class="border px-2 py-1 text-left">Asset Code</th>
+                  <th class="border px-2 py-1">Mechanical</th>
+                  <th class="border px-2 py-1">Electrical</th>
+                  <th class="border px-2 py-1">Hydraulics</th>
+                  <th class="border px-2 py-1">Operator</th>
+                  <th class="border px-2 py-1">Others</th>
+                  <th class="border px-2 py-1">Total</th>
+                </tr>
+              </thead>
+
+              <tbody id="breakdownTypeMatrixBody"></tbody>
+            </table>
+
+          </div>
+        <!-- ================= END BREAKDOWN TYPE MATRIX ================= -->
+
+        <!-- ALL ASSETS (COLLAPSED PLACEHOLDER) -->
+        <div
+          id="allChronicAssetsContainer"
+          class="hidden mt-4 border rounded overflow-auto">
+          
+        </div>
+
+      <!-- WHY THEY REPEAT (BREAKDOWN TYPE / NLP TOGGLE) -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+
+          <h3 class="font-semibold">
+            ❓ Why They Repeat
+          </h3>
+
+          <!-- TOGGLE -->
+          <div class="flex gap-4 text-sm">
+
+            <label class="flex items-center gap-1 cursor-pointer">
+              <input
+                type="radio"
+                name="whyRepeatView"
+                value="type"
+                checked
+              />
+              Breakdown Type
+            </label>
+
+            <label class="flex items-center gap-1 text-gray-400 cursor-not-allowed">
+              <input
+                type="radio"
+                name="whyRepeatView"
+                value="nlp"
+                disabled
+              />
+              Root Cause (NLP)
+            </label>
+
+          </div>
+
+        </div>
+
+        <!-- BREAKDOWN TYPE VIEW -->
+        <div id="whyByTypeView">
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- BAR CHART PLACEHOLDER -->
+            <div id="breakdownTypeChart" class="border rounded p-3 h-[300px]"></div>
+
+            <!-- SUMMARY TABLE -->
+            <div class="border rounded p-3">
+
+              <h4 class="font-semibold mb-2 text-sm">
+                Breakdown Type Summary (Chronic Assets Only)
+              </h4>
+
+              <table class="w-full text-sm border-collapse">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="border px-2 py-1 text-left">Breakdown Type</th>
+                    <th class="border px-2 py-1 text-center">Count</th>
+                    <th class="border px-2 py-1 text-center">Affected Assets</th>
+                  </tr>
+                </thead>
+               <tbody id="breakdownTypeSummaryBody"></tbody>
+              </table>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- NLP ROOT CAUSE VIEW (FUTURE - UI READY) -->
+        <div
+          id="whyByNlpView"
+          class="hidden space-y-4 border rounded p-4 bg-gray-50"
+        >
+
+          <div class="flex items-center justify-between">
+            <h4 class="font-semibold text-sm">
+              🧠 Root Cause Analysis (NLP – Grouped)
+            </h4>
+
+            <span class="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800">
+              Coming Soon
+            </span>
+          </div>
+
+          <!-- NLP SUMMARY CARDS -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+            <div class="border rounded p-3 bg-white">
+              <div class="text-xs text-gray-500"></div>
+              <div class="text-sm font-semibold"></div>
+            </div>
+
+            <div class="border rounded p-3 bg-white">
+              <div class="text-xs text-gray-500"></div>
+              <div class="text-sm font-semibold"></div>
+            </div>
+
+            <div class="border rounded p-3 bg-white">
+              <div class="text-xs text-gray-500"></div>
+              <div class="text-sm font-semibold"></div>
+            </div>
+
+            <div class="border rounded p-3 bg-white">
+              <div class="text-xs text-gray-500"></div>
+              <div class="text-sm font-semibold"></div>
+            </div>
+
+          </div>
+
+          <!-- NLP CHART PLACEHOLDER -->
+          <div class="border rounded p-3 h-[260px] flex items-center justify-center text-gray-400 text-sm bg-white">
+            NLP Root Cause Group Distribution Chart
+          </div>
+
+          <!-- NLP SUMMARY TABLE -->
+          <div class="border rounded p-3 bg-white">
+
+            <h5 class="font-semibold text-sm mb-2">
+              Root Cause Group Summary
+            </h5>
+
+            <table class="w-full text-sm border-collapse">
+              <thead class="bg-gray-100">
+                <tr>
+                  <th class="border px-2 py-1 text-left">Root Cause Group</th>
+                  <th class="border px-2 py-1 text-center">Breakdowns</th>
+                  <th class="border px-2 py-1 text-center">Assets</th>
+                </tr>
+              </thead>
+              <tbody id="nlpSummaryBody"></tbody>
+
+              
+            </table>
+
+          </div>
+
+        </div>
+
+
+
+      </div>
+
+     
+
+    </div>
+    <!-- ================= END REPEATED / CHRONIC BREAKDOWN ANALYSIS ================= -->  
 
   </div>
 
@@ -450,6 +767,8 @@
   <script>
   const API="/user/breakdown_reports";
   let table, editId=null;
+  let BREAKDOWN_RAW = [];
+  let CHRONIC_ASSETS = [];
 
   // ensure header and cell text wraps and rows auto-size to content
 
@@ -546,9 +865,10 @@ async function loadDashboard(){
 
         const d = await r.json();
 
-        /* STORE RAW DATA */
+        /* dashboard API does not return row-level data */
+        DASHBOARD_FILTERED = [];
         DASHBOARD_RAW = d.rows || [];
-        applyDashboardFilters();
+        
 
         /* ---------- LIMIT MONTH SELECTOR TO AVAILABLE DATA ---------- */
         if(DASHBOARD_RAW.length){
@@ -766,10 +1086,434 @@ function renderOwnHireChart(ownHire){
 
 
 /* ---------- LOAD DASHBOARD ---------- */
-loadDashboard();
 
 
+
+(async function initPage(){
+  await loadBreakdownRaw();
+  await loadDashboard();
+  applyDashboardFilters();
+})();  
+
+  /* ---------- CHRONIC VIEW LIMIT CHANGE ---------- */
+  const chronicLimitEl = document.getElementById("chronicViewLimit");
+  if(chronicLimitEl){
+    chronicLimitEl.addEventListener("change", renderChronicTable);
+  }
+
+  async function loadBreakdownRaw(){
+
+    console.log("⏳ loadBreakdownRaw() called");
+
+    const r = await fetch("/user/breakdown_reports");
+
+    console.log("📡 API response status:", r.status);
+
+    const data = await r.json();
+
+    console.log("📦 Raw API response:", data);
+
+    BREAKDOWN_RAW = Array.isArray(data)
+      ? data
+      : (data.rows || []);
+
+    console.log("✅ Parsed rows count:", BREAKDOWN_RAW.length);
+
+    buildChronicAggregation();
+  }
+
+  function buildChronicAggregation(minCount = 1){
+
+    const map = {};
+
+    BREAKDOWN_RAW.forEach(r => {
+
+      const code = (r.asset_code || "").trim();
+      if(!code) return;
+
+      if(!map[code]){
+        map[code] = {
+          asset_code: code,
+          total: 0,
+          active: 0,
+          closed: 0,
+          types: {},
+          rows: []
+        };
+      }
+
+      map[code].total++;
+      map[code].rows.push(r);
+
+      if((r.status || "").trim() === "Closed"){
+        map[code].closed++;
+      }else{
+        map[code].active++;
+      }
+
+      const type = (r.breakdown_type || "Unknown").trim();
+      map[code].types[type] = (map[code].types[type] || 0) + 1;
+    });
+
+
+    
+    CHRONIC_ASSETS = Object.values(map)
+      .filter(a => a.total >= minCount);
+
+    renderChronicKPIs();
+    renderBreakdownTypeSummary();
+    computeOwnHireChronicStats();
+    renderOwnHireChronicUI();
+    renderBreakdownTypeMatrix();
+    renderChronicTable();
+  }
+
+  function getPrimaryType(types){
+
+    let max = 0;
+    let key = "Unknown";
+
+    Object.entries(types).forEach(([k,v]) => {
+      if(v > max){
+        max = v;
+        key = k;
+      }
+    });
+
+    return key;
+  }  
+
+  function renderChronicKPIs(){
+
+    const totalAssets = new Set(
+      BREAKDOWN_RAW.map(r => r.asset_code).filter(Boolean)
+    ).size;
+
+    document.getElementById("kpiChronicAssets").innerText =
+      CHRONIC_ASSETS.length;
+
+    document.getElementById("kpiTotalAssets").innerText =
+      totalAssets;
+
+    document.getElementById("kpiChronicRatio").innerText =
+      totalAssets
+        ? ((CHRONIC_ASSETS.length / totalAssets) * 100).toFixed(1) + "%"
+        : "0%";
+
+    const worst = CHRONIC_ASSETS
+      .sort((a,b)=>b.total - a.total)[0];
+
+    if(worst){
+      document.getElementById("kpiWorstAsset").innerText =
+        worst.asset_code;
+
+      document.getElementById("kpiWorstAssetMeta").innerText =
+        `${worst.total} breakdowns`;
+    }
+  }
+
+  function renderChronicTable(){
+
+    console.log("📊 renderChronicTable() called");
+
+    const headerRow = document.getElementById("chronicAssetsHeaderRow");
+    const body      = document.getElementById("topChronicAssetsBody");
+
+    if(!headerRow || !body) return;
+
+    body.innerHTML = "";
+
+    const assetMap = {};      // ✅ MUST BE FIRST
+    const monthSet = new Set();
+
+    /* ---------- COLLECT MONTHS + COUNTS ---------- */
+    BREAKDOWN_RAW.forEach(r => {
+
+      const code = (r.asset_code || "").trim();
+      if(!code) return;
+
+      const rawDate =
+        r.breakdown_start ||
+        r.created_at ||
+        r.closed_at;
+
+      if(!rawDate) return;
+
+      let d;
+
+      if (typeof rawDate === "string" && rawDate.includes("/")) {
+        const parts = rawDate.split(" ");
+        const [dd, mm, yyyy] = parts[0].split("/");
+        d = new Date(`${yyyy}-${mm}-${dd}`);
+      } else {
+        d = new Date(rawDate);
+      }
+
+      if(isNaN(d)) return;
+
+      const ym =
+        d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0");
+
+      monthSet.add(ym);
+
+      if(!assetMap[code]){
+        assetMap[code] = {};
+      }
+
+      assetMap[code][ym] = (assetMap[code][ym] || 0) + 1;
+    });
+
+    const months = Array.from(monthSet).sort();
+
+    console.log("📅 Months detected:", months);
+
+    /* ---------- BUILD HEADER ---------- */
+    headerRow.innerHTML = `
+      <th class="border px-2 py-1 text-left">Asset Code</th>
+      ${months.map(m => `
+        <th class="border px-2 py-1 cursor-pointer"
+            onclick="sortByMonth('${m}')">
+          ${m}
+        </th>
+      `).join("")}
+      <th class="border px-2 py-1">Max / Month</th>
+    `;
+
+    /* ---------- BUILD ROWS ---------- */
+    body.innerHTML = "";
+
+    Object.entries(assetMap).forEach(([code, perMonth]) => {
+
+      const values = Object.values(perMonth);
+      const maxMonth = values.length ? Math.max(...values) : 0;
+
+      if(maxMonth === 0) return;
+
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td class="border px-2 py-1 text-left font-semibold">${code}</td>
+        ${months.map(m => `
+          <td class="border px-2 py-1 text-center ${
+            perMonth[m] === maxMonth ? "bg-red-100 font-semibold" : ""
+          }">
+            ${perMonth[m] || ""}
+          </td>
+        `).join("")}
+        <td class="border px-2 py-1 text-center font-semibold">${maxMonth}</td>
+      `;
+
+      body.appendChild(tr);
+    });
+  }
+
+
+  function renderBreakdownTypeMatrix(){
+
+    const body = document.getElementById("breakdownTypeMatrixBody");
+    if(!body) return;
+
+    body.innerHTML = "";
+
+    const map = {};
+    
+    console.table(BREAKDOWN_RAW.slice(0, 5));
+
+    BREAKDOWN_RAW.forEach(r => {
+
+      const code = (r.asset_code || "").trim();
+      if(!code) return;
+
+      const type = (r.breakdown_type || "Others").trim();
+
+      if(!map[code]){
+        map[code] = {
+          Mechanical: 0,
+          Electrical: 0,
+          Hydraulics: 0,
+          Operator: 0,
+          Others: 0
+        };
+      }
+
+      if(map[code][type] !== undefined){
+        map[code][type]++;
+      }else{
+        map[code].Others++;
+      }
+    });
+
+    Object.entries(map).forEach(([code, t]) => {
+
+      const total =
+        t.Mechanical +
+        t.Electrical +
+        t.Hydraulics +
+        t.Operator +
+        t.Others;
+
+      if(total === 0) return;
+
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td class="border px-2 py-1 text-left font-semibold">${code}</td>
+        <td class="border px-2 py-1 text-center">${t.Mechanical || ""}</td>
+        <td class="border px-2 py-1 text-center">${t.Electrical || ""}</td>
+        <td class="border px-2 py-1 text-center">${t.Hydraulics || ""}</td>
+        <td class="border px-2 py-1 text-center">${t.Operator || ""}</td>
+        <td class="border px-2 py-1 text-center">${t.Others || ""}</td>
+        <td class="border px-2 py-1 text-center font-semibold">${total}</td>
+      `;
+
+      body.appendChild(tr);
+    });
+  }
+
+  function sortByMonth(month){
+
+    if(!window._MONTH_SORT){
+      window._MONTH_SORT = { key: null, dir: "desc" };
+    }
+
+    if(window._MONTH_SORT.key === month){
+      window._MONTH_SORT.dir =
+        window._MONTH_SORT.dir === "desc" ? "asc" : "desc";
+    }else{
+      window._MONTH_SORT.key = month;
+      window._MONTH_SORT.dir = "desc";
+    }
+
+    renderChronicTable();
+  }
+
+  function renderBreakdownTypeSummary(){
+
+    const map = {};
+    const assetSet = {};
+
+    CHRONIC_ASSETS.forEach(a => {
+      Object.entries(a.types).forEach(([type,count])=>{
+        map[type] = (map[type] || 0) + count;
+        assetSet[type] = (assetSet[type] || new Set());
+        assetSet[type].add(a.asset_code);
+      });
+    });
+
+    const body = document.getElementById("breakdownTypeSummaryBody");
+    body.innerHTML = "";
+
+    Object.keys(map).sort((a,b)=>map[b]-map[a]).forEach(type=>{
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="border px-2 py-1 text-left">${type}</td>
+        <td class="border px-2 py-1 text-center">${map[type]}</td>
+        <td class="border px-2 py-1 text-center">${assetSet[type].size}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
   
+  function computeOwnHireChronicStats(){
+
+    const own = {
+      totalAssets: new Set(),
+      chronicAssets: [],
+      breakdownCount: 0
+    };
+
+    const hire = {
+      totalAssets: new Set(),
+      chronicAssets: [],
+      breakdownCount: 0
+    };
+
+    // total assets (FROM ASSET MASTER — SOURCE OF TRUTH)
+    (ASSET_MASTER || []).forEach(a => {
+
+        const oh = (a.owner || "").toUpperCase();
+        const code = (a.asset_code || "").trim();
+
+        if(!code) return;
+
+        if(oh === "OWN"){
+            own.totalAssets.add(code);
+        }
+
+        if(oh === "HIRE"){
+            hire.totalAssets.add(code);
+        }
+    });
+
+    // chronic assets only
+    CHRONIC_ASSETS.forEach(a => {
+
+      const sample = a.rows[0];
+      const oh = (sample.own_hire || "").toUpperCase();
+
+      if(oh === "OWN"){
+        own.chronicAssets.push(a);
+        own.breakdownCount += a.total;
+      }
+
+      if(oh === "HIRE"){
+        hire.chronicAssets.push(a);
+        hire.breakdownCount += a.total;
+      }
+    });
+
+    // store for UI step (B2-B)
+    window._CHRONIC_OH = {
+      OWN: {
+        total: own.totalAssets.size,
+        chronic: own.chronicAssets.length,
+        avgBreakdowns: own.chronicAssets.length
+          ? (own.breakdownCount / own.chronicAssets.length).toFixed(2)
+          : "0.00"
+      },
+      HIRE: {
+        total: hire.totalAssets.size,
+        chronic: hire.chronicAssets.length,
+        avgBreakdowns: hire.chronicAssets.length
+          ? (hire.breakdownCount / hire.chronicAssets.length).toFixed(2)
+          : "0.00"
+      }
+    };
+  }
+  
+  function renderOwnHireChronicUI(){
+
+    if(!window._CHRONIC_OH) return;
+
+    const own  = window._CHRONIC_OH.OWN;
+    const hire = window._CHRONIC_OH.HIRE;
+
+    function pct(chronic, total){
+      return total ? ((chronic / total) * 100).toFixed(1) + "%" : "0%";
+    }
+
+    // OWN
+    document.getElementById("ownChronicRatio").innerText =
+      `${own.chronic} / ${own.total} (${pct(own.chronic, own.total)})`;
+
+    document.getElementById("ownAvgBreakdowns").innerText =
+      own.avgBreakdowns;
+
+    document.getElementById("ownAvgMonths").innerText =
+      "—"; // STEP–B2-C (month matrix)
+
+    // HIRE
+    document.getElementById("hireChronicRatio").innerText =
+      `${hire.chronic} / ${hire.total} (${pct(hire.chronic, hire.total)})`;
+
+    document.getElementById("hireAvgBreakdowns").innerText =
+      hire.avgBreakdowns;
+
+    document.getElementById("hireAvgMonths").innerText =
+      "—"; // STEP–B2-C (month matrix)
+  }
 
   document.getElementById("filterAll").onclick = function(){
     table.clearFilter();
@@ -797,8 +1541,13 @@ loadDashboard();
 
       /* ---- MONTH FILTER ---- */
       if(monthVal){
-        const dt = r.breakdown_start || "";
-        if(!dt.startsWith(monthVal)) return false;
+            const d = new Date(r.breakdown_start);
+            if(isNaN(d)) return false;
+
+            const ym =
+                  d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+
+            if(ym !== monthVal) return false;
       }
 
       /* ---- PACKAGE FILTER ---- */
