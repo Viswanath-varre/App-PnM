@@ -1,1028 +1,1359 @@
-{% extends 'user_base.html' %}
-{% block title %}User — Breakdown Report{% endblock %}
+  {% extends 'user_base.html' %}
+  {% block title %}User — Breakdown Report{% endblock %}
 
-{% block content %}
-<link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
-<script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+  {% block content %}
+  <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- flatpickr for datetime pickers with Confirm button -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.js"></script>
+  <!-- flatpickr for datetime pickers with Confirm button -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.js"></script>
 
-<script>
-  /* injected from backend */
-  const ASSET_MASTER = {{ asset_master | tojson }};
-</script>
+  <script>
+    /* injected from backend */
+    const ASSET_MASTER = {{ asset_master | tojson }};
+  </script>
 
-<div class="space-y-6">
+  <div class="space-y-6">
 
-  <!-- session user for client-side defaulting -->
-  <div id="session_user"
-       data-name="{{ session.get('name', session.get('user')) }}"
-       style="display:none"></div>
+    <!-- session user for client-side defaulting -->
+    <div id="session_user"
+        data-name="{{ session.get('name', session.get('user')) }}"
+        style="display:none"></div>
 
-  <!-- HEADER -->
-  <div class="flex justify-between items-center">
-    <div>
-      <h1 class="text-2xl font-bold">Breakdown Report</h1>
-      <p class="text-sm text-gray-500">
-        Active & historical breakdown tracking
-      </p>
-    </div>
-
-    <div class="flex gap-3">
-      <button id="btnCreate"
-              class="px-4 py-2 bg-yellow-400 rounded font-semibold">
-        ➕ Create Breakdown
-      </button>
-
-      <a id="btnExportXlsx"
-         href="/user/breakdown_reports/export_xlsx"
-         class="px-4 py-2 bg-blue-600 text-white rounded font-semibold">
-        ⬇️ Download Excel
-      </a>
-
-      <a id="btnExportCsv"
-         href="/user/breakdown_reports/export"
-         class="px-4 py-2 bg-gray-700 text-white rounded font-semibold">
-        ⬇️ Download CSV
-      </a>
-    </div>
-  </div>
-
-  <!-- ================= SPEED & RECOVERY DASHBOARD ================= -->
-  <div id="breakdownDashboard" class="space-y-4 mb-6">
-
-    <!-- MONTH SELECTOR -->
-    <div class="flex gap-2 overflow-x-auto">
-      <button class="month-card active px-3 py-1 border rounded">
-        Current Month
-      </button>
-    </div>
-
-    <!-- FILTER BAR (Dashboard Filters) -->
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-
-      <select id="filterPackage" class="border p-2 rounded">
-        <option value="ALL">All Packages</option>
-        <option value="Adabari">Adabari</option>
-        <option value="Birsing">Birsing</option>
-        <option value="Phulbari">Phulbari</option>
-      </select>
-
-      <select id="filterOwnership" class="border p-2 rounded">
-        <option value="ALL">OWN + HIRE</option>
-        <option value="OWN">OWN</option>
-        <option value="HIRE">HIRE</option>
-      </select>
-
-      <select id="filterStatusDash" class="border p-2 rounded">
-        <option value="ALL">Active + Closed</option>
-        <option value="ACTIVE">Active</option>
-        <option value="CLOSED">Closed</option>
-      </select>
-
-    </div>
-
-    <!-- KPI ROW -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-
-      <div class="border rounded p-3">
-        <div class="text-sm text-gray-500">Active Breakdowns</div>
-        <div id="kpiActive" class="text-2xl font-bold">0</div>
+    <!-- HEADER -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold">Breakdown Report</h1>
+        <p class="text-sm text-gray-500">
+          Active & historical breakdown tracking
+        </p>
       </div>
 
-      <div class="border rounded p-3">
-        <div class="text-sm text-gray-500">Closed Breakdowns</div>
-        <div id="kpiClosed" class="text-2xl font-bold">0</div>
+      <div class="flex gap-3">
+        <button id="btnCreate"
+                class="px-4 py-2 bg-yellow-400 rounded font-semibold">
+          ➕ Create Breakdown
+        </button>
+
+        <a id="btnExportXlsx"
+          href="/user/breakdown_reports/export_xlsx"
+          class="px-4 py-2 bg-blue-600 text-white rounded font-semibold">
+          ⬇️ Download Excel
+        </a>
+
+        <a id="btnExportCsv"
+          href="/user/breakdown_reports/export"
+          class="px-4 py-2 bg-gray-700 text-white rounded font-semibold">
+          ⬇️ Download CSV
+        </a>
+      </div>
+    </div>
+
+    <!-- ================= SPEED & RECOVERY DASHBOARD ================= -->
+    <div id="breakdownDashboard" class="space-y-4 mb-6">
+
+      <!-- MONTH SELECTOR -->
+      <div class="flex gap-2 items-center">
+        <input
+        type="month"
+        id="filterMonth"
+        class="border p-2 rounded"
+        />
+      </div>
+      
+
+      <!-- FILTER BAR (Dashboard Filters) -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+
+        <select id="filterPackage" class="border p-2 rounded">
+          <option value="ALL">All Packages</option>
+          <option value="Adabari">Adabari</option>
+          <option value="Birsing">Birsing</option>
+          <option value="Phulbari">Phulbari</option>
+        </select>
+
+        <select id="filterOwnership" class="border p-2 rounded">
+          <option value="ALL">OWN + HIRE</option>
+          <option value="OWN">OWN</option>
+          <option value="HIRE">HIRE</option>
+        </select>
+
+
+
       </div>
 
-      <div class="border rounded p-3">
-        <div class="text-sm text-gray-500">Avg Repair Time (hrs)</div>
-        <div id="kpiAvgRepair" class="text-2xl font-bold">0.00</div>
-      </div>
+      <!-- KPI ROW -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
-      <div class="border rounded p-3">
-        <div class="text-sm text-gray-500">Avg Active Delay (hrs)</div>
-        <div id="kpiAvgActiveDelay"
-             class="text-2xl font-bold text-red-600">
-          0.00
+        <div class="border rounded p-3">
+          <div class="text-sm text-gray-500">Active Breakdowns</div>
+          <div id="kpiActive" class="text-2xl font-bold">0</div>
         </div>
+
+        <div class="border rounded p-3">
+          <div class="text-sm text-gray-500">Closed Breakdowns</div>
+          <div id="kpiClosed" class="text-2xl font-bold">0</div>
+        </div>
+
+        <div class="border rounded p-3">
+          <div class="text-sm text-gray-500">Avg Repair Time (hrs)</div>
+          <div id="kpiAvgRepair" class="text-2xl font-bold">0.00</div>
+        </div>
+
+        <div class="border rounded p-3">
+          <div class="text-sm text-gray-500">Avg Active Delay (hrs)</div>
+          <div id="kpiAvgActiveDelay"
+              class="text-2xl font-bold text-red-600">
+            0.00
+          </div>
+        </div>
+
       </div>
 
-    </div>
+      <!-- CHART PLACEHOLDERS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-    <!-- CHART PLACEHOLDERS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="border rounded p-3 chart-box">
+                  <h3 class="font-semibold mb-2">
+                        Avg Repair Time (Closed)
+                  </h3>
+                  <canvas id="chartRepairSpeed"></canvas>
+            </div>
 
-      <div class="border rounded p-3">
-        <h3 class="font-semibold mb-2">
-          Avg Repair Time (Closed)
-        </h3>
-        <canvas id="chartRepairSpeed"></canvas>
+            <div class="border rounded p-3 chart-box">
+                  <h3 class="font-semibold mb-2">
+                        Active Breakdown Ageing
+                  </h3>
+                  <canvas id="chartAgeing"></canvas>
+            </div>
+
+            <div class="border rounded p-3 chart-box">
+                  <h3 class="font-semibold mb-2">
+                        OWN vs HIRE Repair Speed
+                  </h3>
+                  <canvas id="chartOwnHire"></canvas>
+            </div>
+
       </div>
 
-      <div class="border rounded p-3">
-        <h3 class="font-semibold mb-2">
-          Active Breakdown Ageing
-        </h3>
-        <canvas id="chartAgeing"></canvas>
-      </div>
 
-      <div class="border rounded p-3">
-        <h3 class="font-semibold mb-2">
-          OWN vs HIRE Repair Speed
-        </h3>
-        <canvas id="chartOwnHire"></canvas>
-      </div>
-
-    </div>
-
-    <!-- PACKAGE SPEED CARDS -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <!-- PACKAGE SPEED CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
       <div class="border rounded p-3">
         <h3 class="font-semibold">Adabari</h3>
-        <div>Active: <span id="adbActive">0</span></div>
-        <div>Avg Repair: <span id="adbRepair">0.00</span> hrs</div>
-        <div>Avg Active Delay: <span id="adbDelay">0.00</span> hrs</div>
+
+        <div>OWN Active: <span id="adbOwnActive">0</span></div>
+        <div>HIRE Active: <span id="adbHireActive">0</span></div>
+
+        <div>OWN Active DT: <span id="adbOwnActiveDT">0.00</span> hrs</div>
+        <div>HIRE Active DT: <span id="adbHireActiveDT">0.00</span> hrs</div>
+
+        <div>OWN Avg DT: <span id="adbOwnAvgDT">0.00</span> hrs</div>
+        <div>HIRE Avg DT: <span id="adbHireAvgDT">0.00</span> hrs</div>
       </div>
 
       <div class="border rounded p-3">
         <h3 class="font-semibold">Birsing</h3>
-        <div>Active: <span id="birActive">0</span></div>
-        <div>Avg Repair: <span id="birRepair">0.00</span> hrs</div>
-        <div>Avg Active Delay: <span id="birDelay">0.00</span> hrs</div>
+
+        <div>OWN Active: <span id="birOwnActive">0</span></div>
+        <div>HIRE Active: <span id="birHireActive">0</span></div>
+
+        <div>OWN Active DT: <span id="birOwnActiveDT">0.00</span> hrs</div>
+        <div>HIRE Active DT: <span id="birHireActiveDT">0.00</span> hrs</div>
+
+        <div>OWN Avg DT: <span id="birOwnAvgDT">0.00</span> hrs</div>
+        <div>HIRE Avg DT: <span id="birHireAvgDT">0.00</span> hrs</div>
       </div>
 
       <div class="border rounded p-3">
         <h3 class="font-semibold">Phulbari</h3>
-        <div>Active: <span id="phuActive">0</span></div>
-        <div>Avg Repair: <span id="phuRepair">0.00</span> hrs</div>
-        <div>Avg Active Delay: <span id="phuDelay">0.00</span> hrs</div>
+
+        <div>OWN Active: <span id="phuOwnActive">0</span></div>
+        <div>HIRE Active: <span id="phuHireActive">0</span></div>
+
+        <div>OWN Active DT: <span id="phuOwnActiveDT">0.00</span> hrs</div>
+        <div>HIRE Active DT: <span id="phuHireActiveDT">0.00</span> hrs</div>
+
+        <div>OWN Avg DT: <span id="phuOwnAvgDT">0.00</span> hrs</div>
+        <div>HIRE Avg DT: <span id="phuHireAvgDT">0.00</span> hrs</div>
       </div>
 
-            <!-- TOTAL CARD -->
+      <!-- TOTAL CARD -->
       <div class="border rounded p-3 bg-gray-50">
         <h3 class="font-semibold">Total</h3>
-        <div>Active: <span id="totActive">0</span></div>
-        <div>Avg Repair: <span id="totRepair">0.00</span> hrs</div>
-        <div>Avg Active Delay: <span id="totDelay">0.00</span> hrs</div>
+
+        <div>OWN Active: <span id="totOwnActive">0</span></div>
+        <div>HIRE Active: <span id="totHireActive">0</span></div>
+
+        <div>OWN Active DT: <span id="totOwnActiveDT">0.00</span> hrs</div>
+        <div>HIRE Active DT: <span id="totHireActiveDT">0.00</span> hrs</div>
+
+        <div>OWN Avg DT: <span id="totOwnAvgDT">0.00</span> hrs</div>
+        <div>HIRE Avg DT: <span id="totHireAvgDT">0.00</span> hrs</div>
       </div>
 
+      </div>
+
+
+    </div>
+    <!-- ================= END SPEED & RECOVERY DASHBOARD ================= -->
+
+    
+
+
+    <!-- EXISTING TABLE FILTER BAR (KEEP) -->
+    <div class="flex gap-2 mb-2">
+      <button id="filterAll"
+              class="px-3 py-1 border rounded font-semibold bg-gray-100">
+        All
+      </button>
+
+      <button id="filterActive"
+              class="px-3 py-1 border rounded font-semibold bg-red-100 text-red-800">
+        🔴 Active
+      </button>
+
+      <button id="filterClosed"
+              class="px-3 py-1 border rounded font-semibold bg-green-100 text-green-800">
+        🟢 Closed
+      </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="border rounded p-2">
+      <div id="breakdownTable"></div>
     </div>
 
   </div>
-  <!-- ================= END SPEED & RECOVERY DASHBOARD ================= -->
-
-  <!-- EXISTING TABLE FILTER BAR (KEEP) -->
-  <div class="flex gap-2 mb-2">
-    <button id="filterAll"
-            class="px-3 py-1 border rounded font-semibold bg-gray-100">
-      All
-    </button>
-
-    <button id="filterActive"
-            class="px-3 py-1 border rounded font-semibold bg-red-100 text-red-800">
-      🔴 Active
-    </button>
-
-    <button id="filterClosed"
-            class="px-3 py-1 border rounded font-semibold bg-green-100 text-green-800">
-      🟢 Closed
-    </button>
-  </div>
-
-  <!-- TABLE -->
-  <div class="border rounded p-2">
-    <div id="breakdownTable"></div>
-  </div>
-
-</div>
 
 
-<!-- MODAL -->
-<div id="bdModal" class="hidden fixed inset-0 bg-black/60 z-50">
-  <div class="bg-white w-[95%] max-w-7xl max-h-[90%] overflow-y-auto mx-auto mt-6 rounded">
+  <!-- MODAL -->
+  <div id="bdModal" class="hidden fixed inset-0 bg-black/60 z-50">
+    <div class="bg-white w-[95%] max-w-7xl max-h-[90%] overflow-y-auto mx-auto mt-6 rounded">
 
-    <div class="flex justify-between items-center border-b px-6 py-3">
-      <h2 id="modalTitle" class="text-xl font-bold"></h2>
-      <button onclick="closeModal()">✖</button>
-    </div>
+      <div class="flex justify-between items-center border-b px-6 py-3">
+        <h2 id="modalTitle" class="text-xl font-bold"></h2>
+        <button onclick="closeModal()">✖</button>
+      </div>
 
-    <div class="p-6 space-y-6">
+      <div class="p-6 space-y-6">
 
-      <!-- ASSET (CREATE ONLY FIELDS) -->
-      <section class="create-only">
-        <h3 class="font-semibold mb-3">Asset</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
-          <!-- Asset live-search input (replaces select) -->
-          <input
-            id="asset_input"
-            list="asset_list"
-            placeholder="Type Asset Code *"
-            class="border p-2 rounded"
-            autocomplete="off"
-          />
+        <!-- ASSET (CREATE ONLY FIELDS) -->
+        <section class="create-only">
+          <h3 class="font-semibold mb-3">Asset</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+            <!-- Asset live-search input (replaces select) -->
+            <input
+              id="asset_input"
+              list="asset_list"
+              placeholder="Type Asset Code *"
+              class="border p-2 rounded"
+              autocomplete="off"
+            />
 
-          <datalist id="asset_list"></datalist>
+            <datalist id="asset_list"></datalist>
 
-          <!-- Hidden actual asset code -->
-          <input type="hidden" id="asset_code">  
-          <input id="asset_description" placeholder="Asset Description" class="border p-2 rounded"readonly>
-          <select id="asset_package" class="border p-2 rounded">
-            <option value="">Package</option>
-            <option>Adabari</option>
-            <option>Birsing</option>
-            <option>Phulbari</option>
-          </select>  
-          <input id="own_hire" placeholder="OWN / HIRE" class="border p-2 rounded">
+            <!-- Hidden actual asset code -->
+            <input type="hidden" id="asset_code">  
+            <input id="asset_description" placeholder="Asset Description" class="border p-2 rounded"readonly>
+            <select id="asset_package" class="border p-2 rounded">
+              <option value="">Package</option>
+              <option>Adabari</option>
+              <option>Birsing</option>
+              <option>Phulbari</option>
+            </select>  
+            <input id="own_hire" placeholder="OWN / HIRE" class="border p-2 rounded">
+            <input id="agency" placeholder="Agency" class="border p-2 rounded bg-gray-100" readonly>
+
+          </div>
+        </section>
+
+        <!-- LOCATION (visible in both Create and Edit) -->
+        <section>
+          <h3 class="font-semibold mb-3">Location</h3>
+          <div>
+            <input id="location" placeholder="Location" class="border p-2 rounded w-full">
+          </div>
+        </section>
+
+        <!-- BREAKDOWN -->
+        <section>
+              <h3 class="font-semibold mb-3">Breakdown</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+
+                    <div class="flex flex-col">
+                      <label class="text-sm font-semibold mb-1">Breakdown Start</label>
+                      <input type="text" id="breakdown_start" class="border p-2 rounded fp-input">
+                    </div>
+
+                    <div class="flex flex-col edit-only">
+                      <label class="text-sm font-semibold mb-1">Breakdown End</label>
+                      <input type="text" id="breakdown_end" class="border p-2 rounded fp-input">
+                    </div>
+
+                    <div class="flex flex-col">
+                          <label class="text-sm font-semibold mb-1">Breakdown Type</label>
+                          <select id="breakdown_type" class="border p-2 rounded">
+                                <option value="">Breakdown Type</option>
+                                <option>Mechanical</option>
+                                <option>Electrical</option>
+                                <option>Hydraulics</option>
+                                <option>Operator</option>
+                                <option>Others</option>
+                          </select>
+                    </div>
+
+                    <div class="flex flex-col">
+                          <label class="text-sm font-semibold mb-1">Root Cause</label>
+                          <input id="root_cause" class="border p-2 rounded">
+                    </div>
+
+                    <div class="flex flex-col sm:col-span-4">
+                          <label class="text-sm font-semibold mb-1">Breakdown Description</label>
+                          <textarea
+                                id="breakdown_description"
+                                class="border p-2 rounded"></textarea>
+                    </div>
+
+              </div>
+        </section>
+
+
+
+        <!-- RESPONSIBILITY & EIP -->
+        <section>
+              <h3 class="font-semibold mb-3">Responsibility & EIP</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+
+                    <div class="flex flex-col">
+                          <label class="text-sm font-semibold mb-1">Responsible Person</label>
+                          <select id="responsible_person" class="border p-2 rounded">
+                                <option value="">Responsible Person</option>
+                          </select>
+                    </div>
+
+                    <div class="flex flex-col edit-only">
+                      <label class="text-sm font-semibold mb-1">Expected Commission Date</label>
+                      <input type="text" id="expected_commissioned_at" class="border p-2 rounded fp-input">
+                    </div>
+
+                    <div class="flex flex-col edit-only">
+                      <label class="text-sm font-semibold mb-1">EIP Commission Date</label>
+                      <input type="text" id="eip_commissioned_at" class="border p-2 rounded fp-input">
+                    </div>
+
+                    <div class="flex flex-col">
+                          <label class="text-sm font-semibold mb-1">Downtime (Hours)</label>
+                          <input
+                                id="downtime_hrs"
+                                readonly
+                                class="border p-2 rounded bg-gray-100">
+                    </div>
+
+              </div>
+        </section>
+
+        <!-- META -->
+        <section>
+              <h3 class="font-semibold mb-3">Other Details</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+
+                    <div class="flex flex-col">
+                          <label class="text-sm font-semibold mb-1">Reported By</label>
+                          <input id="reported_by" readonly class="border p-2 rounded bg-gray-100">
+                    </div>
+
+                    <div class="flex flex-col edit-only">
+                          <label class="text-sm font-semibold mb-1">Updated By</label>
+                          <input id="updated_by" readonly class="border p-2 rounded bg-gray-100">
+                    </div>
+
+              </div>
+        </section>
+
+        <div class="flex flex-col mt-3">
+              <label class="text-sm font-semibold mb-1">Current Status</label>
+              <textarea id="remarks" class="border p-2 rounded w-full"></textarea>
         </div>
-      </section>
 
-      <!-- LOCATION (visible in both Create and Edit) -->
-      <section>
-        <h3 class="font-semibold mb-3">Location</h3>
-        <div>
-          <input id="location" placeholder="Location" class="border p-2 rounded w-full">
+        <!-- ✅ DO NOT CLOSE p-6 HERE -->
+        
+        <div class="flex justify-end gap-3 border-t px-6 py-3">
+              <button
+                    onclick="closeModal()"
+                    class="border px-4 py-2 rounded">
+                    Cancel
+              </button>
+
+              <button
+                    onclick="saveBreakdown()"
+                    class="bg-green-600 text-white px-4 py-2 rounded">
+                    Save
+              </button>
+
+              <button
+                    onclick="closeAsClosed()"
+                    class="edit-only bg-red-600 text-white px-4 py-2 rounded">
+                    Close
+              </button>
         </div>
-      </section>
 
-      <!-- BREAKDOWN -->
-      <section>
-            <h3 class="font-semibold mb-3">Breakdown</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-
-                  <div class="flex flex-col">
-                    <label class="text-sm font-semibold mb-1">Breakdown Start</label>
-                    <input type="text" id="breakdown_start" class="border p-2 rounded fp-input">
-                  </div>
-
-                  <div class="flex flex-col edit-only">
-                    <label class="text-sm font-semibold mb-1">Breakdown End</label>
-                    <input type="text" id="breakdown_end" class="border p-2 rounded fp-input">
-                  </div>
-
-                  <div class="flex flex-col">
-                        <label class="text-sm font-semibold mb-1">Breakdown Type</label>
-                        <select id="breakdown_type" class="border p-2 rounded">
-                              <option value="">Breakdown Type</option>
-                              <option>Mechanical</option>
-                              <option>Electrical</option>
-                              <option>Hydraulics</option>
-                              <option>Operator</option>
-                              <option>Others</option>
-                        </select>
-                  </div>
-
-                  <div class="flex flex-col">
-                        <label class="text-sm font-semibold mb-1">Root Cause</label>
-                        <input id="root_cause" class="border p-2 rounded">
-                  </div>
-
-                  <div class="flex flex-col sm:col-span-4">
-                        <label class="text-sm font-semibold mb-1">Breakdown Description</label>
-                        <textarea
-                              id="breakdown_description"
-                              class="border p-2 rounded"></textarea>
-                  </div>
-
-            </div>
-      </section>
-
-
-
-      <!-- RESPONSIBILITY & EIP -->
-      <section>
-            <h3 class="font-semibold mb-3">Responsibility & EIP</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-
-                  <div class="flex flex-col">
-                        <label class="text-sm font-semibold mb-1">Responsible Person</label>
-                        <select id="responsible_person" class="border p-2 rounded">
-                              <option value="">Responsible Person</option>
-                        </select>
-                  </div>
-
-                  <div class="flex flex-col edit-only">
-                    <label class="text-sm font-semibold mb-1">Expected Commission Date</label>
-                    <input type="text" id="expected_commissioned_at" class="border p-2 rounded fp-input">
-                  </div>
-
-                  <div class="flex flex-col edit-only">
-                    <label class="text-sm font-semibold mb-1">EIP Commission Date</label>
-                    <input type="text" id="eip_commissioned_at" class="border p-2 rounded fp-input">
-                  </div>
-
-                  <div class="flex flex-col">
-                        <label class="text-sm font-semibold mb-1">Downtime (Hours)</label>
-                        <input
-                              id="downtime_hrs"
-                              readonly
-                              class="border p-2 rounded bg-gray-100">
-                  </div>
-
-            </div>
-      </section>
-
-      <!-- META -->
-      <section>
-            <h3 class="font-semibold mb-3">Other Details</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-
-                  <div class="flex flex-col">
-                        <label class="text-sm font-semibold mb-1">Reported By</label>
-                        <input id="reported_by" readonly class="border p-2 rounded bg-gray-100">
-                  </div>
-
-                  <div class="flex flex-col edit-only">
-                        <label class="text-sm font-semibold mb-1">Updated By</label>
-                        <input id="updated_by" readonly class="border p-2 rounded bg-gray-100">
-                  </div>
-
-            </div>
-      </section>
-
-      <div class="flex flex-col mt-3">
-            <label class="text-sm font-semibold mb-1">Current Status</label>
-            <textarea id="remarks" class="border p-2 rounded w-full"></textarea>
       </div>
+  </div>
 
-      <!-- ✅ DO NOT CLOSE p-6 HERE -->
-      
-      <div class="flex justify-end gap-3 border-t px-6 py-3">
-            <button
-                  onclick="closeModal()"
-                  class="border px-4 py-2 rounded">
-                  Cancel
-            </button>
-
-            <button
-                  onclick="saveBreakdown()"
-                  class="bg-green-600 text-white px-4 py-2 rounded">
-                  Save
-            </button>
-
-            <button
-                  onclick="closeAsClosed()"
-                  class="edit-only bg-red-600 text-white px-4 py-2 rounded">
-                  Close
-            </button>
-      </div>
-
-    </div>
-</div>
-
-<style>
-  /* keep header titles single-line */
-  .tabulator .tabulator-col .tabulator-col-title{
-    white-space: nowrap !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  /* keep cell content single-line with ellipsis */
-  .tabulator .tabulator-cell{
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    height: 32px; /* fixed single-line row height */
-    line-height: 32px;
-    vertical-align: middle;
-  }
-  /* autocomplete dropdown */
-  .autocomplete-list{
-    position: absolute;
-    background: white;
-    border: 1px solid #e5e7eb;
-    max-height: 220px;
-    overflow-y: auto;
-    width: 100%;
-    z-index: 60;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  }
-  .autocomplete-item{ padding:8px 10px; cursor:pointer; }
-  .autocomplete-item:hover{ background:#f3f4f6 }
-  .autocomplete-item.active{ background:#e6f0ff }
-  /* flatpickr inputs style tweak */
-  .fp-input{ min-width:220px }
-</style>
-
-<script>
-const API="/user/breakdown_reports";
-let table, editId=null;
-
-// ensure header and cell text wraps and rows auto-size to content
-
-/* ---------- TABLE LOAD ---------- */
-async function loadTable(){
-  const r = await fetch(API);
-  const data = await r.json();
-  if(table) table.destroy();
-  table = new Tabulator("#breakdownTable",{
-    data,
-    layout:"fitColumns",
-    height:"600px",
-    columns:[
-      {title:"ID", field:"id", width:60, formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {
-    title:"Status",
-    field:"status",
-    hozAlign:"center",
-    formatter:function(cell){
-      const v = (cell.getValue() || '').toString().trim();
-
-      if(v === 'Closed'){
-        return `<span class="px-2 py-1 text-xs font-semibold rounded bg-green-200 text-green-900">🔒 Closed</span>`;
-      }
-
-      return `<span class="px-2 py-1 text-xs font-semibold rounded bg-red-200 text-red-900">🔴 Active</span>`;
+  <style>
+    /* keep header titles single-line */
+    .tabulator .tabulator-col .tabulator-col-title{
+      white-space: nowrap !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-  },
-      {title:"Asset Code", field:"asset_code", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Asset Description", field:"asset_description", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Package", field:"asset_package", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Own/Hire", field:"own_hire", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Location", field:"location", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Start", field:"breakdown_start", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"End", field:"breakdown_end", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Downtime (hrs)", field:"downtime_hrs", hozAlign:"center", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Type", field:"breakdown_type", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Root Cause", field:"root_cause", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Description", field:"breakdown_description", formatter:"textarea"}, 
-      {title:"Current Status", field:"current_status", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Responsible", field:"responsible_person", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Expected Commission", field:"expected_commissioned_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"EIP Commission", field:"eip_commissioned_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Reported By", field:"reported_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Created By", field:"created_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Updated By", field:"updated_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Created At", field:"created_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-      {title:"Remarks", field:"remarks", formatter:"textarea"},
-      {
-        title:"Edit",
-        width:60,
-        hozAlign:"center",
-        formatter:function(cell){
-          const row = cell.getRow().getData();
-          if((row.status || '').trim() === 'Closed'){
-            return '🔒';
-          }
-          return '✏️';
-        },
-        cellClick:function(e, cell){
-          const row = cell.getRow().getData();
-          if((row.status || '').trim() === 'Closed'){
-            alert("Closed breakdowns cannot be edited.");
-            return;
-          }
-          openEdit(row);
+    /* keep cell content single-line with ellipsis */
+    .tabulator .tabulator-cell{
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      height: 32px; /* fixed single-line row height */
+      line-height: 32px;
+      vertical-align: middle;
+    }
+    /* autocomplete dropdown */
+    .autocomplete-list{
+      position: absolute;
+      background: white;
+      border: 1px solid #e5e7eb;
+      max-height: 220px;
+      overflow-y: auto;
+      width: 100%;
+      z-index: 60;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+    .autocomplete-item{ padding:8px 10px; cursor:pointer; }
+    .autocomplete-item:hover{ background:#f3f4f6 }
+    .autocomplete-item.active{ background:#e6f0ff }
+    /* flatpickr inputs style tweak */
+    .fp-input{ min-width:220px }
+    
+    .chart-box{
+      height: 320px;
+      position: relative;
+      overflow: hidden;
+    }  
+
+  </style>
+
+  <script>
+  const API="/user/breakdown_reports";
+  let table, editId=null;
+
+  // ensure header and cell text wraps and rows auto-size to content
+
+  /* ---------- TABLE LOAD ---------- */
+  async function loadTable(){
+    const r = await fetch(API);
+    const data = await r.json();
+    if(table) table.destroy();
+    table = new Tabulator("#breakdownTable",{
+      data,
+      layout:"fitColumns",
+      height:"600px",
+      columns:[
+        {title:"ID", field:"id", width:60, formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {
+      title:"Status",
+      field:"status",
+      hozAlign:"center",
+      formatter:function(cell){
+        const v = (cell.getValue() || '').toString().trim();
+
+        if(v === 'Closed'){
+          return `<span class="px-2 py-1 text-xs font-semibold rounded bg-green-200 text-green-900">🔒 Closed</span>`;
         }
+
+        return `<span class="px-2 py-1 text-xs font-semibold rounded bg-red-200 text-red-900">🔴 Active</span>`;
       }
-    ],
-    placeholder:"No breakdown reports found",
-    pagination:false,
-  });
-  // fetch package-wise summary and render cards
-  try{
-    const s = await fetch('/user/breakdown_summary');
-    if(s.ok){
-      const json = await s.json();
-      renderPackageSummary(json);
-      try{
-        // Active downtime KPIs
-                const activeRows = data.filter(d => {
-                    const status = (d.status || '').toString().toLowerCase().trim();
-                    const currentStatus = (d.current_status || '').toString().toLowerCase();
+    },
+        {title:"Asset Code", field:"asset_code", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Asset Description", field:"asset_description", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Agency", field:"agency", frozen:true, formatter:function(cell){ const v = cell.getValue(); return v == null ? '' : String(v); }},
+        {title:"Package", field:"asset_package", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Own/Hire", field:"own_hire", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Location", field:"location", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Start", field:"breakdown_start", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"End", field:"breakdown_end", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Downtime (hrs)", field:"downtime_hrs", hozAlign:"center", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Type", field:"breakdown_type", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Root Cause", field:"root_cause", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Description", field:"breakdown_description", formatter:"textarea"}, 
+        {title:"Current Status", field:"current_status", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Responsible", field:"responsible_person", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Expected Commission", field:"expected_commissioned_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"EIP Commission", field:"eip_commissioned_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Reported By", field:"reported_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Created By", field:"created_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Updated By", field:"updated_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Created At", field:"created_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Remarks", field:"remarks", formatter:"textarea"},
+        {
+          title:"Edit",
+          width:60,
+          hozAlign:"center",
+          formatter:function(cell){
+            const row = cell.getRow().getData();
+            if((row.status || '').trim() === 'Closed'){
+              return '🔒';
+            }
+            return '✏️';
+          },
+          cellClick:function(e, cell){
+            const row = cell.getRow().getData();
+            if((row.status || '').trim() === 'Closed'){
+              alert("Closed breakdowns cannot be edited.");
+              return;
+            }
+            openEdit(row);
+          }
+        }
+      ],
+      placeholder:"No breakdown reports found",
+      pagination:false,
+    });
 
-                    const isClosed =
-                        status === 'closed' ||
-                        currentStatus.includes('closed');
-
-                    return !isClosed;
-                });
-
-        const activeDowntime = activeRows.reduce((sum, r) => sum + (parseFloat(r.downtime_hrs) || 0), 0);
-        document.getElementById("kpiActiveDowntime").innerText = activeDowntime.toFixed(1);
-        document.getElementById("kpiAvgDowntime").innerText = activeRows.length ? (activeDowntime / activeRows.length).toFixed(1) : "0";
-      }catch(ke){
-        console.warn('kpi computation failed', ke);
-        document.getElementById("kpiActiveDowntime").innerText = '0';
-        document.getElementById("kpiAvgDowntime").innerText = '0';
-      }
-    }else{
-      document.getElementById('packageSummary').innerText = '';
-      document.getElementById("kpiActiveDowntime").innerText = '0';
-      document.getElementById("kpiAvgDowntime").innerText = '0';
-    }
-  }catch(e){
-    console.warn('summary fetch failed', e);
-    document.getElementById('packageSummary').innerText = '';
   }
+  loadTable();
+
+/* ================= NEW DASHBOARD LOGIC ================= */
+
+let chartRepairSpeed = null;
+let chartAgeing = null;
+let chartOwnHire = null;
+let DASHBOARD_RAW = [];
+let DASHBOARD_FILTERED = [];
+
+
+async function loadDashboard(){
+
+        const r = await fetch("/user/breakdown_dashboard");
+        if(!r.ok){
+                console.error("Dashboard API failed");
+                return;
+        }
+
+        const d = await r.json();
+
+        /* STORE RAW DATA */
+        DASHBOARD_RAW = d.rows || [];
+        applyDashboardFilters();
+
+        /* ---------- LIMIT MONTH SELECTOR TO AVAILABLE DATA ---------- */
+        if(DASHBOARD_RAW.length){
+                const months = DASHBOARD_RAW
+                        .map(r => (r.breakdown_start || "").slice(0, 7))
+                        .filter(v => v);
+
+                months.sort(); // YYYY-MM sort safe
+
+                const minMonth = months[0];
+                const maxMonth = months[months.length - 1];
+
+                const monthEl = document.getElementById("filterMonth");
+                if(monthEl){
+                        monthEl.min = minMonth;
+                        monthEl.max = maxMonth;
+
+                        // if current value is outside range, snap to latest
+                        if(!monthEl.value || monthEl.value < minMonth || monthEl.value > maxMonth){
+                                monthEl.value = maxMonth;
+                        }
+                }
+        }
+
+        /* ---------- PACKAGE OWN / HIRE CARDS ---------- */
+
+        const pkgOH = d.package_own_hire || {};
+
+        function avg(dt, cnt){
+                return cnt ? (dt / cnt).toFixed(2) : "0.00";
+        }
+
+        const bind = {
+                "Adabari": "adb",
+                "Birsing": "bir",
+                "Phulbari": "phu",
+                "TOTAL": "tot"
+        };
+
+        Object.keys(bind).forEach(pkg => {
+
+                const key = bind[pkg];
+                const p = pkgOH[pkg];
+                if(!p) return;
+
+                const own = p.OWN || {};
+                const hire = p.HIRE || {};
+
+                function setText(id, val){
+                        const el = document.getElementById(id);
+                        if(el) el.innerText = val;
+                }
+
+                setText(`${key}OwnActive`, own.active_count || 0);
+                setText(`${key}HireActive`, hire.active_count || 0);
+
+                setText(
+                        `${key}OwnActiveDT`,
+                        (own.active_downtime || 0).toFixed(2)
+                );
+
+                setText(
+                        `${key}HireActiveDT`,
+                        (hire.active_downtime || 0).toFixed(2)
+                );
+
+                setText(
+                        `${key}OwnAvgDT`,
+                        avg(own.total_downtime || 0, own.total_count || 0)
+                );
+
+                setText(
+                        `${key}HireAvgDT`,
+                        avg(hire.total_downtime || 0, hire.total_count || 0)
+                );
+        });
+
+
+
+
+        /* ---------- KPIs ---------- */
+        document.getElementById("kpiActive").innerText =
+                d.counts.active;
+
+        document.getElementById("kpiClosed").innerText =
+                d.counts.closed;
+
+        document.getElementById("kpiAvgRepair").innerText =
+                d.kpi.avg_repair_time.toFixed(2);
+
+        document.getElementById("kpiAvgActiveDelay").innerText =
+                d.kpi.avg_active_delay.toFixed(2);
+        
+
+        /* ---------- PACKAGE CARDS ---------- 
+        const map = {
+                "Adabari": "adb",
+                "Birsing": "bir",
+                "Phulbari": "phu"
+        };
+
+        let totActive = 0;
+        let totRepairSum = 0;
+        let totDelaySum = 0;
+
+        Object.keys(map).forEach(pkg => {
+
+                const key = map[pkg];
+                const p = d.packages[pkg] || {};
+
+                const active = p.active || 0;
+                const avgRepair = p.avg_repair_time || 0;
+                const avgDelay = p.avg_active_delay || 0;
+
+                document.getElementById(`${key}Active`).innerText = active;
+                document.getElementById(`${key}Repair`).innerText = avgRepair.toFixed(2);
+                document.getElementById(`${key}Delay`).innerText = avgDelay.toFixed(2);
+
+                totActive += active;
+                totRepairSum += avgRepair;
+                totDelaySum += avgDelay;
+        });
+
+        document.getElementById("totActive").innerText = totActive;
+        document.getElementById("totRepair").innerText =
+                (totActive ? (totRepairSum / 3) : 0).toFixed(2);
+        document.getElementById("totDelay").innerText =
+                (totActive ? (totDelaySum / 3) : 0).toFixed(2);
+        */ 
+        /* ---------- CHARTS ---------- */
+        setTimeout(() => {
+
+                renderRepairChart(d.packages);
+                renderAgeingChart(d.ageing);
+                renderOwnHireChart(d.own_hire);
+
+        }, 50);
+
 }
-loadTable();
 
+function renderRepairChart(packages){
 
+        const labels = [];
+        const data = [];
 
-document.getElementById("filterAll").onclick = function(){
-  table.clearFilter();
-};
+        Object.keys(packages).forEach(p=>{
+                labels.push(p);
+                data.push(packages[p].avg_repair_time || 0);
+        });
 
-document.getElementById("filterActive").onclick = function(){
-  table.setFilter(function(data){
-    return (data.status || "").trim() !== "Closed";
-  });
-};
+        if(chartRepairSpeed) chartRepairSpeed.destroy();
 
-document.getElementById("filterClosed").onclick = function(){
-  table.setFilter(function(data){
-    return (data.status || "").trim() === "Closed";
-  });
-};
-
-function renderPackageSummary(payload){
-  const pkgBox = document.getElementById('packageSummary');
-  const overallBox = document.getElementById('overallSummary');
-  pkgBox.innerHTML = '';
-  overallBox.innerHTML = '';
-
-  let totalActive = 0;
-  let totalDowntime = 0;
-
-  ['Adabari','Birsing','Phulbari'].forEach(pkg=>{
-    const p = payload.packages?.[pkg] || {};
-    const active = p.ACTIVE_COUNT || 0;
-    const downtime = p.ACTIVE_DOWNTIME_HRS || 0;
-
-    totalActive += active;
-    totalDowntime += downtime;
-
-    pkgBox.innerHTML += `
-      <div class="border rounded p-3 flex justify-between text-sm">
-        <span class="font-semibold">${pkg}</span>
-        <span>Active: ${active}</span>
-        <span>Downtime: ${downtime.toFixed(2)} hrs</span>
-      </div>`;
-  });
-
-  const totalClosed =
-    (payload.totals?.TOTAL_COUNT || 0) - totalActive;
-
-  overallBox.innerHTML = `
-    Total Active: ${totalActive}
-    &nbsp; | &nbsp;
-    Total Closed: ${totalClosed}
-    &nbsp; | &nbsp;
-    Total Downtime: ${totalDowntime.toFixed(2)} hrs
-  `;
+        chartRepairSpeed = new Chart(
+                document.getElementById("chartRepairSpeed"),
+                {
+                        type: "bar",
+                        data: {
+                                labels,
+                                datasets: [{
+                                        label: "Avg Repair (hrs)",
+                                        data
+                                }]
+                        },
+                        options: { responsive:true, maintainAspectRatio: false }
+                }
+        );
 }
 
-document.getElementById("btnCreate").onclick = openCreate;
+function renderAgeingChart(ageing){
 
-function openCreate(){
-  editId = null;
-  clearForm();
-  setModalMode(true);
+        if(chartAgeing) chartAgeing.destroy();
 
-  initDatePickers(); 
-  setMinDate48Hours();
+        chartAgeing = new Chart(
+                document.getElementById("chartAgeing"),
+                {
+                        type: "doughnut",
+                        data: {
+                                labels: ["0–24 hrs", "24–48 hrs", "48+ hrs"],
+                                datasets: [{
+                                        data: [
+                                                ageing["0_24"],
+                                                ageing["24_48"],
+                                                ageing["48_plus"]
+                                        ]
+                                }]
+                        },
+                        options: { responsive:true,maintainAspectRatio: false }
+                }
+        );
+}
+
+function renderOwnHireChart(ownHire){
+
+        if(chartOwnHire) chartOwnHire.destroy();
+
+        chartOwnHire = new Chart(
+                document.getElementById("chartOwnHire"),
+                {
+                        type: "bar",
+                        data: {
+                                labels: ["OWN", "HIRE"],
+                                datasets: [{
+                                        label: "Avg Repair (hrs)",
+                                        data: [
+                                                ownHire.OWN || 0,
+                                                ownHire.HIRE || 0
+                                        ]
+                                }]
+                        },
+                        options: { responsive:true,maintainAspectRatio: false }
+                }
+        );
+}
+
+
+
+/* ---------- LOAD DASHBOARD ---------- */
+loadDashboard();
+
+
   
 
-  const sess = document.getElementById('session_user');
-  const name = sess ? (sess.dataset.name || '') : '';
+  document.getElementById("filterAll").onclick = function(){
+    table.clearFilter();
+  };
 
-  document.getElementById('reported_by').value = name;
-  document.getElementById('updated_by').value = '';
+  document.getElementById("filterActive").onclick = function(){
+    table.setFilter(function(data){
+      return (data.status || "").trim() !== "Closed";
+    });
+  };
 
-  document.getElementById("modalTitle").innerText = "Create Breakdown";
-  document.getElementById("bdModal").classList.remove("hidden");
-}
+  document.getElementById("filterClosed").onclick = function(){
+    table.setFilter(function(data){
+      return (data.status || "").trim() === "Closed";
+    });
+  };
+
+  function applyDashboardFilters(){
+
+    const monthVal = document.getElementById("filterMonth")?.value;
+    const pkgVal   = document.getElementById("filterPackage")?.value || "ALL";
+    const ownVal   = document.getElementById("filterOwnership")?.value || "ALL";
+
+    DASHBOARD_FILTERED = DASHBOARD_RAW.filter(r => {
+
+      /* ---- MONTH FILTER ---- */
+      if(monthVal){
+        const dt = r.breakdown_start || "";
+        if(!dt.startsWith(monthVal)) return false;
+      }
+
+      /* ---- PACKAGE FILTER ---- */
+      if(pkgVal !== "ALL"){
+        if((r.asset_package || "") !== pkgVal) return false;
+      }
+
+      /* ---- OWN / HIRE FILTER ---- */
+      if(ownVal !== "ALL"){
+        if((r.own_hire || "").toUpperCase() !== ownVal) return false;
+      }
+
+      return true;
+    });
+
+    rebuildDashboardFromFiltered();
+  }
+
+  function rebuildDashboardFromFiltered(){
+
+    let active = 0;
+    let closed = 0;
+    let activeDelay = 0;
+    let repairSum = 0;
+    let repairCnt = 0;
+
+    const ageing = { "0_24":0, "24_48":0, "48_plus":0 };
+
+    DASHBOARD_FILTERED.forEach(r => {
+
+      const start = new Date(r.breakdown_start);
+      const end   = r.breakdown_end ? new Date(r.breakdown_end) : null;
+      const now   = new Date();
+
+      const isClosed = (r.status || "").toLowerCase() === "closed";
+
+      if(isClosed){
+        closed++;
+        if(end){
+          repairSum += (end - start) / 3600000;
+          repairCnt++;
+        }
+      }else{
+        active++;
+        const hrs = (now - start) / 3600000;
+        activeDelay += hrs;
+
+        if(hrs <= 24) ageing["0_24"]++;
+        else if(hrs <= 48) ageing["24_48"]++;
+        else ageing["48_plus"]++;
+      }
+    });
+
+    document.getElementById("kpiActive").innerText = active;
+    document.getElementById("kpiClosed").innerText = closed;
+    document.getElementById("kpiAvgRepair").innerText =
+      repairCnt ? (repairSum / repairCnt).toFixed(2) : "0.00";
+    document.getElementById("kpiAvgActiveDelay").innerText =
+      active ? (activeDelay / active).toFixed(2) : "0.00";
+
+    renderAgeingChart(ageing);
+  }
 
 
-function openEdit(row){
-        if((row.status || '').trim() === 'Closed'){
-        alert("This breakdown is closed and cannot be edited.");
+  function renderPackageSummary(payload){
+    const pkgBox = document.getElementById('packageSummary');
+    const overallBox = document.getElementById('overallSummary');
+    pkgBox.innerHTML = '';
+    overallBox.innerHTML = '';
+
+    let totalActive = 0;
+    let totalDowntime = 0;
+
+    ['Adabari','Birsing','Phulbari'].forEach(pkg=>{
+      const p = payload.packages?.[pkg] || {};
+      const active = p.ACTIVE_COUNT || 0;
+      const downtime = p.ACTIVE_DOWNTIME_HRS || 0;
+
+      totalActive += active;
+      totalDowntime += downtime;
+
+      pkgBox.innerHTML += `
+        <div class="border rounded p-3 flex justify-between text-sm">
+          <span class="font-semibold">${pkg}</span>
+          <span>Active: ${active}</span>
+          <span>Downtime: ${downtime.toFixed(2)} hrs</span>
+        </div>`;
+    });
+
+    const totalClosed =
+      (payload.totals?.TOTAL_COUNT || 0) - totalActive;
+
+    overallBox.innerHTML = `
+      Total Active: ${totalActive}
+      &nbsp; | &nbsp;
+      Total Closed: ${totalClosed}
+      &nbsp; | &nbsp;
+      Total Downtime: ${totalDowntime.toFixed(2)} hrs
+    `;
+  }
+
+  document.getElementById("btnCreate").onclick = openCreate;
+
+  function openCreate(){
+    editId = null;
+    clearForm();
+    setModalMode(true);
+
+    initDatePickers(); 
+    setMinDate48Hours();
+    
+
+    const sess = document.getElementById('session_user');
+    const name = sess ? (sess.dataset.name || '') : '';
+
+    document.getElementById('reported_by').value = name;
+    document.getElementById('updated_by').value = '';
+
+    document.getElementById("modalTitle").innerText = "Create Breakdown";
+    document.getElementById("bdModal").classList.remove("hidden");
+  }
+
+
+  function openEdit(row){
+          if((row.status || '').trim() === 'Closed'){
+          alert("This breakdown is closed and cannot be edited.");
+          return;
+        }
+    editId=row.id;
+    Object.keys(row).forEach(k=>{
+      const el = document.getElementById(k);
+      if(!el) return;
+
+      // convert displayed datetime to ISO for datetime-local inputs
+      if(el.type === "datetime-local"){
+        el.value = toIsoIfNeeded(row[k] ?? "");
+      }else{
+        el.value = row[k] ?? "";
+      }
+    });
+    setModalMode(false);
+    
+    initDatePickers(); 
+    setMinDate48Hours();
+    // set updated_by to current user (if not present in row)
+    const sess = document.getElementById('session_user');
+    const name = sess ? (sess.dataset.name || '') : '';
+    if(document.getElementById('updated_by')) document.getElementById('updated_by').value = (row['updated_by'] || name);
+    // ensure reported_by shows original reporter but readonly
+    if(document.getElementById('reported_by')) document.getElementById('reported_by').value = row['reported_by'] || '';
+    document.getElementById("modalTitle").innerText="Edit Breakdown";
+    document.getElementById("bdModal").classList.remove("hidden");
+    document.getElementById("asset_input").value = row.asset_code || "";
+  }
+
+  function toggleCreateEdit(isCreate){
+    // Hide or show the create-only asset section instead of just making fields readOnly
+    document.querySelectorAll('.create-only').forEach(el=>{ el.style.display = isCreate ? '' : 'none'; });
+    // breakdown_start locked on edit
+    const bs = document.getElementById("breakdown_start"); if(bs) bs.readOnly = !isCreate;
+  }
+
+  function setModalMode(isCreate){
+
+    // show / hide edit-only fields
+    document.querySelectorAll('.edit-only')
+      .forEach(el => el.style.display = isCreate ? 'none' : '');
+
+    // Asset fields: editable ONLY in Create
+    ['asset_code','asset_description','asset_package','own_hire','agency']
+      .forEach(id=>{
+        const el = document.getElementById(id);
+        if(!el) return;
+
+        if(el.tagName === 'SELECT'){
+          el.disabled = !isCreate;
+        }else{
+          el.readOnly = !isCreate;
+        }
+      });
+
+    // Location editable in both Create & Edit
+    const loc = document.getElementById('location');
+    if(loc) loc.readOnly = false;
+
+    // Breakdown start: editable ONLY in Create
+    const bs = document.getElementById('breakdown_start');
+    if(bs) bs.readOnly = !isCreate;
+
+
+  }
+
+
+
+
+  /* ---------- ASSET DROPDOWN (FROM ASSET MASTER) ---------- */
+
+  // this variable MUST be injected from backend
+  // const ASSET_MASTER = [...];
+
+  /* ---------- ASSET LIVE AUTOCOMPLETE (LIKE SPARES) ---------- */
+
+  const assetInput = document.getElementById("asset_input");
+  const assetList  = document.getElementById("asset_list");
+
+  let assetCache = [];
+
+  async function fetchAssets(q){
+    if(!q || q.length < 1){
+      assetList.innerHTML = "";
+      return;
+    }
+    try{
+      const r = await fetch(`/user/assets_autocomplete?q=${encodeURIComponent(q)}`);
+      const d = await r.json();
+      assetCache = d || [];
+
+      assetList.innerHTML = "";
+      assetCache.forEach(a => {
+        const opt = document.createElement("option");
+        opt.value = a.asset_code;
+        assetList.appendChild(opt);
+      });
+    }catch(e){
+      console.error("asset autocomplete error", e);
+    }
+  }
+
+  if(assetInput){
+    // live typing
+    assetInput.addEventListener("input", function(){
+      fetchAssets(this.value.trim());
+    });
+
+    // when user selects
+    assetInput.addEventListener("change", function(){
+      const val = this.value;
+      const asset = assetCache.find(a => val.startsWith(a.asset_code));
+
+      if(!asset){
+        ["asset_code","asset_description","asset_package","own_hire","agency","location"]
+          .forEach(id => document.getElementById(id).value = "");
         return;
       }
-  editId=row.id;
-  Object.keys(row).forEach(k=>{
-    const el = document.getElementById(k);
-    if(!el) return;
 
-    // convert displayed datetime to ISO for datetime-local inputs
-    if(el.type === "datetime-local"){
-      el.value = toIsoIfNeeded(row[k] ?? "");
-    }else{
-      el.value = row[k] ?? "";
-    }
-  });
-  setModalMode(false);
-  
-  initDatePickers(); 
-  setMinDate48Hours();
-  // set updated_by to current user (if not present in row)
-  const sess = document.getElementById('session_user');
-  const name = sess ? (sess.dataset.name || '') : '';
-  if(document.getElementById('updated_by')) document.getElementById('updated_by').value = (row['updated_by'] || name);
-  // ensure reported_by shows original reporter but readonly
-  if(document.getElementById('reported_by')) document.getElementById('reported_by').value = row['reported_by'] || '';
-  document.getElementById("modalTitle").innerText="Edit Breakdown";
-  document.getElementById("bdModal").classList.remove("hidden");
-  document.getElementById("asset_input").value = row.asset_code || "";
-}
+      document.getElementById("asset_code").value        = asset.asset_code;
+      document.getElementById("asset_description").value = asset.asset_description || "";
+      document.getElementById("asset_package").value     = asset.package || "";
+      document.getElementById("agency").value            = asset.agency || "";
+      document.getElementById("own_hire").value          = asset.owner || "";
+      document.getElementById("location").value          = asset.location || "";
+    });
+  }
 
-function toggleCreateEdit(isCreate){
-  // Hide or show the create-only asset section instead of just making fields readOnly
-  document.querySelectorAll('.create-only').forEach(el=>{ el.style.display = isCreate ? '' : 'none'; });
-  // breakdown_start locked on edit
-  const bs = document.getElementById("breakdown_start"); if(bs) bs.readOnly = !isCreate;
-}
+  function closeModal(){
+    document.getElementById("bdModal").classList.add("hidden");
+  }
 
-function setModalMode(isCreate){
+  function clearForm(){
+    document.querySelectorAll("#bdModal input,#bdModal textarea,#bdModal select")
+      .forEach(e=>e.value="");
+  }
 
-  // show / hide edit-only fields
-  document.querySelectorAll('.edit-only')
-    .forEach(el => el.style.display = isCreate ? 'none' : '');
+  function toIsoIfNeeded(val){
+    if(!val) return val;
 
-  // Asset fields: editable ONLY in Create
-  ['asset_code','asset_description','asset_package','own_hire']
-    .forEach(id=>{
+    // already ISO (datetime-local)
+    if(val.includes("T")) return val;
+
+    // convert "DD/MM/YYYY hh:mm AM/PM" → ISO
+    const m = val.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}) (AM|PM)$/);
+    if(!m) return val;
+
+    let [,dd,mm,yyyy,hh,mi,ap] = m;
+    hh = parseInt(hh,10);
+    if(ap === "PM" && hh < 12) hh += 12;
+    if(ap === "AM" && hh === 12) hh = 0;
+
+    return `${yyyy}-${mm}-${dd}T${String(hh).padStart(2,'0')}:${mi}`;
+  }
+
+  // initialize flatpickr safely (no re-initialization crash)
+  function initDatePickers(){
+    const fortyEightHoursAgo = new Date(Date.now() - (48 * 60 * 60 * 1000));
+    const now = new Date();
+
+    const opts = {
+      enableTime: true,
+      dateFormat: "d/m/Y h:i K",
+      time_24hr: false,
+
+      allowInput: false,
+      clickOpens: true,
+
+      onReady: function(_, __, instance){
+
+        // ⛔ stop mouse wheel changing value
+        instance.input.addEventListener("wheel", function(e){
+          e.preventDefault();
+        });
+
+        // 🔽 add custom footer buttons once
+        if(instance.calendarContainer.querySelector(".fp-footer")) return;
+
+        const footer = document.createElement("div");
+        footer.className = "fp-footer";
+        footer.style.display = "flex";
+        footer.style.justifyContent = "space-between";
+        footer.style.padding = "6px";
+        footer.style.borderTop = "1px solid #ddd";
+
+        // 🧹 Clear button
+        const btnClear = document.createElement("button");
+        btnClear.type = "button";
+        btnClear.textContent = "Clear";
+        btnClear.className = "px-2 py-1 text-sm border rounded";
+        btnClear.onclick = function(){
+          instance.clear();
+          instance.close();
+          try{ updateDowntime(); }catch(e){}
+        };
+
+        // 📍 Today button
+        const btnToday = document.createElement("button");
+        btnToday.type = "button";
+        btnToday.textContent = "Today";
+        btnToday.className = "px-2 py-1 text-sm border rounded";
+        btnToday.onclick = function(){
+          const now = new Date();
+          instance.setDate(now, true);
+          instance.close();
+          try{ updateDowntime(); }catch(e){}
+        };
+
+        // ✅ OK button
+        const btnOk = document.createElement("button");
+        btnOk.type = "button";
+        btnOk.textContent = "OK";
+        btnOk.className = "px-3 py-1 text-sm bg-green-600 text-white rounded";
+        btnOk.onclick = function(){
+          instance.close();
+          try{ updateDowntime(); }catch(e){}
+        };
+
+        footer.appendChild(btnClear);
+        footer.appendChild(btnToday);
+        footer.appendChild(btnOk);
+
+        instance.calendarContainer.appendChild(footer);
+      },
+
+      onClose: function(){
+        try{ updateDowntime(); }catch(e){}
+      }
+    };
+
+    window._fp = window._fp || {};
+
+    [
+      "breakdown_start",
+      "breakdown_end",
+      "expected_commissioned_at",
+      "eip_commissioned_at"
+    ].forEach(id=>{
       const el = document.getElementById(id);
       if(!el) return;
 
-      if(el.tagName === 'SELECT'){
-        el.disabled = !isCreate;
+      if(window._fp[id]){
+        window._fp[id].set("minDate", fortyEightHoursAgo);
+        window._fp[id].set("maxDate", now);
       }else{
-        el.readOnly = !isCreate;
+        window._fp[id] = flatpickr(el, Object.assign({}, opts, {
+          minDate: fortyEightHoursAgo,
+          maxDate: now
+        }));
       }
     });
-
-  // Location editable in both Create & Edit
-  const loc = document.getElementById('location');
-  if(loc) loc.readOnly = false;
-
-  // Breakdown start: editable ONLY in Create
-  const bs = document.getElementById('breakdown_start');
-  if(bs) bs.readOnly = !isCreate;
-
-
-}
-
-
-
-
-/* ---------- ASSET DROPDOWN (FROM ASSET MASTER) ---------- */
-
-// this variable MUST be injected from backend
-// const ASSET_MASTER = [...];
-
-/* ---------- ASSET LIVE AUTOCOMPLETE (LIKE SPARES) ---------- */
-
-const assetInput = document.getElementById("asset_input");
-const assetList  = document.getElementById("asset_list");
-
-let assetCache = [];
-
-async function fetchAssets(q){
-  if(!q || q.length < 1){
-    assetList.innerHTML = "";
-    return;
   }
-  try{
-    const r = await fetch(`/user/assets_autocomplete?q=${encodeURIComponent(q)}`);
-    const d = await r.json();
-    assetCache = d || [];
 
-    assetList.innerHTML = "";
-    assetCache.forEach(a => {
-      const opt = document.createElement("option");
-      opt.value = a.asset_code;
-      assetList.appendChild(opt);
+
+  function updateDowntime(){
+    const start = document.getElementById('breakdown_start')?.value;
+    const end = document.getElementById('breakdown_end')?.value;
+    if(!start || !end) return;
+    const s = new Date(start);
+    const e = new Date(end);
+    if(isNaN(s) || isNaN(e)) return;
+    const hrs = Math.max(0, (e - s) / (1000*3600));
+    document.getElementById('downtime_hrs').value = hrs.toFixed(2);
+  }
+
+  /* ---------- SAVE ---------- */
+  async function saveBreakdown(fromClose = false){
+    const payload = {};
+    // Collect form values into payload
+    [
+      "asset_code",
+      "location",
+      "breakdown_start",
+      "breakdown_end",
+      "breakdown_type",
+      "root_cause",
+      "breakdown_description",
+      "responsible_person",
+      "expected_commissioned_at",
+      "eip_commissioned_at",
+      "remarks",
+      "status"
+    ].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el && el.value){
+        payload[id] = toIsoIfNeeded(el.value);
+      }
     });
-  }catch(e){
-    console.error("asset autocomplete error", e);
-  }
-}
+    // Ensure asset_code is set from visible input in Create mode
+    if(!editId){
+      const ai = document.getElementById("asset_input");
+      const ac = document.getElementById("asset_code");
 
-if(assetInput){
-  // live typing
-  assetInput.addEventListener("input", function(){
-    fetchAssets(this.value.trim());
-  });
+      if(ai && ac && !ac.value){
+        ac.value = ai.value.trim();
+        payload.asset_code = ac.value;
+      }
+    }
 
-  // when user selects
-  assetInput.addEventListener("change", function(){
-    const val = this.value;
-    const asset = assetCache.find(a => val.startsWith(a.asset_code));
-
-    if(!asset){
-      ["asset_code","asset_description","asset_package","own_hire","location"]
-        .forEach(id => document.getElementById(id).value = "");
+    if(!payload.asset_code && !editId){
+      alert("Asset Code required");
       return;
     }
 
-    document.getElementById("asset_code").value        = asset.asset_code;
-    document.getElementById("asset_description").value = asset.asset_description || "";
-    document.getElementById("asset_package").value     = asset.package || "";
-    document.getElementById("own_hire").value          = asset.owner || "";
-    document.getElementById("location").value          = asset.location || "";
-  });
-}
+    // Client-side validation: if end/eip provided, ensure > start and not in future
+    const startIso = payload.breakdown_start || document.getElementById('breakdown_start')?.value || '';
+    const endIso = payload.breakdown_end || document.getElementById('breakdown_end')?.value || '';
+    const eipIso = payload.eip_commissioned_at || document.getElementById('eip_commissioned_at')?.value || '';
+    const now = new Date();
 
-function closeModal(){
-  document.getElementById("bdModal").classList.add("hidden");
-}
-
-function clearForm(){
-  document.querySelectorAll("#bdModal input,#bdModal textarea,#bdModal select")
-    .forEach(e=>e.value="");
-}
-
-function toIsoIfNeeded(val){
-  if(!val) return val;
-
-  // already ISO (datetime-local)
-  if(val.includes("T")) return val;
-
-  // convert "DD/MM/YYYY hh:mm AM/PM" → ISO
-  const m = val.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}) (AM|PM)$/);
-  if(!m) return val;
-
-  let [,dd,mm,yyyy,hh,mi,ap] = m;
-  hh = parseInt(hh,10);
-  if(ap === "PM" && hh < 12) hh += 12;
-  if(ap === "AM" && hh === 12) hh = 0;
-
-  return `${yyyy}-${mm}-${dd}T${String(hh).padStart(2,'0')}:${mi}`;
-}
-
-// initialize flatpickr safely (no re-initialization crash)
-function initDatePickers(){
-  const fortyEightHoursAgo = new Date(Date.now() - (48 * 60 * 60 * 1000));
-  const now = new Date();
-
-  const opts = {
-    enableTime: true,
-    dateFormat: "d/m/Y h:i K",
-    time_24hr: false,
-
-    allowInput: false,
-    clickOpens: true,
-
-    onReady: function(_, __, instance){
-
-      // ⛔ stop mouse wheel changing value
-      instance.input.addEventListener("wheel", function(e){
-        e.preventDefault();
-      });
-
-      // 🔽 add custom footer buttons once
-      if(instance.calendarContainer.querySelector(".fp-footer")) return;
-
-      const footer = document.createElement("div");
-      footer.className = "fp-footer";
-      footer.style.display = "flex";
-      footer.style.justifyContent = "space-between";
-      footer.style.padding = "6px";
-      footer.style.borderTop = "1px solid #ddd";
-
-      // 🧹 Clear button
-      const btnClear = document.createElement("button");
-      btnClear.type = "button";
-      btnClear.textContent = "Clear";
-      btnClear.className = "px-2 py-1 text-sm border rounded";
-      btnClear.onclick = function(){
-        instance.clear();
-        instance.close();
-        try{ updateDowntime(); }catch(e){}
-      };
-
-      // 📍 Today button
-      const btnToday = document.createElement("button");
-      btnToday.type = "button";
-      btnToday.textContent = "Today";
-      btnToday.className = "px-2 py-1 text-sm border rounded";
-      btnToday.onclick = function(){
-        const now = new Date();
-        instance.setDate(now, true);
-        instance.close();
-        try{ updateDowntime(); }catch(e){}
-      };
-
-      // ✅ OK button
-      const btnOk = document.createElement("button");
-      btnOk.type = "button";
-      btnOk.textContent = "OK";
-      btnOk.className = "px-3 py-1 text-sm bg-green-600 text-white rounded";
-      btnOk.onclick = function(){
-        instance.close();
-        try{ updateDowntime(); }catch(e){}
-      };
-
-      footer.appendChild(btnClear);
-      footer.appendChild(btnToday);
-      footer.appendChild(btnOk);
-
-      instance.calendarContainer.appendChild(footer);
-    },
-
-    onClose: function(){
-      try{ updateDowntime(); }catch(e){}
+    if(endIso){
+      const s = new Date(startIso);
+      const e = new Date(endIso);
+      if(e <= s){ alert('Breakdown End Date must be AFTER Breakdown Start.'); return; }
+      if(e > now){ alert('Breakdown End Date cannot be in the future.'); return; }
     }
-  };
 
-  window._fp = window._fp || {};
-
-  [
-    "breakdown_start",
-    "breakdown_end",
-    "expected_commissioned_at",
-    "eip_commissioned_at"
-  ].forEach(id=>{
-    const el = document.getElementById(id);
-    if(!el) return;
-
-    if(window._fp[id]){
-      window._fp[id].set("minDate", fortyEightHoursAgo);
-      window._fp[id].set("maxDate", now);
-    }else{
-      window._fp[id] = flatpickr(el, Object.assign({}, opts, {
-        minDate: fortyEightHoursAgo,
-        maxDate: now
-      }));
+    if(eipIso){
+      const s = new Date(startIso);
+      const eipd = new Date(eipIso);
+      if(eipd <= s){ alert('EIP Commission Date must be AFTER Breakdown Start.'); return; }
+      if(eipd > now){ alert('EIP Commission Date cannot be in the future.'); return; }
     }
-  });
-}
 
-
-function updateDowntime(){
-  const start = document.getElementById('breakdown_start')?.value;
-  const end = document.getElementById('breakdown_end')?.value;
-  if(!start || !end) return;
-  const s = new Date(start);
-  const e = new Date(end);
-  if(isNaN(s) || isNaN(e)) return;
-  const hrs = Math.max(0, (e - s) / (1000*3600));
-  document.getElementById('downtime_hrs').value = hrs.toFixed(2);
-}
-
-/* ---------- SAVE ---------- */
-async function saveBreakdown(fromClose = false){
-  const payload = {};
-  // Collect form values into payload
-  [
-    "asset_code",
-    "location",
-    "breakdown_start",
-    "breakdown_end",
-    "breakdown_type",
-    "root_cause",
-    "breakdown_description",
-    "responsible_person",
-    "expected_commissioned_at",
-    "eip_commissioned_at",
-    "remarks",
-    "status"
-  ].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el && el.value){
-      payload[id] = toIsoIfNeeded(el.value);
+    // 🚫 BLOCK SAVE if EIP Commission Date is already given (Edit mode only)
+    // ✅ Allow if coming from CLOSE action
+    if(editId && !fromClose){
+      const eipVal = document.getElementById("eip_commissioned_at")?.value || "";
+      if(eipVal){
+        alert("The Details Cant Save After Giving EIP Comminised Date, Please Close The Breakdown");
+        return;
+      }
     }
-  });
-  // Ensure asset_code is set from visible input in Create mode
-  if(!editId){
-    const ai = document.getElementById("asset_input");
-    const ac = document.getElementById("asset_code");
 
-    if(ai && ac && !ac.value){
-      ac.value = ai.value.trim();
-      payload.asset_code = ac.value;
-    }
-  }
+    const res = await fetch(editId ? `${API}/${editId}` : API, {
+      method: editId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-  if(!payload.asset_code && !editId){
-    alert("Asset Code required");
-    return;
-  }
+    let result = {};
+    try {
+      result = await res.json();
+    } catch(e) {}
 
-  // Client-side validation: if end/eip provided, ensure > start and not in future
-  const startIso = payload.breakdown_start || document.getElementById('breakdown_start')?.value || '';
-  const endIso = payload.breakdown_end || document.getElementById('breakdown_end')?.value || '';
-  const eipIso = payload.eip_commissioned_at || document.getElementById('eip_commissioned_at')?.value || '';
-  const now = new Date();
-
-  if(endIso){
-    const s = new Date(startIso);
-    const e = new Date(endIso);
-    if(e <= s){ alert('Breakdown End Date must be AFTER Breakdown Start.'); return; }
-    if(e > now){ alert('Breakdown End Date cannot be in the future.'); return; }
-  }
-
-  if(eipIso){
-    const s = new Date(startIso);
-    const eipd = new Date(eipIso);
-    if(eipd <= s){ alert('EIP Commission Date must be AFTER Breakdown Start.'); return; }
-    if(eipd > now){ alert('EIP Commission Date cannot be in the future.'); return; }
-  }
-
-  // 🚫 BLOCK SAVE if EIP Commission Date is already given (Edit mode only)
-  // ✅ Allow if coming from CLOSE action
-  if(editId && !fromClose){
-    const eipVal = document.getElementById("eip_commissioned_at")?.value || "";
-    if(eipVal){
-      alert("The Details Cant Save After Giving EIP Comminised Date, Please Close The Breakdown");
+    if (!res.ok || result.success === false) {
+      alert(result.error || "Failed to save breakdown");
       return;
     }
+
+    closeModal();
+    loadTable();
   }
 
-  const res = await fetch(editId ? `${API}/${editId}` : API, {
-    method: editId ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  function setMinDate48Hours(){
+    const now = new Date();
+    const minDate = new Date(now.getTime() - (48 * 60 * 60 * 1000));
 
-  let result = {};
-  try {
-    result = await res.json();
-  } catch(e) {}
-
-  if (!res.ok || result.success === false) {
-    alert(result.error || "Failed to save breakdown");
-    return;
+    [
+      "breakdown_start",
+      "breakdown_end",
+      "expected_commissioned_at",
+      "eip_commissioned_at"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if(el && el._flatpickr){
+        el._flatpickr.set("minDate", minDate);
+        el._flatpickr.set("maxDate", now);
+      }
+    });
   }
 
-  closeModal();
-  loadTable();
-}
+  function closeAsClosed(){
+    if(!editId) return;
 
-function setMinDate48Hours(){
-  const now = new Date();
-  const minDate = new Date(now.getTime() - (48 * 60 * 60 * 1000));
+    const start = document.getElementById("breakdown_start")?.value;
+    const end   = document.getElementById("breakdown_end")?.value;
+    const eip   = document.getElementById("eip_commissioned_at")?.value;
 
-  [
-    "breakdown_start",
-    "breakdown_end",
-    "expected_commissioned_at",
-    "eip_commissioned_at"
-  ].forEach(id => {
+    if(!end || !eip){
+      alert("To close a breakdown, Breakdown End Date and EIP Commission Date are mandatory.");
+      return;
+    }
+
+    const startIso = toIsoIfNeeded(start);
+    const endIso   = toIsoIfNeeded(end);
+    const eipIso   = toIsoIfNeeded(eip);
+
+    if(new Date(endIso) <= new Date(startIso)){
+      alert("Breakdown End Date must be AFTER Breakdown Start.");
+      return;
+    }
+
+    if(new Date(eipIso) <= new Date(startIso)){
+      alert("EIP Commission Date must be AFTER Breakdown Start.");
+      return;
+    }
+
+    // Do not allow future dates
+    const now = new Date();
+    if(new Date(endIso) > now){
+      alert("Breakdown End Date cannot be in the future.");
+      return;
+    }
+    if(new Date(eipIso) > now){
+      alert("EIP Commission Date cannot be in the future.");
+      return;
+    }
+
+    if(!confirm("Are you sure you want to CLOSE this breakdown? Once closed, it cannot be edited.")){
+      return;
+    }
+
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.id = "status";
+    hidden.value = "Closed";
+    document.getElementById("bdModal").appendChild(hidden);
+
+    saveBreakdown(true);
+  }
+
+  ["filterMonth","filterPackage","filterOwnership"].forEach(id=>{
     const el = document.getElementById(id);
-    if(el && el._flatpickr){
-      el._flatpickr.set("minDate", minDate);
-      el._flatpickr.set("maxDate", now);
+    if(el){
+      el.addEventListener("change", applyDashboardFilters);
     }
   });
-}
 
-function closeAsClosed(){
-  if(!editId) return;
 
-  const start = document.getElementById("breakdown_start")?.value;
-  const end   = document.getElementById("breakdown_end")?.value;
-  const eip   = document.getElementById("eip_commissioned_at")?.value;
-
-  if(!end || !eip){
-    alert("To close a breakdown, Breakdown End Date and EIP Commission Date are mandatory.");
-    return;
-  }
-
-  const startIso = toIsoIfNeeded(start);
-  const endIso   = toIsoIfNeeded(end);
-  const eipIso   = toIsoIfNeeded(eip);
-
-  if(new Date(endIso) <= new Date(startIso)){
-    alert("Breakdown End Date must be AFTER Breakdown Start.");
-    return;
-  }
-
-  if(new Date(eipIso) <= new Date(startIso)){
-    alert("EIP Commission Date must be AFTER Breakdown Start.");
-    return;
-  }
-
-  // Do not allow future dates
-  const now = new Date();
-  if(new Date(endIso) > now){
-    alert("Breakdown End Date cannot be in the future.");
-    return;
-  }
-  if(new Date(eipIso) > now){
-    alert("EIP Commission Date cannot be in the future.");
-    return;
-  }
-
-  if(!confirm("Are you sure you want to CLOSE this breakdown? Once closed, it cannot be edited.")){
-    return;
-  }
-
-  const hidden = document.createElement("input");
-  hidden.type = "hidden";
-  hidden.id = "status";
-  hidden.value = "Closed";
-  document.getElementById("bdModal").appendChild(hidden);
-
-  saveBreakdown(true);
-}
-
-</script>
-{% endblock %}
+  </script>
+  {% endblock %}

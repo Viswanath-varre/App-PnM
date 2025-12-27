@@ -551,6 +551,7 @@ def create_breakdown_report():
         "asset_description",
         "asset_package",
         "own_hire",
+        "agency",
         "breakdown_start",
         "breakdown_end",
         "breakdown_type",
@@ -587,6 +588,16 @@ def create_breakdown_report():
     payload["status"] = "Active"
     payload["reported_by"] = payload.get("reported_by") or session.get("name", session.get("user"))
     payload["last_updated_by"] = session.get("name", session.get("user"))
+
+    # force agency from asset master (create only)
+    if not payload.get("agency") and payload.get("asset_code"):
+        am = supabase_admin.table("asset_master") \
+            .select("agency") \
+            .eq("asset_code", payload["asset_code"]) \
+            .single() \
+            .execute()
+        if am.data:
+            payload["agency"] = am.data.get("agency")
 
     # ---- FORCE PAYLOAD TO BE JSON SAFE (MANDATORY) ----
     payload = {k: json_safe(v) for k, v in payload.items()}
@@ -784,6 +795,8 @@ def get_breakdown_summary():
         for r in rows:
             pkg = r.get("asset_package") or "Unknown"
             oh = (r.get("own_hire") or "").upper()
+            
+            
 
             if pkg not in ui_packages:
                 ui_packages[pkg] = {"OWN": 0, "HIRE": 0}
@@ -810,6 +823,215 @@ def get_breakdown_summary():
             traceback.format_exc()
         )
         return jsonify({"error": str(e)}), 500
+
+@user_bp.route("/breakdown_dashboard")
+@require_role("user")
+def get_breakdown_dashboard():
+    """
+    New unified dashboard API for Breakdown Speed & Recovery Dashboard.
+    This is the ONLY source for dashboard KPIs, cards, and charts.
+    """
+
+    supabase_admin = current_app.config.get("supabase_admin")
+
+    try:
+        if not supabase_admin:
+            raise RuntimeError("supabase_admin not configured")
+
+        res = supabase_admin.table("breakdown_reports").select("*").execute()
+        rows = res.data or []
+
+        now = datetime.now(IST)
+
+        # -----------------------------
+        # Base counters
+        # -----------------------------
+        total_count = 0
+        active_count = 0
+        closed_count = 0
+
+        # -----------------------------
+        # Time accumulators
+        # -----------------------------
+        active_delay_sum = 0.0
+        closed_repair_sum = 0.0
+        closed_repair_count = 0
+
+        # -----------------------------
+        # Package buckets
+        # -----------------------------
+        packages = {}
+
+        # -----------------------------
+        # OWN / HIRE buckets
+        # -----------------------------
+        own_hire = {
+            "OWN": {"count": 0, "repair_sum": 0.0},
+            "HIRE": {"count": 0, "repair_sum": 0.0}
+        }
+        package_own_hire = {}
+        # -----------------------------
+        # Active ageing buckets (hrs)
+        # -----------------------------
+        ageing = {
+            "0_24": 0,
+            "24_48": 0,
+            "48_plus": 0
+        }
+
+        for r in rows:
+            total_count += 1
+
+            status = (r.get("status") or "").strip().lower()
+            current_status = (r.get("current_status") or "").strip().lower()
+
+            is_closed = (
+                status == "closed"
+                or "closed" in current_status
+            )
+
+            pkg = r.get("asset_package") or "Unknown"
+            oh  = (r.get("own_hire") or "").upper()
+
+            # ---- Init package OWN/HIRE card metrics ----
+            if pkg not in package_own_hire:
+                package_own_hire[pkg] = {
+                    "OWN": {
+                        "active_count": 0,
+                        "active_downtime": 0.0,
+                        "total_count": 0,
+                        "total_downtime": 0.0
+                    },
+                    "HIRE": {
+                        "active_count": 0,
+                        "active_downtime": 0.0,
+                        "total_count": 0,
+                        "total_downtime": 0.0
+                    }
+                }
+
+            # ---- Existing package buckets (KEEP) ----
+            if pkg not in packages:
+                packages[pkg] = {
+                    "ACTIVE": 0,
+                    "ACTIVE_DELAY_SUM": 0.0,
+                    "CLOSED": 0,
+                    "CLOSED_REPAIR_SUM": 0.0
+                }
+
+            start_dt = _safe_fromiso(r.get("breakdown_start"))
+            end_dt   = _safe_fromiso(r.get("breakdown_end"))
+
+            if not start_dt:
+                continue
+
+            if is_closed:
+                closed_count += 1
+                packages[pkg]["CLOSED"] += 1
+
+                if end_dt:
+                    hrs = round((end_dt - start_dt).total_seconds() / 3600, 2)
+                    closed_repair_sum += hrs
+                    closed_repair_count += 1
+                    packages[pkg]["CLOSED_REPAIR_SUM"] += hrs
+
+                    # ---- EXISTING OWN / HIRE AVG REPAIR ----
+                    if oh in own_hire:
+                        own_hire[oh]["count"] += 1
+                        own_hire[oh]["repair_sum"] += hrs
+
+                    # ---- NEW: OWN / HIRE TOTAL (Closed) ----
+                    if oh in ("OWN", "HIRE"):
+                        package_own_hire[pkg][oh]["total_count"] += 1
+                        package_own_hire[pkg][oh]["total_downtime"] += hrs
+
+            else:
+                active_count += 1
+                packages[pkg]["ACTIVE"] += 1
+
+                hrs = round((now - start_dt).total_seconds() / 3600, 2)
+                active_delay_sum += hrs
+                packages[pkg]["ACTIVE_DELAY_SUM"] += hrs
+
+                # ---- NEW: OWN / HIRE ACTIVE ----
+                if oh in ("OWN", "HIRE"):
+                    package_own_hire[pkg][oh]["active_count"] += 1
+                    package_own_hire[pkg][oh]["active_downtime"] += hrs
+                    package_own_hire[pkg][oh]["total_count"] += 1
+                    package_own_hire[pkg][oh]["total_downtime"] += hrs
+
+                # ---- EXISTING AGEING ----
+                if hrs <= 24:
+                    ageing["0_24"] += 1
+                elif hrs <= 48:
+                    ageing["24_48"] += 1
+                else:
+                    ageing["48_plus"] += 1
+
+
+        # -----------------------------
+        # Final computed KPIs
+        # -----------------------------
+        avg_active_delay = (
+            active_delay_sum / active_count
+            if active_count else 0.0
+        )
+
+        avg_repair_time = (
+            closed_repair_sum / closed_repair_count
+            if closed_repair_count else 0.0
+        )
+
+        own_hire_result = {}
+        for k, v in own_hire.items():
+            own_hire_result[k] = (
+                v["repair_sum"] / v["count"]
+                if v["count"] else 0.0
+            )
+
+        # -----------------------------
+        # Package averages
+        # -----------------------------
+        package_result = {}
+
+        for pkg, p in packages.items():
+            package_result[pkg] = {
+                "active": p["ACTIVE"],
+                "avg_active_delay": (
+                    p["ACTIVE_DELAY_SUM"] / p["ACTIVE"]
+                    if p["ACTIVE"] else 0.0
+                ),
+                "avg_repair_time": (
+                    p["CLOSED_REPAIR_SUM"] / p["CLOSED"]
+                    if p["CLOSED"] else 0.0
+                )
+            }
+
+        return jsonify({
+                "counts": {
+                        "total": total_count,
+                        "active": active_count,
+                        "closed": closed_count
+                },
+                "kpi": {
+                        "avg_active_delay": round(avg_active_delay, 2),
+                        "avg_repair_time": round(avg_repair_time, 2)
+                },
+                "packages": package_result,
+                "own_hire": own_hire_result,
+                "ageing": ageing,
+                "rows": rows   # ✅ ADD THIS LINE
+        }), 200
+
+
+    except Exception as e:
+        current_app.logger.error(
+            "get_breakdown_dashboard error: %s\n%s",
+            e,
+            traceback.format_exc()
+        )
+        return jsonify({"error": str(e)}), 500
+
 
 @user_bp.route("/assets_autocomplete")
 @require_role("user")
@@ -859,7 +1081,7 @@ def export_breakdown_reports():
 
         # header
         header = [
-                "id", "asset_code", "asset_description", "asset_package", "own_hire", "location",
+                "id", "asset_code", "asset_description", "asset_package", "own_hire","agency", "location",
                 "breakdown_start", "breakdown_end", "downtime_hrs", "breakdown_type", "root_cause",
                 "breakdown_description", "status", "current_status", "responsible_person",
                 "expected_commissioned_at", "eip_commissioned_at", "reported_by", "created_by",
@@ -886,7 +1108,7 @@ def export_breakdown_reports():
 
                 row_vals = [
                         r.get("id"), r.get("asset_code"), r.get("asset_description"),
-                        r.get("asset_package"), r.get("own_hire"), r.get("location"),
+                        r.get("asset_package"), r.get("own_hire"), r.get("agency"), r.get("location"),
                         _to_iso(start_raw), _to_iso(end_raw), downtime,
                         r.get("breakdown_type"), r.get("root_cause"),
                         r.get("breakdown_description"), r.get("status"),
@@ -928,7 +1150,7 @@ def export_breakdown_reports_xlsx():
         ws.title = "Breakdown Reports"
 
         header = [
-                "id", "asset_code", "asset_description", "asset_package", "own_hire", "location",
+                "id", "asset_code", "asset_description", "asset_package", "own_hire", "agency", "location",
                 "breakdown_start", "breakdown_end", "downtime_hrs", "breakdown_type", "root_cause",
                 "breakdown_description", "status", "current_status", "responsible_person",
                 "expected_commissioned_at", "eip_commissioned_at", "reported_by", "created_by",
@@ -964,7 +1186,7 @@ def export_breakdown_reports_xlsx():
 
                 vals = [
                         r.get("id"), r.get("asset_code"), r.get("asset_description"),
-                        r.get("asset_package"), r.get("own_hire"), r.get("location"),
+                        r.get("asset_package"), r.get("own_hire"), r.get("agency"), r.get("location"),
                         _to_iso(start_raw), _to_iso(end_raw), downtime,
                         r.get("breakdown_type"), r.get("root_cause"),
                         r.get("breakdown_description"), r.get("status"),
