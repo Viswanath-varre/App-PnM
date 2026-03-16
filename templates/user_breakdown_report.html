@@ -1,10 +1,11 @@
-  {% extends 'user_base.html' %}
+{% extends 'user_base.html' %}
   {% block title %}User — Breakdown Report{% endblock %}
 
   {% block content %}
   <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
   <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- flatpickr for datetime pickers with Confirm button -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -17,7 +18,7 @@
     const ASSET_MASTER = {{ asset_master | tojson }};
   </script>
 
-  <div class="space-y-6">
+  <div class="space-y-8 px-2 sm:px-4 lg:px-6 bg-gray-50 dark:bg-gray-900 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
 
     <!-- session user for client-side defaulting -->
     <div id="session_user"
@@ -25,373 +26,627 @@
         style="display:none"></div>
 
     <!-- HEADER -->
-    <div class="flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-bold">Breakdown Report</h1>
-        <p class="text-sm text-gray-500">
-          Active & historical breakdown tracking
-        </p>
-      </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-yellow-200">
 
-      <div class="flex gap-3">
-        <button id="btnCreate"
-                class="px-4 py-2 bg-yellow-400 rounded font-semibold">
-          ➕ Create Breakdown
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+            <!-- LEFT : TITLE -->
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-900">
+                    Breakdown Report
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">
+                    Active &amp; historical breakdown tracking
+                </p>
+            </div>
+
+            <!-- RIGHT : ACTIONS -->
+            <div class="flex flex-wrap gap-2 items-center">
+
+                <button
+                    id="btnCreate"
+                    class="px-4 py-2 rounded-lg font-semibold
+                           bg-yellow-400 text-black
+                           hover:bg-yellow-500 transition">
+                    ➕ Create Breakdown
+                </button>
+
+                <div class="h-6 w-px bg-gray-300 hidden sm:block"></div>
+
+                <a
+                    id="btnExportXlsx"
+                    href="/user/breakdown_reports/export_xlsx"
+                    class="px-3 py-2 rounded-lg text-sm font-semibold
+                           border border-gray-300
+                           hover:bg-gray-100 transition">
+                    ⬇️ Excel
+                </a>
+
+                <a
+                    id="btnExportCsv"
+                    href="/user/breakdown_reports/export"
+                    class="px-3 py-2 rounded-lg text-sm font-semibold
+                           border border-gray-300
+                           hover:bg-gray-100 transition">
+                    ⬇️ CSV
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-6">
+
+        <!-- ================= SPEED & RECOVERY DASHBOARD ================= -->
+
+        <button
+          class="md:hidden w-full text-left font-semibold p-3 rounded bg-gray-200 dark:bg-gray-700"
+          onclick="this.nextElementSibling.classList.toggle('hidden')">
+          📊 Dashboard Summary
         </button>
+        <div class="hidden md:block">
 
-        <a id="btnExportXlsx"
-          href="/user/breakdown_reports/export_xlsx"
-          class="px-4 py-2 bg-blue-600 text-white rounded font-semibold">
-          ⬇️ Download Excel
-        </a>
+                <div id="breakdownDashboard" class="space-y-4 mb-6">
 
-        <a id="btnExportCsv"
-          href="/user/breakdown_reports/export"
-          class="px-4 py-2 bg-gray-700 text-white rounded font-semibold">
-          ⬇️ Download CSV
-        </a>
-      </div>
+                        <!-- MONTH SELECTOR -->
+                        <div class="flex gap-2 items-center">
+                                <input
+                                        type="month"
+                                        id="filterMonth"
+                                        class="border p-2 rounded"
+                                />
+                        </div>
+
+                        <!-- FILTER BAR -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+
+                                <select id="filterPackage" class="border p-2 rounded">
+                                        <option value="ALL">All Packages</option>
+                                        <option value="Adabari">Adabari</option>
+                                        <option value="Birsing">Birsing</option>
+                                        <option value="Phulbari">Phulbari</option>
+                                </select>
+
+                                <select id="filterOwnership" class="border p-2 rounded">
+                                        <option value="ALL">OWN + HIRE</option>
+                                        <option value="OWN">OWN</option>
+                                        <option value="HIRE">HIRE</option>
+                                </select>
+
+                        </div>
+
+                        <!-- KPI ROW -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+                                <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                        <div class="kpi-label flex items-center gap-2">
+                                                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                                                Active Breakdowns
+                                        </div>
+                                        <div id="kpiActive" class="kpi-value">0</div>
+                                </div>
+
+                                <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                        <div class="kpi-label flex items-center gap-2">
+                                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                                Closed Breakdowns
+                                        </div>
+                                        <div id="kpiClosed" class="kpi-value">0</div>
+                                </div>
+
+                                <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                        <div class="kpi-label flex items-center gap-2">
+                                                <i data-lucide="clock" class="w-4 h-4"></i>
+                                                Avg Repair Time (hrs)
+                                        </div>
+                                        <div id="kpiAvgRepair" class="kpi-value">0.00</div>
+                                </div>
+
+                                <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                        <div class="kpi-label flex items-center gap-2">
+                                                <i data-lucide="timer" class="w-4 h-4"></i>
+                                                Avg Active Delay (hrs)
+                                        </div>
+                                        <div id="kpiAvgActiveDelay" class="kpi-value">0.00</div>
+                                       
+                                </div>
+
+                        </div>
+
+                        <!-- CHARTS -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+                                <div class="border rounded p-3 chart-box">
+                                        <div class="kpi-label flex items-center gap-2">
+                                                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                                                Avg Repair Time (Closed)
+                                        </div>
+                                        <canvas id="chartRepairSpeed"></canvas>
+                                </div>
+
+                                <div class="border rounded p-3 chart-box">
+                                        <div class="kpi-label flex items-center gap-2">
+                                                <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                                                Active Breakdown Ageing
+                                        </div>
+                                        <canvas id="chartAgeing"></canvas>
+                                </div>
+
+                                <div class="border rounded p-3 chart-box">
+                                        <div class="kpi-label flex items-center gap-2">   
+                                                <i data-lucide="shuffle" class="w-4 h-4"></i>
+                                                OWN vs HIRE Repair Speed
+                                        </div>
+                                        <canvas id="chartOwnHire"></canvas>
+                                </div>
+
+                        </div>
+
+                        <!-- PACKAGE SPEED CARDS -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                                <!-- ADABARI -->
+                                <div class="pkg-card p-4 shadow-sm">
+                                        <h3 class="pkg-title">Adabari</h3>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Active Breakdowns</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="adbOwnActive">0</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="adbHireActive">0</div>
+                                                </div>
+                                        </div>
+
+                                        <div class="pkg-divider"></div>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Active Downtime (hrs)</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="adbOwnActiveDT">0.00</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="adbHireActiveDT">0.00</div>
+                                                </div>
+                                        </div>
+
+                                        <div class="pkg-divider"></div>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Average Downtime (hrs)</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="adbOwnAvgDT">0.00</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="adbHireAvgDT">0.00</div>
+                                                </div>
+                                        </div>
+                                </div>
+
+                                <!-- BIRSING -->
+                                <div class="pkg-card p-4 shadow-sm">
+                                        <h3 class="pkg-title">Birsing</h3>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Active Breakdowns</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="birOwnActive">0</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="birHireActive">0</div>
+                                                </div>
+                                        </div>
+
+                                        <div class="pkg-divider"></div>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Active Downtime (hrs)</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="birOwnActiveDT">0.00</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="birHireActiveDT">0.00</div>
+                                                </div>
+                                        </div>
+
+                                        <div class="pkg-divider"></div>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Average Downtime (hrs)</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="birOwnAvgDT">0.00</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="birHireAvgDT">0.00</div>
+                                                </div>
+                                        </div>
+                                </div>
+
+                                <!-- PHULBARI -->
+                                <div class="pkg-card p-4 shadow-sm">
+                                        <h3 class="pkg-title">Phulbari</h3>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Active Breakdowns</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="phuOwnActive">0</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="phuHireActive">0</div>
+                                                </div>
+                                        </div>
+
+                                        <div class="pkg-divider"></div>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Active Downtime (hrs)</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="phuOwnActiveDT">0.00</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="phuHireActiveDT">0.00</div>
+                                                </div>
+                                        </div>
+
+                                        <div class="pkg-divider"></div>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Average Downtime (hrs)</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="phuOwnAvgDT">0.00</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="phuHireAvgDT">0.00</div>
+                                                </div>
+                                        </div>
+                                </div>
+
+                                <!-- TOTAL -->
+                                <div class="pkg-card p-4 shadow-sm border">
+                                        <h3 class="pkg-title">Total</h3>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Active Breakdowns</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="totOwnActive">0</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="totHireActive">0</div>
+                                                </div>
+                                        </div>
+
+                                        <div class="pkg-divider"></div>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Active Downtime (hrs)</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="totOwnActiveDT">0.00</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="totHireActiveDT">0.00</div>
+                                                </div>
+                                        </div>
+
+                                        <div class="pkg-divider"></div>
+
+                                        <div class="pkg-block">
+                                                <div class="pkg-block-title">Average Downtime (hrs)</div>
+
+                                                <div class="pkg-kpi pkg-own">
+                                                        <div class="pkg-label">OWN</div>
+                                                        <div class="pkg-value" id="totOwnAvgDT">0.00</div>
+                                                </div>
+
+                                                <div class="pkg-kpi pkg-hire">
+                                                        <div class="pkg-label">HIRE</div>
+                                                        <div class="pkg-value" id="totHireAvgDT">0.00</div>
+                                                </div>
+                                        </div>
+                                </div>
+
+                        </div>
+
+                </div>
+
+        </div>
+        <!-- ================= END SPEED & RECOVERY DASHBOARD ================= -->
+
     </div>
-
-    <!-- ================= SPEED & RECOVERY DASHBOARD ================= -->
-    <div id="breakdownDashboard" class="space-y-4 mb-6">
-
-      <!-- MONTH SELECTOR -->
-      <div class="flex gap-2 items-center">
-        <input
-        type="month"
-        id="filterMonth"
-        class="border p-2 rounded"
-        />
-      </div>
-      
-
-      <!-- FILTER BAR (Dashboard Filters) -->
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-
-        <select id="filterPackage" class="border p-2 rounded">
-          <option value="ALL">All Packages</option>
-          <option value="Adabari">Adabari</option>
-          <option value="Birsing">Birsing</option>
-          <option value="Phulbari">Phulbari</option>
-        </select>
-
-        <select id="filterOwnership" class="border p-2 rounded">
-          <option value="ALL">OWN + HIRE</option>
-          <option value="OWN">OWN</option>
-          <option value="HIRE">HIRE</option>
-        </select>
-
-
-
-      </div>
-
-      <!-- KPI ROW -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-
-        <div class="border rounded p-3">
-          <div class="text-sm text-gray-500">Active Breakdowns</div>
-          <div id="kpiActive" class="text-2xl font-bold">0</div>
-        </div>
-
-        <div class="border rounded p-3">
-          <div class="text-sm text-gray-500">Closed Breakdowns</div>
-          <div id="kpiClosed" class="text-2xl font-bold">0</div>
-        </div>
-
-        <div class="border rounded p-3">
-          <div class="text-sm text-gray-500">Avg Repair Time (hrs)</div>
-          <div id="kpiAvgRepair" class="text-2xl font-bold">0.00</div>
-        </div>
-
-        <div class="border rounded p-3">
-          <div class="text-sm text-gray-500">Avg Active Delay (hrs)</div>
-          <div id="kpiAvgActiveDelay"
-              class="text-2xl font-bold text-red-600">
-            0.00
-          </div>
-        </div>
-
-      </div>
-
-      <!-- CHART PLACEHOLDERS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            <div class="border rounded p-3 chart-box">
-                  <h3 class="font-semibold mb-2">
-                        Avg Repair Time (Closed)
-                  </h3>
-                  <canvas id="chartRepairSpeed"></canvas>
-            </div>
-
-            <div class="border rounded p-3 chart-box">
-                  <h3 class="font-semibold mb-2">
-                        Active Breakdown Ageing
-                  </h3>
-                  <canvas id="chartAgeing"></canvas>
-            </div>
-
-            <div class="border rounded p-3 chart-box">
-                  <h3 class="font-semibold mb-2">
-                        OWN vs HIRE Repair Speed
-                  </h3>
-                  <canvas id="chartOwnHire"></canvas>
-            </div>
-
-      </div>
-
-
-      <!-- PACKAGE SPEED CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-
-      <div class="border rounded p-3">
-        <h3 class="font-semibold">Adabari</h3>
-
-        <div>OWN Active: <span id="adbOwnActive">0</span></div>
-        <div>HIRE Active: <span id="adbHireActive">0</span></div>
-
-        <div>OWN Active DT: <span id="adbOwnActiveDT">0.00</span> hrs</div>
-        <div>HIRE Active DT: <span id="adbHireActiveDT">0.00</span> hrs</div>
-
-        <div>OWN Avg DT: <span id="adbOwnAvgDT">0.00</span> hrs</div>
-        <div>HIRE Avg DT: <span id="adbHireAvgDT">0.00</span> hrs</div>
-      </div>
-
-      <div class="border rounded p-3">
-        <h3 class="font-semibold">Birsing</h3>
-
-        <div>OWN Active: <span id="birOwnActive">0</span></div>
-        <div>HIRE Active: <span id="birHireActive">0</span></div>
-
-        <div>OWN Active DT: <span id="birOwnActiveDT">0.00</span> hrs</div>
-        <div>HIRE Active DT: <span id="birHireActiveDT">0.00</span> hrs</div>
-
-        <div>OWN Avg DT: <span id="birOwnAvgDT">0.00</span> hrs</div>
-        <div>HIRE Avg DT: <span id="birHireAvgDT">0.00</span> hrs</div>
-      </div>
-
-      <div class="border rounded p-3">
-        <h3 class="font-semibold">Phulbari</h3>
-
-        <div>OWN Active: <span id="phuOwnActive">0</span></div>
-        <div>HIRE Active: <span id="phuHireActive">0</span></div>
-
-        <div>OWN Active DT: <span id="phuOwnActiveDT">0.00</span> hrs</div>
-        <div>HIRE Active DT: <span id="phuHireActiveDT">0.00</span> hrs</div>
-
-        <div>OWN Avg DT: <span id="phuOwnAvgDT">0.00</span> hrs</div>
-        <div>HIRE Avg DT: <span id="phuHireAvgDT">0.00</span> hrs</div>
-      </div>
-
-      <!-- TOTAL CARD -->
-      <div class="border rounded p-3 bg-gray-50">
-        <h3 class="font-semibold">Total</h3>
-
-        <div>OWN Active: <span id="totOwnActive">0</span></div>
-        <div>HIRE Active: <span id="totHireActive">0</span></div>
-
-        <div>OWN Active DT: <span id="totOwnActiveDT">0.00</span> hrs</div>
-        <div>HIRE Active DT: <span id="totHireActiveDT">0.00</span> hrs</div>
-
-        <div>OWN Avg DT: <span id="totOwnAvgDT">0.00</span> hrs</div>
-        <div>HIRE Avg DT: <span id="totHireAvgDT">0.00</span> hrs</div>
-      </div>
-
-      </div>
-
-
-    </div>
-    <!-- ================= END SPEED & RECOVERY DASHBOARD ================= -->
-
+    
     
 
-
     <!-- EXISTING TABLE FILTER BAR (KEEP) -->
-    <div class="flex gap-2 mb-2">
-      <button id="filterAll"
+    <div class="section-divider"></div> 
+     <div class="flex gap-2 mb-2">
+       <button id="filterAll"
               class="px-3 py-1 border rounded font-semibold bg-gray-100">
-        All
-      </button>
+         All
+       </button>
 
-      <button id="filterActive"
+       <button id="filterActive"
               class="px-3 py-1 border rounded font-semibold bg-red-100 text-red-800">
-        🔴 Active
-      </button>
+         🔴 Active
+       </button>
 
-      <button id="filterClosed"
+       <button id="filterClosed"
               class="px-3 py-1 border rounded font-semibold bg-green-100 text-green-800">
-        🟢 Closed
-      </button>
-    </div>
+         🟢 Closed
+       </button>
+     </div>
 
-    <!-- TABLE -->
-    <div class="border rounded p-2">
-      <div id="breakdownTable"></div>
+     <!-- TABLE -->
+     <div class="border rounded p-2">
+       <div id="breakdownTable"></div>
+     </div>
     </div>
-  
       <!-- ================= REPEATED / CHRONIC BREAKDOWN ANALYSIS ================= -->
-    <div id="repeatedAnalysis" class="space-y-6 mt-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 space-y-6">
 
-      <!-- SECTION HEADER -->
-      <div>
-        <h2 class="text-xl font-bold">
-          🔁 Repeated / Chronic Breakdown Analysis (Overall)
-        </h2>
-        <p class="text-sm text-gray-500">
-          Assets with breakdowns repeating across multiple months (Active + Closed)
-        </p>
-      </div>
+        <button
+         class="md:hidden w-full text-left font-semibold p-3 rounded bg-gray-200 dark:bg-gray-700 mt-4"
+         onclick="this.nextElementSibling.classList.toggle('hidden')">
+         🔁 Repeated Breakdown Analysis
+        </button>
 
-      <!-- KPI SUMMARY CARDS -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div id="repeatedAnalysis" class="hidden md:block space-y-6 mt-8">
 
-        <div class="border rounded p-3">
-          <div class="text-sm text-gray-500">Chronic Assets</div>
-          <div id="kpiChronicAssets" class="text-2xl font-bold"></div>
-        </div>
+                <!-- SECTION HEADER -->
+                <div>
+                        <h2 class="text-lg sm:text-xl font-bold">
+                                Repeated Breakdown Analysis (Overall)
+                        </h2>
+                        <p class="text-sm text-gray-500">
+                                Assets with breakdowns occurring multiple times (Active + Closed)
+                        </p>
+                </div>
 
-        <div class="border rounded p-3">
-          <div class="text-sm text-gray-500">Total Assets</div>
-          <div id="kpiTotalAssets" class="text-2xl font-bold"></div>
-        </div>
+                <!-- KPI SUMMARY CARDS -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
-        <div class="border rounded p-3">
-          <div class="text-sm text-gray-500">Chronic / Total</div>
-          <div id="kpiChronicRatio" class="text-2xl font-bold"></div>
-        </div>
+                        <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                <div class="text-sm text-gray-500">Repeated Breakdown Assets</div>
+                                <div id="kpiChronicAssets"
+                                     class="text-lg sm:text-2xl font-bold"></div>
+                        </div>
 
-        <div class="border rounded p-3 bg-red-50">
-          <div class="text-sm text-gray-500">Asset with Most Breakdowns</div>
-          <div id="kpiWorstAsset" class="text-lg font-bold text-red-700"></div>
-          <div id="kpiWorstAssetMeta" class="text-xs text-gray-500"></div>  
-        </div>
+                        <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                <div class="text-sm text-gray-500">Total Assets</div>
+                                <div id="kpiTotalAssets"
+                                     class="text-lg sm:text-2xl font-bold"></div>
+                        </div>
 
-      </div>
+                        <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                <div class="text-sm text-gray-500">Repeated / Total Assets</div>
+                                <div id="kpiChronicRatio"
+                                     class="text-lg sm:text-2xl font-bold"></div>
+                        </div>
 
-      <!-- OWN vs HIRE SUMMARY -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="rounded-xl p-4 bg-red-50 shadow-sm">
+                                <div class="text-sm text-gray-500">
+                                        Asset with Most Breakdowns
+                                </div>
+                                <div id="kpiWorstAsset"
+                                     class="text-lg font-bold text-red-700"></div>
+                                <div id="kpiWorstAssetMeta"
+                                     class="text-xs text-gray-500"></div>
+                        </div>
 
-        <div class="border rounded p-3">
-          <h3 class="font-semibold mb-2">🟢 OWN Assets</h3>
-          <div>Chronic / Total: <span id="ownChronicRatio"></span></div>
-          <div>Avg Breakdowns: <span id="ownAvgBreakdowns"></span></div>
-          <div>Avg Months Affected: <span id="ownAvgMonths"></span></div>
-        </div>
-
-        <div class="border rounded p-3">
-          <h3 class="font-semibold mb-2">🔵 HIRE Assets</h3>
-          <div>Chronic / Total: <span id="hireChronicRatio"></span></div>
-          <div>Avg Breakdowns: <span id="hireAvgBreakdowns"></span></div>
-          <div>Avg Months Affected: <span id="hireAvgMonths"></span></div>
-        </div>
-
-      </div>
-
-        <!-- ACTION BAR -->
-        <div class="flex flex-wrap gap-3 items-center justify-between mb-3">
-
-          <div class="flex gap-2 items-center text-sm">
-            <span class="font-semibold">View:</span>
-
-            <select id="chronicViewLimit" class="border p-1 rounded">
-              <option value="10">Top 10 Assets</option>
-              <option value="15">Top 15 Assets</option>
-              <option value="20">Top 20 Assets</option>
-            </select>
-          </div>
-
-          <div class="flex gap-2">
-            <button
-              id="btnToggleAllAssets"
-              class="px-3 py-1 border rounded text-sm font-semibold">
-              Show All Breakdown Assets
-            </button>
-
-            <button
-              id="btnExportChronicExcel"
-              class="px-3 py-1 bg-green-600 text-white rounded text-sm font-semibold">
-              ⬇️ Download Excel
-            </button>
-          </div>
+                </div>
 
         </div>
 
-        <!-- TOP CHRONIC ASSETS TABLE -->
-        <div class="overflow-x-auto border rounded">
+            <!-- OWN vs HIRE SUMMARY -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-          <table class="min-w-full border-collapse text-sm text-center">
-                <thead class="bg-gray-100 sticky top-0">
-                <tr id="chronicAssetsHeaderRow">
-                <th class="border px-2 py-1 text-left">
-                Asset Code
-                </th>
+                <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                    <div class="ownhire-card own-card">
+                        <div class="ownhire-header">
+                            <span class="ownhire-dot own-dot"></span>
+                            <h3>OWN Assets</h3>
+                        </div>
 
-                <!-- dynamic month columns injected here -->
+                        <div class="ownhire-body">
+                            <div class="ownhire-row">
+                                <span class="ownhire-label">Repeated / Total Assets</span>
+                                <span class="ownhire-value" id="ownChronicRatio"></span>
+                            </div>
 
-                <th class="border px-2 py-1">
-                Max / Month
-                </th>
-                </tr>
-                </thead>
+                            <div class="ownhire-row">
+                                <span class="ownhire-label">Avg Breakdowns / Asset</span>
+                                <span class="ownhire-value" id="ownAvgBreakdowns"></span>
+                            </div>
 
-            <tbody id="topChronicAssetsBody"></tbody>
-            
+                            <div class="ownhire-row">
+                                <span class="ownhire-label">Avg Months Affected</span>
+                                <span class="ownhire-value" id="ownAvgMonths"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                    <div class="ownhire-card hire-card">
+                        <div class="ownhire-header">
+                            <span class="ownhire-dot hire-dot"></span>
+                            <h3>HIRE Assets</h3>
+                        </div>
 
-          </table>
+                        <div class="ownhire-body">
+                            <div class="ownhire-row">
+                                <span class="ownhire-label">Repeated / Total Assets</span>
+                                <span class="ownhire-value" id="hireChronicRatio"></span>
+                            </div>
 
-        </div>
+                            <div class="ownhire-row">
+                                <span class="ownhire-label">Avg Breakdowns / Asset</span>
+                                <span class="ownhire-value" id="hireAvgBreakdowns"></span>
+                            </div>
 
-        <!-- ACTION BAR — BREAKDOWN TYPE MATRIX -->
-        <div class="flex flex-wrap gap-3 items-center justify-between mb-3 mt-4">
+                            <div class="ownhire-row">
+                                <span class="ownhire-label">Avg Months Affected</span>
+                                <span class="ownhire-value" id="hireAvgMonths"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ACTION BAR -->
+            <div class="flex flex-wrap gap-3 items-center justify-between mb-3">
 
                 <div class="flex gap-2 items-center text-sm">
-                        <span class="font-semibold">View:</span>
-
-                        <select id="typeMatrixViewLimit" class="border p-1 rounded">
-                                <option value="10">Top 10 Assets</option>
-                                <option value="15">Top 15 Assets</option>
-                                <option value="20">Top 20 Assets</option>
-                                <option value="ALL">All Assets</option>
-                        </select>
+                    <span class="font-semibold">View:</span>
+                    <select id="chronicViewLimit" class="border p-1 rounded">
+                        <option value="10">Top 10 Repeated Assets</option>
+                        <option value="15">Top 15 Repeated Assets</option>
+                        <option value="20">Top 20 Repeated Assets</option>
+                    </select>
                 </div>
 
                 <div class="flex gap-2">
-                        <button
-                                id="btnShowAllTypeMatrix"
-                                class="px-3 py-1 border rounded text-sm font-semibold">
-                                Show All Breakdown Assets
-                        </button>
+                    <button
+                        id="btnToggleAllAssets"
+                        class="px-3 py-1 border rounded text-sm font-semibold">
+                        Show All Breakdown Assets
+                    </button>
 
-                        <button
-                                id="btnExportTypeMatrixExcel"
-                                class="px-3 py-1 bg-green-600 text-white rounded text-sm font-semibold">
-                                ⬇️ Download Excel
-                        </button>
+                    <button
+                        id="btnExportChronicExcel"
+                        class="px-3 py-1 bg-green-600 text-white rounded text-sm font-semibold">
+                        ⬇️ Download Excel
+                    </button>
                 </div>
+
+            </div>
+
+            <!-- TOP CHRONIC ASSETS TABLE -->
+            <div class="overflow-x-auto border rounded">
+
+                <table class="min-w-full border-collapse text-sm text-center chronic-table">
+                    <thead class="sticky top-0 chronic-thead">
+                        <tr id="chronicAssetsHeaderRow">
+                            <th class="border px-2 py-1 text-left">Asset Code</th>
+                            <th class="border px-2 py-1">Max / Month</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topChronicAssetsBody"></tbody>
+                </table>
+
+            </div>
+
+            <!-- ACTION BAR — BREAKDOWN TYPE MATRIX -->
+            <div class="flex flex-wrap gap-3 items-center justify-between mb-3 mt-4">
+
+                <div class="flex gap-2 items-center text-sm">
+                    <span class="font-semibold">View:</span>
+                    <select id="typeMatrixViewLimit" class="border p-1 rounded">
+                        <option value="10">Top 10 Repeated Assets</option>
+                        <option value="15">Top 15 Repeated Assets</option>
+                        <option value="20">Top 20 Repeated Assets</option>
+                        <option value="ALL">All Assets</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-2">
+                    <button
+                        id="btnShowAllTypeMatrix"
+                        class="px-3 py-1 border rounded text-sm font-semibold">
+                        Show All Breakdown Assets
+                    </button>
+
+                    <button
+                        id="btnExportTypeMatrixExcel"
+                        class="px-3 py-1 bg-green-600 text-white rounded text-sm font-semibold">
+                        ⬇️ Download Excel
+                    </button>
+                </div>
+
+            </div>
+
+            <div id="tab-types" class="tab-section">
+
+                <!-- BREAKDOWN TYPE MATRIX -->
+                <div class="mt-6 overflow-x-auto border rounded">
+
+                    <table class="min-w-full border-collapse text-sm text-center type-matrix-table">
+
+                        <thead class="sticky top-0 type-matrix-thead">
+                            <tr>
+                                <th class="border px-2 py-1 text-left font-semibold sticky-left">
+                                    Asset Code
+                                </th>
+                                <th class="border px-2 py-1">Mechanical</th>
+                                <th class="border px-2 py-1">Electrical</th>
+                                <th class="border px-2 py-1">Hydraulics</th>
+                                <th class="border px-2 py-1">Operator</th>
+                                <th class="border px-2 py-1">Others</th>
+                                <th class="border px-2 py-1 font-bold sticky-right">
+                                    Total
+                                </th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="breakdownTypeMatrixBody">
+                            <!-- JS will insert rows here -->
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
 
         </div>
 
-        <!-- ================= BREAKDOWN TYPE MATRIX (STEP-B3) ================= -->
-          <div class="mt-6 overflow-x-auto border rounded">
-
-            <table class="min-w-full border-collapse text-sm text-center">
-              <thead class="bg-gray-100 sticky top-0">
-                <tr>
-                  <th class="border px-2 py-1 text-left">Asset Code</th>
-                  <th class="border px-2 py-1">Mechanical</th>
-                  <th class="border px-2 py-1">Electrical</th>
-                  <th class="border px-2 py-1">Hydraulics</th>
-                  <th class="border px-2 py-1">Operator</th>
-                  <th class="border px-2 py-1">Others</th>
-                  <th class="border px-2 py-1">Total</th>
-                </tr>
-              </thead>
-
-              <tbody id="breakdownTypeMatrixBody"></tbody>
-            </table>
-
-          </div>
+    </div>
         <!-- ================= END BREAKDOWN TYPE MATRIX ================= -->
 
         <!-- ALL ASSETS (COLLAPSED PLACEHOLDER) -->
@@ -401,50 +656,18 @@
           
         </div>
 
-      <!-- WHY THEY REPEAT (BREAKDOWN TYPE / NLP TOGGLE) -->
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
 
-          <h3 class="font-semibold">
-            ❓ Why They Repeat
-          </h3>
-
-          <!-- TOGGLE -->
-          <div class="flex gap-4 text-sm">
-
-            <label class="flex items-center gap-1 cursor-pointer">
-              <input
-                type="radio"
-                name="whyRepeatView"
-                value="type"
-                checked
-              />
-              Breakdown Type
-            </label>
-
-            <label class="flex items-center gap-1 text-gray-400 cursor-not-allowed">
-              <input
-                type="radio"
-                name="whyRepeatView"
-                value="nlp"
-                disabled
-              />
-              Root Cause (NLP)
-            </label>
-
-          </div>
-
-        </div>
 
         <!-- BREAKDOWN TYPE VIEW -->
         <div id="whyByTypeView">
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
             <!-- BAR CHART PLACEHOLDER -->
             <div id="breakdownTypeChart" class="border rounded p-3 h-[300px]"></div>
 
             <!-- SUMMARY TABLE -->
-            <div class="border rounded p-3">
+            <div class="rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
 
               <h4 class="font-semibold mb-2 text-sm">
                 Breakdown Type Summary (Chronic Assets Only)
@@ -470,7 +693,7 @@
         <!-- NLP ROOT CAUSE VIEW (FUTURE - UI READY) -->
         <div
           id="whyByNlpView"
-          class="hidden space-y-4 border rounded p-4 bg-gray-50"
+          class="hidden space-y-4 border rounded p-4 bg-gray-50 dark:bg-gray-900"
         >
 
           <div class="flex items-center justify-between">
@@ -478,30 +701,28 @@
               🧠 Root Cause Analysis (NLP – Grouped)
             </h4>
 
-            <span class="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800">
-              Coming Soon
-            </span>
+
           </div>
 
           <!-- NLP SUMMARY CARDS -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
-            <div class="border rounded p-3 bg-white">
+            <div class="border rounded p-3 bg-white dark:bg-gray-800">
               <div class="text-xs text-gray-500"></div>
               <div class="text-sm font-semibold"></div>
             </div>
 
-            <div class="border rounded p-3 bg-white">
+            <div class="border rounded p-3 bg-white dark:bg-gray-800">
               <div class="text-xs text-gray-500"></div>
               <div class="text-sm font-semibold"></div>
             </div>
 
-            <div class="border rounded p-3 bg-white">
+            <div class="border rounded p-3 bg-white dark:bg-gray-800">
               <div class="text-xs text-gray-500"></div>
               <div class="text-sm font-semibold"></div>
             </div>
 
-            <div class="border rounded p-3 bg-white">
+            <div class="border rounded p-3 bg-white dark:bg-gray-800">
               <div class="text-xs text-gray-500"></div>
               <div class="text-sm font-semibold"></div>
             </div>
@@ -514,7 +735,7 @@
           </div>
 
           <!-- NLP SUMMARY TABLE -->
-          <div class="border rounded p-3 bg-white">
+          <div class="border rounded p-3 bg-white dark:bg-gray-800">
 
             <h5 class="font-semibold text-sm mb-2">
               Root Cause Group Summary
@@ -551,10 +772,10 @@
 
   <!-- MODAL -->
   <div id="bdModal" class="hidden fixed inset-0 bg-black/60 z-50">
-    <div class="bg-white w-[95%] max-w-7xl max-h-[90%] overflow-y-auto mx-auto mt-6 rounded">
+    <div class="bg-white dark:bg-gray-800 w-[96%] sm:w-[92%] max-w-6xl max-h-[90%] rounded-2xl shadow-xl overflow-y-auto mx-auto mt-6 rounded">
 
       <div class="flex justify-between items-center border-b px-6 py-3">
-        <h2 id="modalTitle" class="text-xl font-bold"></h2>
+        <h2 id="modalTitle" class="text-lg sm:text-xl font-bold"></h2>
         <button onclick="closeModal()">✖</button>
       </div>
 
@@ -577,14 +798,14 @@
 
             <!-- Hidden actual asset code -->
             <input type="hidden" id="asset_code">  
-            <input id="asset_description" placeholder="Asset Description" class="border p-2 rounded"readonly>
+            <input id="asset_description" placeholder="Asset Description" class="border p-2 rounded" readonly>
             <select id="asset_package" class="border p-2 rounded">
               <option value="">Package</option>
               <option>Adabari</option>
               <option>Birsing</option>
               <option>Phulbari</option>
             </select>  
-            <input id="own_hire" placeholder="OWN / HIRE" class="border p-2 rounded">
+            <input id="own_hire" placeholder="OWN / HIRE" class="border p-2 rounded" readonly>
             <input id="agency" placeholder="Agency" class="border p-2 rounded bg-gray-100" readonly>
 
           </div>
@@ -757,18 +978,697 @@
     .fp-input{ min-width:220px }
     
     .chart-box{
-      height: 320px;
+      height: 260px;
       position: relative;
       overflow: hidden;
     }  
+    
+    @media (min-width: 1024px){
+      .chart-box{ height: 320px; }
+    }  
+
+    /* ================= CANVA-STYLE CARD POLISH ================= */
+
+    .card,
+    .rounded-xl,
+    .chart-box{
+        transition:
+            box-shadow 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .card:hover,
+    .rounded-xl:hover,
+    .chart-box:hover{
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        transform: translateY(-2px);
+    }
+
+    /* Dark mode shadow control */
+    .dark .card:hover,
+    .dark .rounded-xl:hover,
+    .dark .chart-box:hover{
+        box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+    }
+
+    /* ================= KPI VISUAL HIERARCHY ================= */
+
+    .kpi-label{
+        font-size: 0.75rem;
+        color: #6b7280; /* gray-500 */
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    .dark .kpi-label{
+        color: #9ca3af;
+    }
+
+    .kpi-value{
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    /* ================= SECTION SEPARATORS ================= */
+
+    .section-divider{
+        height: 1px;
+        background: linear-gradient(
+            to right,
+            transparent,
+            rgba(0,0,0,0.08),
+            transparent
+        );
+        margin: 24px 0;
+    }
+
+    .dark .section-divider{
+        background: linear-gradient(
+            to right,
+            transparent,
+            rgba(255,255,255,0.12),
+            transparent
+        );
+    }
+   
+    /* ================= PROFESSIONAL PACKAGE CARDS ================= */
+
+    .pkg-card{
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+    }
+
+    .dark .pkg-card{
+        background: #0f172a;
+        border-color: #1f2933;
+    }
+
+    .pkg-title{
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    /* GROUP BLOCK */
+    .pkg-block{
+        margin-bottom: 12px;
+    }
+
+    .pkg-block-title{
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #6b7280;
+        margin-bottom: 6px;
+    }
+
+    .dark .pkg-block-title{
+        color: #9ca3af;
+    }
+
+    /* KPI ROW */
+    .pkg-kpi{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+    }
+
+    .pkg-label{
+        font-size: 0.85rem;
+        color: #374151;
+    }
+
+    .dark .pkg-label{
+        color: #d1d5db;
+    }
+
+    .pkg-value{
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    /* COLOR ACCENTS (SUBTLE) */
+    .pkg-own .pkg-value{ 
+        color: #15803d; /* green-700 */
+    }
+
+    .pkg-hire .pkg-value{ 
+        color: #1d4ed8; /* blue-700 */
+    }
+
+    /* DIVIDER */
+    .pkg-divider{
+        height: 1px;
+        background: #e5e7eb;
+        margin: 10px 0;
+    }
+
+    .dark .pkg-divider{
+        background: #334155;
+    }
+
+    /* ===== HEADER FILTER FIX ===== */
+
+    .tabulator-header-filter input,
+    .tabulator-header-filter select{
+        height: 26px;
+        font-size: 12px;
+        padding: 2px 6px;
+        box-sizing: border-box;
+    }
+
+    /* ================= HEADER ALIGNMENT ================= */
+
+    /* Center header titles vertically */
+    .tabulator-col{
+        display: flex;
+        align-items: center;
+    }
+
+    /* Header title text */
+    .tabulator-col-title{
+        width: 100%;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    /* ================= CELL TEXT ALIGNMENT ================= */
+
+    /* Default center alignment */
+    .tabulator-cell{
+        text-align: center;
+    }
+
+    /* Right-align numeric / date columns */
+    .tabulator-cell[data-field="downtime_hrs"],
+    .tabulator-cell[data-field="breakdown_start"],
+    .tabulator-cell[data-field="breakdown_end"],
+    .tabulator-cell[data-field="expected_commissioned_at"],
+    .tabulator-cell[data-field="eip_commissioned_at"]{
+        text-align: right;
+        padding-right: 8px;
+    }
+    
+    /* ================= USER_BASE COLOR THEME ================= */
+
+    /* Table border */
+    .tabulator{
+        border: 1px solid #facc15; /* yellow-400 */
+        border-radius: 8px;
+    }
+
+    /* Header background */
+    .tabulator-header{
+        background: #fefce8; /* very light yellow */
+        border-bottom: 1px solid #fde68a;
+    }
+
+    /* Header cells */
+    .tabulator-col{
+        background: transparent;
+        color: #111827; /* near black */
+    }
+
+    /* Row background */
+    .tabulator-row{
+        background: #ffffff;
+    }
+
+    /* Zebra striping (very light) */
+    .tabulator-row:nth-child(even){
+        background: #fffbeb; /* soft yellow */
+    }
+
+    /* Hover effect */
+    .tabulator-row:hover{
+        background: #fef3c7 !important;
+    }
+
+    /* Active row (click feel) */
+    .tabulator-row.tabulator-selected{
+        background: #fde68a !important;
+    }
+    
+    /* ================= FILTER INPUT STYLE ================= */
+
+    .tabulator-header-filter input,
+    .tabulator-header-filter select{
+        background: #ffffff;
+        border: 1px solid #facc15;
+        border-radius: 4px;
+        color: #111827;
+    }
+
+    .tabulator-header-filter input::placeholder{
+        color: #9ca3af;
+    }    
+
+  /* ================= OWN / HIRE PROFESSIONAL CARDS ================= */
+
+  .ownhire-card{
+    background: linear-gradient(180deg, #ffffff, #f9fafb);
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+
+  .dark .ownhire-card{
+    background: linear-gradient(180deg, #0f172a, #020617);
+    border-color: #1f2937;
+  }
+
+  /* Header */
+  .ownhire-header{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .ownhire-header h3{
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .dark .ownhire-header h3{
+    color: #e5e7eb;
+  }
+
+  /* Dot indicator */
+  .ownhire-dot{
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .own-dot{ background: #16a34a; }   /* green */
+  .hire-dot{ background: #2563eb; }  /* blue */
+
+  /* Body rows */
+  .ownhire-body{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ownhire-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Labels */
+  .ownhire-label{
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  .dark .ownhire-label{
+    color: #9ca3af;
+  }
+
+  /* Values */
+  .ownhire-value{
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .dark .ownhire-value{
+    color: #f9fafb;
+  }
+
+  /* Subtle accent */
+  .own-card .ownhire-value{
+    color: #15803d;
+  }
+
+  .hire-card .ownhire-value{
+    color: #1d4ed8;
+  }
+
+  /* ================= REPEATED BREAKDOWN – TABLE 1 ================= */
+
+  .chronic-table{
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .chronic-thead{
+    background: linear-gradient(
+      to bottom,
+      #fefce8,
+      #fef3c7
+    );
+  }
+
+  .chronic-thead th{
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #92400e;
+    padding: 8px 6px;
+    border-bottom: 1px solid #fde68a;
+  }
+
+  /* Body rows */
+  .chronic-table tbody tr{
+    transition: background 0.15s ease;
+  }
+
+  /* Zebra */
+  .chronic-table tbody tr:nth-child(even){
+    background: #fffbeb;
+  }
+
+  /* Hover */
+  .chronic-table tbody tr:hover{
+    background: #fef3c7;
+  }
+
+  /* Asset code emphasis */
+  .chronic-table td:first-child{
+    font-weight: 600;
+    color: #111827;
+  }
+
+  /* Month cells */
+  .chronic-table td{
+    padding: 6px 4px;
+  }
+
+  /* Highlight MAX month (already marked red) – soften it */
+  .chronic-table td.bg-red-100{
+    background: #fee2e2 !important;
+    color: #991b1b;
+    font-weight: 700;
+  }
+
+  /* Max / Month column */
+  .chronic-table td:last-child{
+    font-weight: 800;
+    color: #7c2d12;
+  }
+
+  /* Dark mode support */
+  .dark .chronic-thead{
+    background: linear-gradient(
+      to bottom,
+      #1f2933,
+      #020617
+    );
+  }
+
+  .dark .chronic-thead th{
+    color: #fde68a;
+  }
+
+  .dark .chronic-table tbody tr:nth-child(even){
+    background: #020617;
+  }
+
+  .dark .chronic-table tbody tr:hover{
+    background: #1f2937;
+  }
+
+  /* ================= STICKY COLUMNS (TABLE-1) ================= */
+
+  /* Left sticky (Asset Code) */
+  .sticky-left{
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: inherit;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+  }
+
+  /* Right sticky (Max / Month) */
+  .sticky-right{
+    position: sticky;
+    right: 0;
+    z-index: 3;
+    background: inherit;
+    box-shadow: -2px 0 6px rgba(0,0,0,0.05);
+  }
+
+  /* Ensure header stays above body */
+  .chronic-thead .sticky-left,
+  .chronic-thead .sticky-right{
+    z-index: 4;
+  }
+
+    /* ================= BREAKDOWN TYPE MATRIX ================= */
+
+    .type-matrix-table{
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    /* Header */
+    .type-matrix-thead{
+        background: linear-gradient(to bottom, #fefce8, #fde68a);
+    }
+
+    .type-matrix-thead th{
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #92400e;
+        padding: 8px 6px;
+    }
+
+    /* Zebra rows */
+    .type-matrix-table tbody tr:nth-child(even){
+        background: #fffbeb;
+    }
+
+    /* Hover */
+    .type-matrix-table tbody tr:hover{
+        background: #fef3c7;
+    }
+
+    /* Matrix cells */
+    .matrix-cell{
+        font-weight: 600;
+        color: #374151;
+    }
+
+    /* Highlight totals */
+    .type-matrix-table td:last-child{
+        background: #fef3c7;
+        color: #7c2d12;
+    }
+
+    /* Dark mode */
+    .dark .type-matrix-thead{
+        background: linear-gradient(to bottom, #1f2937, #020617);
+    }
+
+    .dark .type-matrix-thead th{
+        color: #fde68a;
+    }
+
+    .dark .type-matrix-table tbody tr:nth-child(even){
+        background: #020617;
+    }
+
+    .dark .type-matrix-table tbody tr:hover{
+        background: #1f2937;
+    }
 
   </style>
 
   <script>
-  const API="/user/breakdown_reports";
-  let table, editId=null;
-  let BREAKDOWN_RAW = [];
-  let CHRONIC_ASSETS = [];
+   console.log("JS STARTED");
+
+   if (window.lucide) {
+     lucide.createIcons();
+   }  
+
+   const API="/user/breakdown_reports";
+   let table, editId=null;
+   let BREAKDOWN_RAW = [];
+   let CHRONIC_ASSETS = [];
+  
+
+   const NLP_ENGINE = {
+
+    /* ===================== HYDRAULIC ===================== */
+    "Hydraulic": {
+      keywords: ["hydraulic", "hose", "jack", "cylinder", "oil leak"],
+      failures: {
+        "Leakage": ["oil leak", "hose burst", "seal leak", "pipe leakage"],
+        "Low Pressure": ["slow movement", "weak hydraulic", "no lifting"],
+        "Pump Failure": ["pump noise", "no pressure", "pump fail"],
+        "Valve Failure": ["valve stuck", "control valve issue"]
+      }
+    },
+
+    /* ===================== ENGINE ===================== */
+    "Engine": {
+      keywords: ["engine", "rpm", "smoke", "oil pressure"],
+      failures: {
+        "RPM Issue": ["low rpm", "rpm fluctuation", "engine hunting"],
+        "Overheating": ["engine hot", "coolant boiling"],
+        "Oil Pressure Low": ["oil pressure low", "warning light"],
+        "Combustion Failure": ["black smoke", "white smoke"]
+      }
+    },
+
+    /* ===================== ELECTRICAL ===================== */
+    "Electrical": {
+      keywords: ["electrical", "battery", "sensor", "wiring"],
+      failures: {
+        "Power Failure": ["no power", "battery dead"],
+        "Sensor Fault": ["sensor error", "fault code"],
+        "Wiring Issue": ["wire cut", "short circuit"]
+      }
+    },
+
+    /* ===================== TRANSMISSION ===================== */
+    "Transmission": {
+      keywords: ["gear", "clutch", "transmission"],
+      failures: {
+        "Clutch Slip": ["slip", "no pickup"],
+        "Gear Failure": ["gear noise", "gear stuck"]
+      }
+    },
+
+    /* ===================== GANTRY CRANE ===================== */
+    "Gantry Crane": {
+      keywords: ["gantry", "crane", "hoist"],
+      failures: {
+        "Hoist Failure": ["load not lifting", "hoist jam"],
+        "Wire Rope Damage": ["rope cut", "wire broken"],
+        "Travel Motor Issue": ["crane not moving"]
+      }
+    },
+
+    /* ===================== VFD / DRIVE ===================== */
+    "VFD / Drive": {
+      keywords: ["vfd", "drive", "inverter"],
+      failures: {
+        "Overload Trip": ["vfd trip", "overload fault"],
+        "Overheat": ["vfd overheating"],
+        "Communication Error": ["comm fault", "no signal"]
+      }
+    },
+
+    /* ===================== CRD / LOAD CELL ===================== */
+    "CRD / Load Cell": {
+      keywords: ["crd", "load cell", "weight"],
+      failures: {
+        "Calibration Error": ["wrong weight", "calibration error"],
+        "Signal Loss": ["no signal", "fluctuating weight"]
+      }
+    },
+
+    /* ===================== BATCHING / PLANT ===================== */
+    "Batching Plant": {
+      keywords: ["batching", "mixer", "plant"],
+      failures: {
+        "Mixer Jam": ["mixer stuck", "not rotating"],
+        "Weighing Error": ["wrong mix", "weight mismatch"]
+      }
+    },
+
+    /* ===================== ROAD EQUIPMENT ===================== */
+    "Road Equipment": {
+      keywords: ["paver", "roller", "bitumen"],
+      failures: {
+        "Vibration Failure": ["no vibration"],
+        "Spray Failure": ["bitumen not spraying"]
+      }
+    },
+
+    /* ===================== TRAILER / PULLER ===================== */
+    "Trailer / Puller": {
+      keywords: ["trailer", "axle", "puller"],
+      failures: {
+        "Axle Failure": ["axle noise", "wheel jam"],
+        "Brake Failure": ["brake fail", "air leak"]
+      }
+    },
+
+    /* ===================== MAINTENANCE ===================== */
+    "Maintenance": {
+      keywords: ["service", "pm", "maintenance"],
+      failures: {
+        "PM Missed": ["service not done", "pm skipped"],
+        "Poor Repair": ["repeat issue", "temporary fix"]
+      }
+    },
+
+    /* ===================== OPERATOR ===================== */
+    "Operator Error": {
+      keywords: ["operator", "handling", "mistake"],
+      failures: {
+        "Misuse": ["overload", "wrong operation"],
+        "Negligence": ["alarm ignored", "late reporting"]
+      }
+    }
+
+  };  
+
+  /* ================= NLP SEVERITY + FUZZY MATCH ================= */
+
+  const NLP_SEVERITY = {
+    "Leakage": { level: "Medium", color: "#f59e0b" },
+    "Low Pressure": { level: "High", color: "#dc2626" },
+    "Pump Failure": { level: "High", color: "#dc2626" },
+    "Valve Failure": { level: "Medium", color: "#f59e0b" },
+
+    "RPM Issue": { level: "Medium", color: "#f59e0b" },
+    "Overheating": { level: "High", color: "#dc2626" },
+    "Oil Pressure Low": { level: "High", color: "#dc2626" },
+
+    "Power Failure": { level: "High", color: "#dc2626" },
+    "Sensor Fault": { level: "Medium", color: "#f59e0b" },
+    "Wiring Issue": { level: "Medium", color: "#f59e0b" },
+
+    "Clutch Slip": { level: "High", color: "#dc2626" },
+    "Gear Failure": { level: "High", color: "#dc2626" },
+
+    "Hoist Failure": { level: "High", color: "#dc2626" },
+
+    "Overload Trip": { level: "Medium", color: "#f59e0b" },
+
+    "Calibration Error": { level: "Low", color: "#22c55e" },
+    "Signal Loss": { level: "Medium", color: "#f59e0b" },
+
+    "Mixer Jam": { level: "High", color: "#dc2626" },
+
+    "Axle Failure": { level: "High", color: "#dc2626" },
+
+    "PM Missed": { level: "Medium", color: "#f59e0b" },
+    "Poor Repair": { level: "High", color: "#dc2626" },
+
+    "Misuse": { level: "Medium", color: "#f59e0b" },
+    "Negligence": { level: "High", color: "#dc2626" },
+
+    "Unknown": { level: "Low", color: "#9ca3af" }
+  };
+
+  /* ---- SPELL-TOLERANT MATCH ---- */
+  function fuzzyMatch(text, keyword){
+    if(!text || !keyword) return false;
+
+    text = text.toLowerCase();
+    keyword = keyword.toLowerCase();
+
+    if(text.includes(keyword)) return true;
+
+    const norm = s => s.replace(/[aeiou]/g, "");
+    return norm(text).includes(norm(keyword));
+  }
 
   // ensure header and cell text wraps and rows auto-size to content
 
@@ -780,13 +1680,19 @@
     table = new Tabulator("#breakdownTable",{
       data,
       layout:"fitColumns",
-      height:"600px",
+      movableColumns:false,
+      resizableRows:false,
+      layoutColumnsOnNewData:false,
+      headerFilterLiveFilter:true,
+      height: window.innerWidth < 768 ? 420 : 600,
       columns:[
-        {title:"ID", field:"id", width:60, formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"ID", field:"id", width:60, frozen:true, formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
         {
       title:"Status",
       field:"status",
       hozAlign:"center",
+      frozen:true,
+      minWidth:120,
       formatter:function(cell){
         const v = (cell.getValue() || '').toString().trim();
 
@@ -797,46 +1703,67 @@
         return `<span class="px-2 py-1 text-xs font-semibold rounded bg-red-200 text-red-900">🔴 Active</span>`;
       }
     },
-        {title:"Asset Code", field:"asset_code", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Asset Description", field:"asset_description", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Agency", field:"agency", frozen:true, formatter:function(cell){ const v = cell.getValue(); return v == null ? '' : String(v); }},
-        {title:"Package", field:"asset_package", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Own/Hire", field:"own_hire", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Location", field:"location", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Start", field:"breakdown_start", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"End", field:"breakdown_end", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Downtime (hrs)", field:"downtime_hrs", hozAlign:"center", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Type", field:"breakdown_type", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Root Cause", field:"root_cause", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Description", field:"breakdown_description", formatter:"textarea"}, 
-        {title:"Current Status", field:"current_status", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Responsible", field:"responsible_person", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Expected Commission", field:"expected_commissioned_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"EIP Commission", field:"eip_commissioned_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Reported By", field:"reported_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Created By", field:"created_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Updated By", field:"updated_by", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Created At", field:"created_at", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
-        {title:"Remarks", field:"remarks", formatter:"textarea"},
+        {title:"Asset Code", field:"asset_code", minWidth:120, frozen:true, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Asset Description", field:"asset_description", minWidth:220, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Agency", field:"agency", minWidth:160, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Package", field:"asset_package", minWidth:120, sorter:"string", headerFilter:"select", headerFilterParams:{values:{"":"All","Adabari":"Adabari","Birsing":"Birsing","Phulbari":"Phulbari"}}, formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Own/Hire", field:"own_hire", minWidth:100, sorter:"string", headerFilter:"select", headerFilterParams:{values:{"":"All","OWN":"OWN","HIRE":"HIRE"}}, formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Breakdown Start Date", field:"breakdown_start", minWidth:240, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Breakdown End Date", field:"breakdown_end", minWidth:240, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Downtime (hrs)", field:"downtime_hrs", minWidth:200, sorter:"number", headerFilter:"input", headerFilterPlaceholder:"≥ hrs", hozAlign:"center", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Breakdown Type", field:"breakdown_type", minWidth:200, sorter:"string", headerFilter:"select", headerFilterParams:{values:{"":"All","Mechanical":"Mechanical","Electrical":"Electrical","Hydraulics":"Hydraulics","Operator":"Operator","Others":"Others"}}, formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Root Cause", field:"root_cause", minWidth:180, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '' : String(v);}},
+
+        {title:"Breakdown Description", field:"breakdown_description", minWidth:240, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:"textarea"},
+
+        {title:"Current Status", field:"current_status", minWidth:240, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Responsible Person", field:"responsible_person", minWidth:160, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+        {title:"Expected Commission Date", field:"expected_commissioned_at", minWidth:200, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"EIP Commission Date", field:"eip_commissioned_at", minWidth:200, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Reported By", field:"reported_by", minWidth:140, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Created By", field:"created_by", minWidth:140, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Updated By", field:"updated_by", minWidth:140, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Created At", field:"created_at", minWidth:160, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:function(cell){const v=cell.getValue(); return v==null? '': String(v);}},
+
+        {title:"Remarks", field:"remarks", minWidth:220, sorter:"string", headerFilter:"input", headerFilterPlaceholder:"Search", formatter:"textarea"},
+
         {
-          title:"Edit",
-          width:60,
-          hozAlign:"center",
-          formatter:function(cell){
-            const row = cell.getRow().getData();
-            if((row.status || '').trim() === 'Closed'){
-              return '🔒';
+            title:"Edit",
+            minWidth:60,
+            width:60,
+            hozAlign:"center",
+            frozen:true,
+            headerSort:false,
+            formatter:function(cell){
+                const row = cell.getRow().getData();
+                if((row.status || '').trim() === 'Closed'){
+                    return '🔒';
+                }
+                return '✏️';
+            },
+            cellClick:function(e, cell){
+                const row = cell.getRow().getData();
+                if((row.status || '').trim() === 'Closed'){
+                    alert("Closed breakdowns cannot be edited.");
+                    return;
+                }
+                openEdit(row);
             }
-            return '✏️';
-          },
-          cellClick:function(e, cell){
-            const row = cell.getRow().getData();
-            if((row.status || '').trim() === 'Closed'){
-              alert("Closed breakdowns cannot be edited.");
-              return;
-            }
-            openEdit(row);
-          }
         }
       ],
       placeholder:"No breakdown reports found",
@@ -946,9 +1873,6 @@ async function loadDashboard(){
                 );
         });
 
-
-
-
         /* ---------- KPIs ---------- */
         document.getElementById("kpiActive").innerText =
                 d.counts.active;
@@ -1037,6 +1961,16 @@ function renderRepairChart(packages){
         );
 }
 
+function switchTab(key){
+  document.querySelectorAll('.tab-section')
+    .forEach(s=>s.classList.add('hidden'));
+
+  document.getElementById(`tab-${key}`)?.classList.remove('hidden');
+
+  document.querySelectorAll('.tab-btn')
+    .forEach(b=>b.classList.remove('border-blue-500','font-semibold'));
+}
+
 function renderAgeingChart(ageing){
 
         if(chartAgeing) chartAgeing.destroy();
@@ -1092,7 +2026,7 @@ function renderOwnHireChart(ownHire){
 (async function initPage(){
   await loadBreakdownRaw();
   await loadDashboard();
-  applyDashboardFilters();
+  
 })();  
 
   /* ---------- CHRONIC VIEW LIMIT CHANGE ---------- */
@@ -1164,8 +2098,102 @@ function renderOwnHireChart(ownHire){
     renderBreakdownTypeSummary();
     computeOwnHireChronicStats();
     renderOwnHireChronicUI();
-    renderBreakdownTypeMatrix();
+    setTimeout(renderBreakdownTypeMatrix, 200);
     renderChronicTable();
+    runNlpAnalysis();
+    renderNlpSummary();
+  }
+  
+  function showNlpForAsset(assetCode){
+
+    const rows = BREAKDOWN_RAW.filter(r =>
+      (r.asset_code || "").trim() === assetCode
+    );
+
+    const summary = {};
+    let total = 0;
+
+    rows.forEach(r => {
+
+      const text = [
+        r.root_cause,
+        r.breakdown_description,
+        r.breakdown_type,
+        r.asset_description
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      const results = analyzeFailure(text);
+
+      results.forEach(a => {
+        if(!summary[a.failure]){
+          summary[a.failure] = 0;
+        }
+        summary[a.failure]++;
+        total++;
+      });
+    });
+
+    // ===== Render NLP Table =====
+    const body = document.getElementById("nlpSummaryBody");
+    if(!body) return;
+
+    body.innerHTML = "";
+
+    Object.entries(summary)
+      .sort((a,b)=>b[1]-a[1])
+      .forEach(([failure,count]) => {
+
+        const sev = getSeverityFromCount(count);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="border px-2 py-1">${failure}</td>
+          <td class="border px-2 py-1 text-center">${count}</td>
+          <td class="border px-2 py-1 text-center">
+            <span style="
+              background:${sev.color};
+              color:white;
+              padding:2px 8px;
+              border-radius:999px;
+              font-size:12px;
+            ">
+              ${sev.level}
+            </span>
+          </td>
+        `;
+
+        body.appendChild(tr);
+      });
+
+    // show NLP panel
+    document.getElementById("whyByTypeView").classList.add("hidden");
+    document.getElementById("whyByNlpView").classList.remove("hidden");
+  }
+
+  function runNlpAnalysis(){
+
+    const results = [];
+
+    CHRONIC_ASSETS.forEach(asset => {
+
+      asset.rows.forEach(r => {
+
+        const text =
+          (r.root_cause || "") + " " +
+          (r.breakdown_description || "") + " " +
+          (r.breakdown_type || "");
+
+        const analysis = analyzeFailure(text);
+
+        results.push({
+          asset_code: asset.asset_code,
+          root_cause: r.root_cause,
+          analysis
+        });
+      });
+    });
+
+    window.NLP_RESULTS = results;
   }
 
   function getPrimaryType(types){
@@ -1183,6 +2211,56 @@ function renderOwnHireChart(ownHire){
     return key;
   }  
 
+  function renderNlpSummary(){
+
+    const body = document.getElementById("nlpSummaryBody");
+    if(!body) return;
+
+    body.innerHTML = "";
+
+    const map = {};
+    const assetSet = {};
+
+    (window.NLP_RESULTS || []).forEach(r => {
+
+      (r.analysis || []).forEach(a => {
+
+        if(!map[a.failure]){
+          map[a.failure] = 0;
+          assetSet[a.failure] = new Set();
+        }
+
+        map[a.failure]++;
+        assetSet[a.failure].add(r.asset_code);
+
+      });
+
+    });
+
+    Object.entries(map)
+      .sort((a,b)=>b[1]-a[1])
+      .forEach(([failure,count]) => {
+
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="border px-2 py-1">${failure}</td>
+          <td class="border px-2 py-1 text-center">${count}</td>
+          <td class="border px-2 py-1 text-center">
+            ${assetSet[failure].size}
+          </td>
+        `;
+
+        body.appendChild(tr);
+
+      });
+
+    // ✅ SWITCH UI
+    document.getElementById("whyByTypeView").classList.add("hidden");
+    document.getElementById("whyByNlpView").classList.remove("hidden");
+
+  }
+  
   function renderChronicKPIs(){
 
     const totalAssets = new Set(
@@ -1270,7 +2348,7 @@ function renderOwnHireChart(ownHire){
 
     /* ---------- BUILD HEADER ---------- */
     headerRow.innerHTML = `
-      <th class="border px-2 py-1 text-left">Asset Code</th>
+      <th class="border px-2 py-1 text-left sticky-left">Asset Code</th>
       ${months.map(m => `
         <th class="border px-2 py-1 cursor-pointer"
             onclick="sortByMonth('${m}')">
@@ -1292,8 +2370,14 @@ function renderOwnHireChart(ownHire){
 
       const tr = document.createElement("tr");
 
+      tr.classList.add("cursor-pointer", "hover:bg-yellow-50");
+
+      tr.onclick = function(){
+        showNlpForAsset(code);
+      };
+
       tr.innerHTML = `
-        <td class="border px-2 py-1 text-left font-semibold">${code}</td>
+        <td class="border px-2 py-1 text-left font-semibold sticky-left">${code}</td> 
         ${months.map(m => `
           <td class="border px-2 py-1 text-center ${
             perMonth[m] === maxMonth ? "bg-red-100 font-semibold" : ""
@@ -1317,8 +2401,6 @@ function renderOwnHireChart(ownHire){
     body.innerHTML = "";
 
     const map = {};
-    
-    console.table(BREAKDOWN_RAW.slice(0, 5));
 
     BREAKDOWN_RAW.forEach(r => {
 
@@ -1358,17 +2440,147 @@ function renderOwnHireChart(ownHire){
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
-        <td class="border px-2 py-1 text-left font-semibold">${code}</td>
-        <td class="border px-2 py-1 text-center">${t.Mechanical || ""}</td>
-        <td class="border px-2 py-1 text-center">${t.Electrical || ""}</td>
-        <td class="border px-2 py-1 text-center">${t.Hydraulics || ""}</td>
-        <td class="border px-2 py-1 text-center">${t.Operator || ""}</td>
-        <td class="border px-2 py-1 text-center">${t.Others || ""}</td>
-        <td class="border px-2 py-1 text-center font-semibold">${total}</td>
+        <td class="border px-2 py-1 text-left font-semibold sticky-left">${code}</td>
+        <td class="border px-2 py-1 text-center">${t.Mechanical}</td>
+        <td class="border px-2 py-1 text-center">${t.Electrical}</td>
+        <td class="border px-2 py-1 text-center">${t.Hydraulics}</td>
+        <td class="border px-2 py-1 text-center">${t.Operator}</td>
+        <td class="border px-2 py-1 text-center">${t.Others}</td>
+        <td class="border px-2 py-1 text-center font-bold sticky-right">${total}</td>
       `;
 
       body.appendChild(tr);
     });
+  }
+
+
+  function analyzeFailure(text){
+
+    const input = (text || "").toLowerCase();
+    const results = [];
+
+    for(const eq in NLP_ENGINE){
+
+      const block = NLP_ENGINE[eq];
+
+      for(const fail in block.failures){
+
+        for(const word of block.failures[fail]){
+
+          if(fuzzyMatch(input, word)){
+
+            const meta = NLP_SEVERITY[fail] || {
+              level: "Low",
+              color: "#9ca3af"
+            };
+
+            results.push({
+              equipment: eq,
+              failure: fail,
+              severity: meta.level,
+              color: meta.color,
+              confidence: "High",
+              action:
+                meta.level === "High"
+                  ? "Immediate Attention"
+                  : "Inspection Required"
+            });
+          }
+        }
+      }
+    }
+
+    if(!results.length){
+      results.push({
+        equipment: "Unknown",
+        failure: "Unknown",
+        severity: "Low",
+        color: "#9ca3af",
+        confidence: "Low",
+        action: "Manual Inspection"
+      });
+    }
+
+    return results;
+  }
+  
+  function getSeverityFromCount(count){
+    if(count >= 10){
+      return { level: "High", color: "#dc2626" };
+    }
+    if(count >= 5){
+      return { level: "Medium", color: "#f59e0b" };
+    }
+    return { level: "Low", color: "#22c55e" };
+  }
+
+  function calculateSeverityFromHistory(assetCode){
+
+    const rows = BREAKDOWN_RAW.filter(r =>
+      (r.asset_code || "").trim() === assetCode
+    );
+
+    if(!rows.length){
+      return {
+        level: "Low",
+        color: "#22c55e",
+        reason: "No breakdown history"
+      };
+    }
+
+    const now = new Date();
+
+    let monthlyCount = 0;
+    let yearlyCount = 0;
+
+    rows.forEach(r => {
+      const d = new Date(r.breakdown_start);
+      if(isNaN(d)) return;
+
+      const diffDays = (now - d) / (1000 * 60 * 60 * 24);
+
+      if(diffDays <= 30) monthlyCount++;
+      if(diffDays <= 365) yearlyCount++;
+    });
+
+    // 🔴 HIGH
+    if(monthlyCount >= 10){
+      return {
+        level: "High",
+        color: "#dc2626",
+        reason: `≥ ${monthlyCount} breakdowns this month`
+      };
+    }
+
+    // 🟠 MEDIUM
+    if(monthlyCount >= 5 || yearlyCount >= 10){
+      return {
+        level: "Medium",
+        color: "#f59e0b",
+        reason: `${monthlyCount}/month, ${yearlyCount}/year`
+      };
+    }
+
+    // 🟢 LOW
+    return {
+      level: "Low",
+      color: "#22c55e",
+      reason: `${yearlyCount} breakdowns this year`
+    };
+  }
+
+  function calculateAssetHealth(results){
+    let score = 100;
+    results.forEach(r => {
+      if(r.confidence === "High") score -= 25;
+    });
+    return Math.max(score, 0);
+  }
+
+  function predictFailure(history){
+    const map = {};
+    history.forEach(h => map[h.failure] = (map[h.failure] || 0) + 1);
+    return Object.entries(map).sort((a,b)=>b[1]-a[1])[0] || null;
   }
 
   function sortByMonth(month){
@@ -1608,7 +2820,16 @@ function renderOwnHireChart(ownHire){
     document.getElementById("kpiAvgActiveDelay").innerText =
       active ? (activeDelay / active).toFixed(2) : "0.00";
 
-    renderAgeingChart(ageing);
+    if(chartAgeing){
+        chartAgeing.data.datasets[0].data = [
+            ageing["0_24"],
+            ageing["24_48"],
+            ageing["48_plus"]
+        ];
+        chartAgeing.update();
+    }else{
+        renderAgeingChart(ageing);
+    }
   }
 
 
@@ -1783,22 +3004,22 @@ function renderOwnHireChart(ownHire){
     });
 
     // when user selects
-    assetInput.addEventListener("change", function(){
-      const val = this.value;
-      const asset = assetCache.find(a => val.startsWith(a.asset_code));
+    assetInput.addEventListener("input", function(){
 
-      if(!asset){
-        ["asset_code","asset_description","asset_package","own_hire","agency","location"]
-          .forEach(id => document.getElementById(id).value = "");
-        return;
-      }
+        const val = this.value.trim();
+        if(!val) return;
 
-      document.getElementById("asset_code").value        = asset.asset_code;
-      document.getElementById("asset_description").value = asset.asset_description || "";
-      document.getElementById("asset_package").value     = asset.package || "";
-      document.getElementById("agency").value            = asset.agency || "";
-      document.getElementById("own_hire").value          = asset.owner || "";
-      document.getElementById("location").value          = asset.location || "";
+        const asset = assetCache.find(a => a.asset_code === val);
+
+        if(!asset) return;
+
+        document.getElementById("asset_code").value        = asset.asset_code;
+        document.getElementById("asset_description").value = asset.asset_description || "";
+        document.getElementById("asset_package").value     = asset.package || "";
+        document.getElementById("own_hire").value          = asset.owner || "";
+        document.getElementById("agency").value            = asset.agency || "";
+        document.getElementById("location").value          = asset.location || "";
+
     });
   }
 
@@ -2102,6 +3323,8 @@ function renderOwnHireChart(ownHire){
       el.addEventListener("change", applyDashboardFilters);
     }
   });
+  // ================= NLP TOGGLE HANDLER =================
+
 
 
   </script>
