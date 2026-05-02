@@ -175,7 +175,7 @@
         
         /* Mobile Menu Button */
         .menu-btn {
-            display: none;
+            display: block; /* Make sure it's visible on desktop */
             position: fixed;
             top: 20px;
             left: 20px;
@@ -220,11 +220,13 @@
         @media (max-width: 768px) {
             .sidebar {
                 width: 280px;
-                transform: translateX(-280px);
+                transform: translateX(-280px) !important;
+                display: flex !important; 
+                opacity: 1 !important; 
             }
             
             .sidebar.open {
-                transform: translateX(0);
+                transform: translateX(0) !important;
             }
             
             .main-content {
@@ -236,10 +238,6 @@
             .header {
                 left: 0;
                 right: 0;
-            }
-            
-            .menu-btn {
-                display: block;
             }
             
             .resize-handle-left,
@@ -304,28 +302,22 @@
 </head>
 <body class="bg-gray-100">
     
-    <!-- Mobile Menu Button -->
     <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">
         <span></span>
         <span></span>
         <span></span>
     </button>
     
-    <!-- Overlay for mobile -->
     <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
     
-    <!-- Resize Handles for Content Spacing -->
-    <div class="resize-handle-left" id="resizeHandleLeft"></div>
+    <div class="resize-handle-left sidebar-hidden" id="resizeHandleLeft"></div>
     <div class="resize-handle-right" id="resizeHandleRight"></div>
     
-    <!-- Sidebar -->
-    <div class="sidebar sidebar-gradient flex flex-col" id="sidebar">
-        <!-- Sidebar Header -->
+    <div class="sidebar sidebar-gradient flex flex-col hidden" id="sidebar" style="opacity: 0; transform: translateX(-280px);">
         <div class="p-6 border-b border-gray-600">
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center pulse-glow">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                        <!-- Construction Crane Icon -->
                         <rect x="11" y="2" width="2" height="18" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
                         <rect x="4" y="5" width="16" height="1.5" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
                         <rect x="2" y="5" width="4" height="1" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
@@ -350,7 +342,6 @@
             </div>
         </div>
         
-        <!-- Navigation Menu -->
         <nav class="mt-4 px-2">
             <a href="/admin/admin_dashboard" class="sidebar-link" data-page="dashboard">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -476,7 +467,6 @@
             </a>
         </nav>
         
-        <!-- Logout Button -->
         <div class="mt-auto px-2 pb-6">
             <a href="/logout" class="sidebar-link bg-red-600 hover:bg-red-700 rounded-lg mx-2">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -487,26 +477,23 @@
         </div>
     </div>
     
-    <header class="header header-gradient" id="header">
+    <header class="header header-gradient sidebar-hidden" id="header">
         <div class="flex items-center h-full px-6">
 
-            <!-- Left: Title (hidden on mobile) -->
-            <div class="hidden sm:block">
+            <div class="hidden sm:block ml-14">
                 <h1 class="text-xl font-bold text-yellow-custom">MABP - P&M</h1>
                 <p class="text-sm text-gray-300">(Plant & Machinery) Data Management System</p>
             </div>
 
-            <!-- Center: Welcome Message -->
             <div class="flex-1 text-center">
-                <p class="text-yellow-custom font-semibold">
-                    Welcome, <span id="userName">Admin</span>
+                <p class="font-bold text-yellow-600 text-sm">
+                    Welcome, {{ session.get('name', 'User') }}
                 </p>
                 <p class="text-white text-xs sm:text-sm truncate max-w-[160px] sm:max-w-none mx-auto">
-                    {{ session.get('name', '') }}
+                    {{ session.get('role', 'Role') }}
                 </p>
             </div>
 
-            <!-- Right: Profile Dropdown -->
             <div class="flex items-center space-x-4">
                 <div class="relative">
                     <button id="userMenuBtn" class="w-8 h-8 bg-yellow-custom rounded-full flex items-center justify-center">
@@ -526,8 +513,7 @@
     </header>
 
 
-    <!-- Main Content -->
-    <main class="main-content bg-gray-50" id="mainContent">
+    <main class="main-content bg-gray-50 sidebar-hidden" id="mainContent">
         <div class="fade-in">
         
             {% block content %}
@@ -601,6 +587,7 @@
                         mainContent.classList.toggle('sidebar-hidden');
                         header.classList.toggle('sidebar-hidden');
                         resizeHandleLeft.classList.toggle('sidebar-hidden');
+                        menuBtn.classList.toggle('active'); // Turn menu button into an X when open
                 }  
         }
         

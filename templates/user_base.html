@@ -27,7 +27,7 @@
     .sidebar-gradient { background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%); }
     .header-gradient { background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%); }
 
-    /* Sidebar */
+    /* Sidebar Desktop Default */
     .sidebar { 
       width: 280px; 
       height: 100vh; 
@@ -36,24 +36,30 @@
       top: 0; 
       z-index: 40; 
       overflow-y: auto; 
-      transform: translateX(0);
+      transform: translateX(0); /* Open state */
       transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
     }
-    .sidebar.hidden { transform: translateX(-280px); }
+    /* Safely collapses sidebar without using display:none */
+    .sidebar.closed { 
+      transform: translateX(-280px); 
+    }
 
     .sidebar-link { display: flex; align-items: center; padding: 14px 18px; color: #e5e7eb; text-decoration: none; transition: all 0.3s ease; border-left: 4px solid transparent; }
     .sidebar-link:hover { background: rgba(255, 215, 0, 0.1); color: #FFD700; border-left-color: #FFD700; transform: translateX(6px); }
     .sidebar-link.active { background: rgba(255, 215, 0, 0.15); color: #FFD700; border-left-color: #FFD700; }
 
-    /* Main content */
+    /* Main content Desktop Default */
     .main-content { 
       margin-left: 280px; 
       padding: 120px 40px 40px 40px; 
       transition: margin-left 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
     }
-    .main-content.sidebar-hidden { margin-left: 0; opacity: 0.95; }
+    .main-content.expanded { 
+      margin-left: 0; 
+      opacity: 0.95; 
+    }
 
-    /* Header */
+    /* Header Desktop Default */
     .header { 
       height: 80px; 
       box-shadow: 0 2px 10px rgba(255,215,0,0.1); 
@@ -64,7 +70,9 @@
       z-index: 30; 
       transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
     }
-    .header.sidebar-hidden { left: 0; }
+    .header.expanded { 
+      left: 0; 
+    }
 
     /* Mobile Menu Button */
     .menu-btn { display: none; position: fixed; top: 20px; left: 20px; z-index: 50; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.3s ease; }
@@ -73,12 +81,12 @@
     .menu-btn.active span:nth-child(2) { opacity: 0; }
     .menu-btn.active span:nth-child(3) { transform: rotate(45deg) translate(-5px, -6px); }
 
-    /* Mobile adjustments */
+    /* Mobile adjustments overrides */
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-280px); }
-      .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; padding: 110px 20px 30px 20px; }
-      .header { left: 0; }
+      .sidebar { transform: translateX(-280px) !important; }
+      .sidebar.open { transform: translateX(0) !important; } /* Uses !important to force open on mobile */
+      .main-content { margin-left: 0 !important; padding: 110px 20px 30px 20px; }
+      .header { left: 0 !important; }
       .menu-btn { display: block; }
     }
 
@@ -95,21 +103,16 @@
 </head>
 <body class="bg-gray-100">
 
-  <!-- Mobile Menu Button -->
   <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">
     <span></span><span></span><span></span>
   </button>
 
-  <!-- Overlay -->
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-  <!-- Sidebar -->
-  <div class="sidebar sidebar-gradient flex flex-col" id="sidebar">
-    <!-- Sidebar Header -->
+  <div class="sidebar sidebar-gradient flex flex-col closed" id="sidebar">
     <div class="p-6 border-b border-gray-600">
       <div class="flex items-center space-x-3">
         <div class="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center pulse-glow">
-          <!-- Crane Icon -->
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <rect x="11" y="2" width="2" height="18" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
             <rect x="4" y="5" width="16" height="1.5" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
@@ -129,7 +132,6 @@
       </div>
     </div>
 
-    <!-- Navigation -->
     <nav class="mt-4 px-2">
         <a href="/user/dashboard" class="sidebar-link">Dashboard</a>
         {% for m in session.get('accesses', []) %}
@@ -165,42 +167,35 @@
                 {% elif clean == 'workmen_status' %}
                     <a href="/user/workmen_status" class="sidebar-link">Workmen Status</a>
                 {% elif clean == 'dashboard' %}
-                    <a href="/user/dashboard" class="sidebar-link">Dashboard</a>
                 {% endif %}
         {% endfor %}
     </nav>
 
-
-    <!-- Logout -->
     <div class="mt-auto px-2 pb-6">
       <a href="/logout" class="sidebar-link bg-red-600 hover:bg-red-700 rounded-lg">Logout</a>
     </div>
   </div>
 
-  <!-- Header -->
-  <header class="header header-gradient" id="header">
+  <header class="header header-gradient expanded" id="header">
     <div class="flex items-center justify-between h-full px-4 sm:px-6">
       
-      <!-- Desktop Toggle Button -->
       <button class="hidden md:block mr-4" onclick="toggleSidebar()">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-custom" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
 
-      <!-- Left: Title -->
       <div class="hidden sm:block">
         <h1 class="text-xl font-bold text-yellow-custom">InfraMinds</h1>
         <p class="text-sm text-gray-300">Plant & Machinery Intelligent Platform</p>
       </div>
 
-      <!-- Center: Welcome -->
       <div class="flex flex-col items-center text-center flex-grow mx-2">
         <p class="text-yellow-custom font-semibold text-sm sm:text-base">Welcome</p>
         <p class="text-white text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{{ session.get('name', '') }}</p>
+        <p class="text-white text-[10px] sm:text-xs truncate max-w-[120px] sm:max-w-none font-medium opacity-90">{{ session.get('designation', '') }}</p>
       </div>
 
-      <!-- Right: Profile -->
       <div class="flex items-center space-x-4">
         <div class="relative">
           <button id="userMenuBtn" class="w-8 h-8 bg-yellow-custom rounded-full flex items-center justify-center">
@@ -218,8 +213,7 @@
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="main-content bg-gray-50" id="mainContent">
+  <main class="main-content bg-gray-50 expanded" id="mainContent">
     <div class="fade-in">
       {% block content %}{% endblock %}
     </div>
@@ -234,20 +228,24 @@
       const overlay = document.getElementById('overlay');
 
       if (window.innerWidth <= 768) {
+        // Mobile logic: Toggle the 'open' class
         sidebar.classList.toggle('open');
         menuBtn.classList.toggle('active');
         overlay.classList.toggle('active');
       } else {
-        sidebar.classList.toggle('hidden');
-        mainContent.classList.toggle('sidebar-hidden');
-        header.classList.toggle('sidebar-hidden');
+        // Desktop logic: Toggle the 'closed' and 'expanded' classes
+        sidebar.classList.toggle('closed');
+        mainContent.classList.toggle('expanded');
+        header.classList.toggle('expanded');
       }
     }
+
     function closeSidebar() {
       document.getElementById('sidebar').classList.remove('open');
       document.getElementById('menuBtn').classList.remove('active');
       document.getElementById('overlay').classList.remove('active');
     }
+
     document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('userMenuBtn');
       const dropdown = document.getElementById('userDropdown');
@@ -262,20 +260,18 @@
         });
       }
     });
+
     // Highlight active link
     const currentPath = window.location.pathname;
     document.querySelectorAll('.sidebar-link').forEach(link => {
       if (link.getAttribute('href') === currentPath) link.classList.add('active');
     });
 
-        // 🌐 Global dropdown sync every 30 seconds (for all users)
+    // 🌐 Global dropdown sync every 30 seconds (for all users)
     setInterval(async () => {
       try {
-        // Check timestamp from Supabase (using a lightweight endpoint)
         const res = await fetch("/user/dropdown_config");
         const data = await res.json();
-
-        // Compare with cached JSON — only update if changed
         const newData = JSON.stringify(data);
         if (window._lastDropdownData !== newData) {
           window._lastDropdownData = newData;
@@ -286,10 +282,7 @@
       } catch (err) {
         console.warn("Dropdown sync check failed:", err);
       }
-    }, 30000); // every 30s
-
-
-
+    }, 30000); 
   </script>
 </body>
 </html>

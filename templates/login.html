@@ -3,317 +3,702 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title></title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'yellow-custom': '#FFD700',
-            'yellow-light': '#FFF8DC',
-            'black-custom': '#1a1a1a',
-            'gray-custom': '#2d2d2d'
-          }
-        }
-      }
-    }
-  </script>
+  <title>InfraMinds Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
+    :root {
+      --gold: #f7c94a;
+      --gold-deep: #d9981e;
+      --ink: #0f1115;
+      --panel: rgba(12, 15, 20, 0.82);
+      --panel-soft: rgba(17, 21, 28, 0.7);
+      --line: rgba(247, 201, 74, 0.28);
+      --text: #f4f1e8;
+      --muted: #c7c0b1;
+      --danger-bg: rgba(146, 24, 24, 0.22);
+      --danger-border: rgba(255, 154, 154, 0.45);
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
       box-sizing: border-box;
-      height: 100vh;
+    }
+
+    html,
+    body {
       margin: 0;
-      padding: 0;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      background-image: url("https://bbfeqsakiboaslohymte.supabase.co/storage/v1/object/public/Login%20Page%20Images/Login%20Page%20Images/1000116378.jpg");
+      min-height: 100%;
     }
 
-    .background-overlay {
+    body {
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(120deg, rgba(5, 7, 11, 0.8), rgba(5, 7, 11, 0.55)),
+        url("https://rqwnpbqlaxfexrnqbguz.supabase.co/storage/v1/object/public/Login%20Page%20Images/240_F_249049329_BpYUPt5TGST3qTTfOJVpTakAdCLFzcg1.jpg") center/cover no-repeat fixed;
+    }
+
+    body::before {
+      content: "";
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.55);
-      z-index: 0;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(247, 201, 74, 0.18), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(217, 152, 30, 0.14), transparent 28%);
+      pointer-events: none;
     }
 
-    .gradient-bg { 
-      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); 
+    .page-shell {
+      position: relative;
+      min-height: 100vh;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
     }
 
-    .department-banner {
-      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
-      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
-      border-bottom: 3px solid #FFD700;
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+      align-items: center;
+      gap: 24px;
+      padding: 20px 24px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(10, 13, 18, 0.88), rgba(24, 29, 36, 0.75));
+      backdrop-filter: blur(14px);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
     }
 
-    .construction-title {
-      font-family: 'Orbitron', monospace;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-height: 82px;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .brand-emblem {
+      width: 84px;
+      height: 84px;
+      flex: 0 0 84px;
+      filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.34));
+      animation: logo-float 4.5s ease-in-out infinite;
+    }
+
+    .brand-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand-wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      flex-wrap: wrap;
+      font-family: "Rajdhani", sans-serif;
+      font-size: clamp(2rem, 3vw, 2.85rem);
+      font-weight: 700;
+      line-height: 0.9;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .brand-wordmark .infra {
+      color: #f3efe5;
+    }
+
+    .brand-wordmark .minds {
+      background: linear-gradient(135deg, #ffcf57, #f29d1f 75%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .construction-subtitle {
-      font-family: 'Rajdhani', sans-serif;
+    .brand-descriptor {
+      color: #f4ddb0;
+      font-size: 0.74rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 0.9;
+    }
+
+    .brand-underline {
+      width: min(260px, 100%);
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(247, 201, 74, 0), rgba(247, 201, 74, 0.95) 25%, rgba(242, 157, 31, 0.92));
+      transform-origin: left center;
+      animation: line-breathe 4s ease-in-out infinite;
+    }
+
+    .topbar-copy {
+      max-width: 540px;
+      justify-self: end;
+      text-align: right;
+    }
+
+    .topbar-copy h1 {
+      margin: 0;
+      font-family: "Rajdhani", sans-serif;
+      font-size: clamp(1.1rem, 2vw, 1.45rem);
       font-weight: 600;
-      color: #FFD700;
+      color: var(--text);
     }
 
-    .construction-motto {
-      font-family: 'Rajdhani', sans-serif;
-      font-style: italic;
-      color: #FFD700;
+    .topbar-copy p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
     }
 
-    .login-card {
-      background: rgba(26, 26, 26, 0.95);
-      backdrop-filter: blur(10px);
-      border: 2px solid rgba(255, 215, 0, 0.3);
-      box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2);
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(360px, 420px);
+      gap: 28px;
+      align-items: start;
+      flex: 1;
     }
 
-    .input-field {
-      border: none;
-      border-bottom: 2px solid #444;
-      background: transparent;
-      padding: 14px 0;
-      font-size: 18px;
-      color: #FFD700;
+    .story-panel,
+    .login-panel {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
     }
 
-    .input-field::placeholder {
-      color: #aaa;
-      font-size: 16px;
+    .story-panel {
+      padding: 36px;
+      background: linear-gradient(160deg, rgba(9, 12, 18, 0.74), rgba(20, 25, 32, 0.62));
+      overflow: hidden;
+      animation: rise-in 0.8s ease both;
     }
 
-    .input-field:focus {
+    .story-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(247, 201, 74, 0.25);
+      background: rgba(247, 201, 74, 0.08);
+      color: var(--gold);
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .story-kicker::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 14px rgba(247, 201, 74, 0.65);
+    }
+
+    .story-panel h2 {
+      margin: 20px 0 12px;
+      max-width: 9ch;
+      font-family: "Rajdhani", sans-serif;
+      font-size: clamp(2.3rem, 5vw, 4.6rem);
+      line-height: 0.95;
+      text-transform: uppercase;
+      color: #fff8e1;
+    }
+
+    .story-lead {
+      max-width: 54rem;
+      margin: 0 0 26px;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.7;
+    }
+
+    .story-columns {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .copy-card {
+      padding: 22px;
+      border-radius: 22px;
+      background: var(--panel-soft);
+      border: 1px solid rgba(247, 201, 74, 0.14);
+    }
+
+    .copy-card h3 {
+      margin: 0 0 12px;
+      font-family: "Rajdhani", sans-serif;
+      font-size: 1.25rem;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .copy-card p,
+    .copy-card li {
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.96rem;
+    }
+
+    .copy-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .login-panel {
+      padding: 32px;
+      background: linear-gradient(180deg, rgba(10, 13, 18, 0.9), rgba(18, 22, 30, 0.86));
+      align-self: center;
+      width: 100%;
+      animation: rise-in 0.8s ease 0.12s both;
+    }
+
+    .login-header {
+      margin-bottom: 22px;
+    }
+
+    .login-header h3 {
+      margin: 0;
+      font-family: "Rajdhani", sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .login-header p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .error-banner {
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--danger-border);
+      background: var(--danger-bg);
+      color: #ffd9d9;
+      font-size: 0.92rem;
+    }
+
+    .form-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-group label {
+      color: #f4ddb0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .field-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(247, 201, 74, 0.18);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      font: inherit;
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .field-group input::placeholder {
+      color: rgba(244, 241, 232, 0.46);
+    }
+
+    .field-group input:focus {
       outline: none;
-      border-bottom-color: #FFD700;
-      background: rgba(255, 215, 0, 0.05);
+      border-color: rgba(247, 201, 74, 0.75);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 0 4px rgba(247, 201, 74, 0.12);
+    }
+
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .checkbox-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-wrap input {
+      accent-color: var(--gold);
     }
 
     .login-btn {
-      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-      border: none;
-      padding: 16px 36px;
-      border-radius: 8px;
+      width: 100%;
+      padding: 15px 18px;
+      border: 0;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--gold), #f3a126);
+      color: #16120a;
+      font-family: "Rajdhani", sans-serif;
+      font-size: 1.02rem;
       font-weight: 700;
-      font-size: 16px;
-      color: #1a1a1a;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+      box-shadow: 0 16px 30px rgba(217, 152, 30, 0.24);
     }
 
     .login-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+      transform: translateY(-1px);
+      filter: brightness(1.02);
+      box-shadow: 0 20px 36px rgba(217, 152, 30, 0.3);
     }
 
-    .fade-in {
-      animation: fadeIn 1s ease-in;
+    .login-btn:active {
+      transform: translateY(0);
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
+    .login-note {
+      margin-top: 18px;
+      color: rgba(244, 241, 232, 0.55);
+      font-size: 0.84rem;
+      line-height: 1.6;
     }
 
-    .pulse-glow {
-      animation: pulseGlow 3s ease-in-out infinite;
-    }
-
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
-      50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
-    }
-
-    @media (max-width: 768px) {
-      .construction-title {
-        font-size: 1.8rem;
-        letter-spacing: 2px;
+    @keyframes logo-float {
+      0%,
+      100% {
+        transform: scale(1);
       }
-      .construction-subtitle {
-        font-size: 1rem;
-      }
-
-      .fixed.top-24,
-      .fixed.top-28 {
-        position: relative !important;
-        top: 100px !important;
-        right: auto !important;
-        margin: 0 auto;
-        width: 90%;
-        max-width: 400px;
-        z-index: 30;
-      }
-
-      .container {
-        margin-top: 20px;
-        padding-right: 0 !important;
-      }
-    }
-       /* ===============================
-       InfraMinds Text Branding
-       =============================== */
-    .brand-wrap {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.1;
-    }
-
-    .brand-title {
-      font-family: 'Orbitron', monospace;
-      font-size: 1.6rem;
-      font-weight: 900;
-      letter-spacing: 1.5px;
-      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .brand-subtitle {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-      color: #FFD700;
-      opacity: 0.9;
-      margin-top: 2px;
-      text-transform: uppercase;
-    }
-
-    /* Tablet */
-    @media (max-width: 1024px) {
-      .brand-title {
-        font-size: 1.4rem;
-      }
-      .brand-subtitle {
-        font-size: 0.7rem;
+      50% {
+        transform: translateY(-4px) scale(1.01);
       }
     }
 
-    /* Mobile */
-    @media (max-width: 640px) {
-      .brand-title {
-        font-size: 1.2rem;
+    @keyframes line-breathe {
+      0%,
+      100% {
+        transform: scaleX(1);
+        opacity: 0.9;
       }
-      .brand-subtitle {
-        font-size: 0.65rem;
-        letter-spacing: 1.5px;
+      50% {
+        transform: scaleX(1.06);
+        opacity: 1;
       }
     }
 
+    @keyframes rise-in {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar-copy {
+        justify-self: start;
+        text-align: left;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .story-panel h2 {
+        max-width: none;
+      }
+
+      .login-panel {
+        max-width: 460px;
+        justify-self: center;
+        order: 1;
+      }
+
+      .story-panel {
+        order: 2;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        padding: 16px;
+        gap: 16px;
+      }
+
+      .topbar {
+        padding: 18px;
+        gap: 18px;
+      }
+
+      .brand-cluster {
+        min-height: 0;
+      }
+
+      .brand-lockup {
+        gap: 14px;
+      }
+
+      .brand-emblem {
+        width: 72px;
+        height: 72px;
+        flex-basis: 72px;
+      }
+
+      .brand-wordmark {
+        font-size: clamp(1.65rem, 7vw, 2.2rem);
+      }
+
+      .brand-descriptor {
+        font-size: 0.66rem;
+        letter-spacing: 0.2em;
+      }
+
+      .story-panel,
+      .login-panel {
+        border-radius: 22px;
+      }
+
+      .story-panel,
+      .login-panel {
+        padding: 22px;
+      }
+
+      .story-columns {
+        grid-template-columns: 1fr;
+      }
+
+      .story-panel h2 {
+        font-size: clamp(2rem, 10vw, 3rem);
+      }
+
+      .story-lead {
+        font-size: 0.96rem;
+      }
+
+      .topbar-copy h1 {
+        font-size: 1.02rem;
+      }
+
+      .topbar-copy p {
+        font-size: 0.84rem;
+      }
+
+      .login-panel {
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page-shell {
+        padding: 12px;
+      }
+
+      .topbar,
+      .story-panel,
+      .login-panel {
+        border-radius: 18px;
+      }
+
+      .story-panel,
+      .login-panel {
+        padding: 18px;
+      }
+
+      .brand-cluster {
+        align-items: flex-start;
+      }
+
+      .brand-lockup {
+        gap: 12px;
+      }
+
+      .brand-emblem {
+        width: 64px;
+        height: 64px;
+        flex-basis: 64px;
+      }
+
+      .brand-wordmark {
+        font-size: 1.5rem;
+      }
+
+      .brand-descriptor {
+        font-size: 0.6rem;
+        letter-spacing: 0.16em;
+        white-space: normal;
+      }
+
+      .brand-underline {
+        width: min(180px, 100%);
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="background-overlay"></div>
-
-  <!-- Banner -->
-  <div class="department-banner fixed top-0 left-0 right-0 z-50">
-    <div class="flex items-center justify-between px-4 md:px-8 py-4 md:py-5">
-
-      <!-- Left: InfraMinds Text Brand -->
-      <div class="brand-wrap">
-        <div class="brand-title">InfraMinds</div>
-        <div class="brand-subtitle">
-          Plant & Machinery Intelligence Platform
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand-cluster">
+        <div class="brand-lockup" aria-label="InfraMinds Plant and Machinery Intelligence Platform">
+          <svg class="brand-emblem" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="brandGold" x1="14" y1="16" x2="84" y2="86" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FFD45F"/>
+                <stop offset="1" stop-color="#F09A1B"/>
+              </linearGradient>
+              <linearGradient id="brandDark" x1="16" y1="64" x2="58" y2="92" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#F1EEE7"/>
+                <stop offset="1" stop-color="#B5ADB0"/>
+              </linearGradient>
+            </defs>
+            <rect x="8" y="72" width="42" height="10" rx="5" fill="url(#brandDark)"/>
+            <rect x="13" y="76" width="6" height="2.8" rx="1.4" fill="#12151C"/>
+            <rect x="22" y="76" width="6" height="2.8" rx="1.4" fill="#12151C"/>
+            <rect x="31" y="76" width="6" height="2.8" rx="1.4" fill="#12151C"/>
+            <rect x="40" y="76" width="6" height="2.8" rx="1.4" fill="#12151C"/>
+            <path d="M15 67H41L34 48H22L15 67Z" fill="url(#brandGold)"/>
+            <path d="M27 30L22 48H36L42 34L27 30Z" fill="url(#brandGold)"/>
+            <path d="M29 27L52 19C54.5 18.1 57 19.9 57 22.6V39.5C57 41.4 55.6 43 53.7 43.2L44.2 44.3L38 31.5L29 27Z" fill="url(#brandGold)"/>
+            <path d="M42 34L53 35" stroke="#12151C" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="23.5" cy="48.5" r="4.5" fill="#12151C" stroke="#FFD45F" stroke-width="2"/>
+            <path d="M27 30L18 44" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <path d="M38 31.5L34 48" stroke="#12151C" stroke-width="3" stroke-linecap="round"/>
+            <path d="M61 19C74.8 19 86 30.2 86 44C86 57.8 74.8 69 61 69C56.5 69 52.4 67.8 48.8 65.6" stroke="url(#brandGold)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M61 27V38" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <path d="M61 50V61" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <path d="M69 31L65 38" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <path d="M75 44H67" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <path d="M69 57L65 50" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <path d="M53 31L57 38" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <path d="M47 44H55" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <path d="M53 57L57 50" stroke="#FFD45F" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="61" cy="44" r="4.5" fill="#FFF1C8"/>
+            <circle cx="61" cy="27" r="2.8" fill="#FFD45F"/>
+            <circle cx="75" cy="44" r="2.8" fill="#FFD45F"/>
+            <circle cx="61" cy="61" r="2.8" fill="#FFD45F"/>
+            <circle cx="47" cy="44" r="2.8" fill="#FFD45F"/>
+          </svg>
+          <div class="brand-copy">
+            <div class="brand-wordmark">
+              <span class="infra">Infra</span><span class="minds">Minds</span>
+            </div>
+            <div class="brand-descriptor">Plant and Machinery Intelligence Platform</div>
+            <div class="brand-underline" aria-hidden="true"></div>
+          </div>
         </div>
       </div>
+      <div class="topbar-copy">
+        <h1>Operational visibility for equipment, downtime, and field execution</h1>
+        <p>A single place to manage asset readiness, reporting, and decision support across project sites.</p>
+      </div>
+    </header>
 
-      <!-- Right: Department Title -->
-      <div class="text-right">
-        <h1 class="construction-title text-xl md:text-2xl lg:text-3xl">
-          
-        </h1>
-        <p class="construction-subtitle text-xs md:text-sm lg:text-base mt-1">
-          
+    <main class="content-grid">
+      <section class="story-panel">
+        <span class="story-kicker">Asset Management System</span>
+        <h2>Built for moving projects</h2>
+        <p class="story-lead">
+          InfraMinds supports field teams with dependable asset records, breakdown visibility, and day-to-day operational intelligence so work can move with fewer surprises and faster decisions.
         </p>
-      </div>
 
-    </div>
-  </div>
+        <div class="story-columns">
+          <article class="copy-card">
+            <h3>Policy</h3>
+            <p>
+              Larsen &amp; Toubro Transportation Infrastructure IC is committed to planning, deploying, operating, maintaining, refurbishing, and retiring assets across their lifecycle in a disciplined and sustainable way.
+            </p>
+            <ul>
+              <li>Compliance with legal, environmental, contractual, and regulatory requirements.</li>
+              <li>Integration with safety, quality, and environmental management systems.</li>
+              <li>Reliable asset data to improve decisions, service quality, and performance review.</li>
+            </ul>
+          </article>
 
-
-
-  <!-- Login Box -->
-  <div class="fixed top-24 md:top-28 right-4 z-40">
-    <div class="login-card rounded-lg p-6 w-96 fade-in" style="animation-delay: 0.3s;">
-      <div class="text-center mb-4">
-        <h2 class="text-xl md:text-2xl font-bold text-yellow-custom">Login</h2>
-      </div>
-
-      <!-- Error Message -->
-      {% if error %}
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm">
-        {{ error }}
-      </div>
-      {% endif %}
-
-      <form method="POST" action="/login" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-yellow-custom mb-1">Email or Mobile</label>
-          <input type="text" name="email" id="email" class="input-field w-full" placeholder="Enter email or mobile" required>
+          <article class="copy-card">
+            <h3>Department Role</h3>
+            <p>
+              The Plant and Machinery team keeps construction operations supported by dependable equipment, responsive maintenance, and consistent readiness across sites and packages.
+            </p>
+            <ul>
+              <li>Reduce downtime through disciplined monitoring and quicker reporting.</li>
+              <li>Support project teams with plant, machinery, and operational visibility.</li>
+              <li>Drive continuous improvement through digital records and shared learning.</li>
+            </ul>
+          </article>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-yellow-custom mb-1">Password</label>
-          <input type="password" name="password" id="password" class="input-field w-full" placeholder="Enter password" required>
-        </div>
-        <div class="flex items-center justify-between text-sm">
-          <label class="flex items-center">
-            <input type="checkbox" name="remember" class="mr-1 accent-yellow-custom">
-            <span class="text-gray-400">Remember me</span>
-          </label>
-        </div>
-        <button type="submit" class="login-btn w-full">Sign In</button>
-      </form>
-    </div>
-  </div>
+      </section>
 
-  <!-- Main Content -->
-  <div class="pt-24 md:pt-28">
-    <div class="container mx-auto px-4 py-4 md:py-6 lg:pr-96">
-      
-      <!-- Policy -->
-      <div class="fade-in">
-        <h2 class="text-xl font-bold text-yellow-custom mb-4">Asset Management Policy</h2>
-        <div class="text-white leading-relaxed space-y-3 text-base md:text-lg">
-          <p>Larsen & Toure Limited - Transportation Infrastructure Independent Company is committed to effectively plan, arrange, deploy, operate, maintain, repair, refurbish and dispose the assets across lifecycle sustainably to serve the needs of stakeholders and customers, optimizing the long-term return on investment.</p>
-          <p class="font-medium text-yellow-custom">Towards this we shall align objectives and ensure:</p>
-          <ul class="list-disc pl-6 space-y-2">
-            <li>Compliance with legal, regulatory, environmental, and contractual requirements.</li>
-            <li>Integration with the organization's environment, health, workplace safety and quality management systems.</li>
-            <li>Periodic reviews and benchmarking of economic and technical performance of the assets, service providers and contractors.</li>
-            <li>Asset Management decisions are made by accurate and timely asset data.</li>
-            <li>Foster innovation through technology adoption, sustainable solutions, and continuous team upskilling via digital training and shared learning.</li>
-            <li>Identify and implement measures to mitigate risks while leveraging opportunities for sustainable growth.</li>
-            <li>Committed to continual improvement of the Asset Management System for operational efficiency.</li>
-          </ul>
+      <aside class="login-panel">
+        <div class="login-header">
+          <h3>Sign In</h3>
+          <p>Use your registered email or mobile number to access the platform.</p>
         </div>
-      </div>
 
-      <!-- About Us -->
-      <div class="mt-8 fade-in" style="animation-delay: 0.6s;">
-        <h2 class="text-lg font-bold text-yellow-custom mb-3">About Us</h2>
-        <div class="text-white leading-relaxed space-y-3 text-base md:text-lg">
-          <p>At the heart of every successful construction project lies the strength of dependable equipment, the reliability of advanced plants, and the assurance of uninterrupted support. The Plant & Machinery Department exists to provide exactly that — a backbone of power and precision that keeps projects moving forward without compromise.</p>
-          <p>We are not just a support wing; we are an essential partner in progress. From supplying and maintaining heavy machinery to ensuring the smooth functioning of plants, our mission is to empower construction teams with tools that deliver strength, efficiency, and endurance. Whether it is an earthmover shaping the foundation of a project, a crusher plant breaking down raw material, or a batching plant ensuring flawless concrete supply — we ensure every machine runs at peak performance.</p>
-          <p>Our department thrives on foresight and responsibility. We understand that downtime is costly, delays are critical, and reliability is everything. That is why we bring together skilled expertise, advanced technology, and a spirit of dedication to keep every project on track. We take pride in supporting construction operations of every scale, from ambitious infrastructure works to complex urban developments.</p>
-          <p>Beyond machinery, we stand for trust. Every piece of equipment we supply, every plant we maintain, and every service we deliver is a commitment to quality, safety, and progress. In a world where construction never stops, we ensure the power behind it never falters.</p>
-          <p class="font-semibold text-yellow-custom">The Plant & Machinery Department — driving construction forward with precision, power, and purpose.</p>
-        </div>
-      </div>
+        {% if error %}
+        <div class="error-banner">{{ error }}</div>
+        {% endif %}
 
-    </div>
+        <form method="POST" action="/login" class="form-stack">
+          <div class="field-group">
+            <label for="email">Email or Mobile</label>
+            <input type="text" name="email" id="email" placeholder="Enter email or mobile" autocomplete="username" required>
+          </div>
+
+          <div class="field-group">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" placeholder="Enter password" autocomplete="current-password" required>
+          </div>
+
+          <div class="form-row">
+            <label class="checkbox-wrap" for="remember">
+              <input type="checkbox" name="remember" id="remember">
+              <span>Remember me</span>
+            </label>
+          </div>
+
+          <button type="submit" class="login-btn">Access Dashboard</button>
+        </form>
+
+        <p class="login-note">
+          Access is role-based. Use the same credentials managed in the Supabase-backed authentication system for this project.
+        </p>
+      </aside>
+    </main>
   </div>
 </body>
 </html>

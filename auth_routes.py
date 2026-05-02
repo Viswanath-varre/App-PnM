@@ -121,11 +121,23 @@ def login():
 
             if meta.data:
                 session['name'] = meta.data.get("full_name") or _get_user_meta_field(user, 'full_name', email)
-
-                # --- Original user accesses fetched from Supabase ---
-                user_accesses = meta.data.get("accesses", [])
-                session['feature_accesses'] = meta.data.get("feature_accesses", {})
-
+                
+                # --- NEW DYNAMIC ROLE LOOKUP ---
+                user_role = meta.data.get("role", "user")
+                
+                try:
+                    role_req = supabase_admin.table("roles_permissions").select("accesses, feature_accesses").eq("role_name", user_role).execute()
+                    if role_req.data and len(role_req.data) > 0:
+                        user_accesses = role_req.data[0].get("accesses", [])
+                        session['feature_accesses'] = role_req.data[0].get("feature_accesses", {})
+                    else:
+                        # Fallback if role is not setup yet
+                        user_accesses = meta.data.get("accesses", [])
+                        session['feature_accesses'] = meta.data.get("feature_accesses", {})
+                except Exception as e:
+                    print("Role lookup failed:", e)
+                    user_accesses = meta.data.get("accesses", [])
+                    session['feature_accesses'] = meta.data.get("feature_accesses", {})
                 # --- ✅ Define your preferred sidebar order here ---
                 ordered_pages = [
                     'user_dashboard',

@@ -2,1440 +2,1132 @@
 {% block title %}Admin Asset Master{% endblock %}
 
 {% block content %}
-<div class="p-4">
-
-  <!-- Title + Buttons -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+<div class="p-4 flex flex-col h-full">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-5 gap-3 order-1">
     <div>
-      <h1 class="text-2xl font-bold">Asset Master</h1>
-      <p class="text-sm text-gray-600">Manage all asset records</p>
+      <h1 class="text-xl sm:text-2xl lg:text-3xl font-black text-gray-800 tracking-tight transition-all">Asset Master</h1>
+      <p class="text-xs sm:text-sm lg:text-base text-gray-500 font-medium transition-all">Manage all asset records and operations</p>
     </div>
-
-    <span id="dropdownStatus" class="text-xs text-green-700 font-semibold ml-2 hidden">
-      🟢 Dropdowns Updated Just Now
+    <span id="dropdownStatus" class="text-xs text-green-700 font-bold ml-2 hidden bg-green-100 px-3 py-1.5 rounded-full shadow-inner border border-green-200">
+      <i class="fa-solid fa-check-circle mr-1"></i> Dropdowns Updated
     </span>
+  </div>
 
-    <div class="flex flex-wrap items-center gap-2">
-      <!-- Funnel Icon -->
-      <button id="toggleFiltersBtn" class="p-2 rounded border" title="Toggle Filters">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 01.8 1.6L13 10v5a1 1 0 01-1.447.894l-2-1A1 1 0 019 14v-4L3.2 4.6A1 1 0 013 4z" clip-rule="evenodd"/>
-        </svg>
-      </button>
-      
+  <div class="inline-flex bg-gray-200/80 p-1.5 rounded-xl mb-6 shadow-inner border border-gray-300 w-full xl:w-max overflow-x-auto order-2">
+    <button onclick="switchTab('active')" id="tabBtn-active" class="flex-1 sm:flex-none whitespace-nowrap px-6 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ease-out bg-white text-blue-700 shadow-sm border border-gray-200/50">
+      <i class="fa-solid fa-list-check mr-1.5"></i> Active Assets
+    </button>
+    <button onclick="switchTab('activity')" id="tabBtn-activity" class="flex-1 sm:flex-none whitespace-nowrap px-6 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ease-out text-gray-500 hover:text-gray-900 hover:bg-gray-100/50 border border-transparent">
+      <i class="fa-solid fa-layer-group mr-1.5"></i> Activity Wise Assets
+    </button>
+    <button onclick="switchTab('dehired')" id="tabBtn-dehired" class="flex-1 sm:flex-none whitespace-nowrap px-6 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ease-out text-gray-500 hover:text-gray-900 hover:bg-gray-100/50 border border-transparent">
+      <i class="fa-solid fa-box-archive mr-1.5"></i> De-Hired Assets
+    </button>
+  </div>
 
+  <div id="uploadWrapper" class="mt-2 hidden order-3 mb-4">
+    <div class="h-2 bg-gray-200 rounded relative">
+      <div id="uploadProgress" class="h-2 bg-green-500 rounded w-0 text-xs text-white text-center transition-all duration-300"></div>
+    </div>
+    <div id="uploadStatus" class="text-xs text-gray-500 mt-1 font-semibold"></div>
+  </div>
 
-      <a href="/admin/admin_add_asset" class="px-3 py-2 rounded bg-yellow-custom text-black">Add Asset</a>
-      <a href="/admin/download_assets_csv" class="px-3 py-2 rounded border">Download CSV</a>
-      <a href="/admin/download_assets_template_csv" class="px-3 py-2 rounded border">Download Template CSV</a>
-      <a href="#" id="downloadExcelBtn" class="px-3 py-2 rounded border">Download Excel</a>
-      
-      <button id="openDropdownConfigBtn" class="px-3 py-2 rounded border bg-gray-100 hover:bg-gray-200">
-        ⚙️ Manage Dropdowns
-      </button>
-
-      <label class="px-3 py-2 rounded border cursor-pointer bg-white">
-        Upload CSV
+  <div id="tab-active" class="order-4 flex flex-col transition-opacity duration-300">
+    
+    <div class="flex flex-wrap items-center gap-2 bg-white p-3 rounded-xl shadow-sm border border-gray-200 mb-5">
+      <button onclick="openAssetModal()" class="px-4 py-2.5 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-bold shadow hover:shadow-md transition-all"><i class="fa-solid fa-plus mr-1"></i> Add Asset</button>
+      <a href="/admin/download_assets_csv" class="px-4 py-2.5 rounded-lg bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold shadow hover:shadow-md transition-all"><i class="fa-solid fa-file-csv mr-1"></i> CSV</a>
+      <a href="/admin/download_assets_template_csv" class="px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-bold shadow-sm hover:bg-gray-50 transition-all"><i class="fa-solid fa-file-arrow-down mr-1"></i> Template</a>
+      <button id="downloadExcelBtn" class="px-4 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white font-bold shadow hover:shadow-md transition-all"><i class="fa-solid fa-file-excel mr-1"></i> Excel</button>
+      <label class="px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-700 font-bold shadow-sm hover:bg-gray-50 transition-all cursor-pointer">
+        <i class="fa-solid fa-upload mr-1"></i> Upload CSV
         <input id="csvUploadInput" type="file" accept=".csv" style="display:none" />
       </label>
-
-      <button id="refreshBtn" class="px-3 py-2 rounded border">Refresh</button>
-      <button id="deleteSelectedBtn" class="px-3 py-2 rounded border bg-red-500 text-white">Delete Selected</button>
-    </div>
-  </div>
-
-  <!-- Upload progress/status -->
-  <div id="uploadWrapper" class="mt-2 hidden">
-    <div class="h-2 bg-gray-200 rounded relative">
-      <div id="uploadProgress" class="h-2 bg-green-500 rounded w-0 text-xs text-white text-center"></div>
-    </div>
-    <div id="uploadStatus" class="text-xs text-gray-500 mt-1"></div>
-  </div>
-
-  <!-- Dashboard -->
-  <div class="dashboard">
-
-    <!-- Last Update -->
-    <div class="last-update-header">
-      <div id="lastUpdate" class="text-xs text-gray-600">Last Update: --</div>
+      <button id="refreshBtn" class="px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow hover:shadow-md transition-all"><i class="fa-solid fa-rotate-right mr-1"></i> Refresh</button>
+      <button id="dehireSelectedBtn" class="px-4 py-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow hover:shadow-md transition-all"><i class="fa-solid fa-box-archive mr-1"></i> De-Hire</button>
+      <button id="deleteSelectedBtn" class="px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow hover:shadow-md transition-all"><i class="fa-solid fa-trash mr-1"></i> Delete Selected</button>
     </div>
 
-    <!-- Total Assets -->
-    <div class="card total-assets-card">
-      <h3 class="card-title">Total Assets</h3>
-      <div class="stats-new-layout">
-        <div class="stat-column">
-          <div class="stat-main">
-            <div class="stat-label">Own</div>
-            <div id="countOwn" class="stat-number own">0</div>
-          </div>
-          <div class="stat-sub">
-            <div class="stat-label">IHC (₹ Cr)</div>
-            <div id="totalIHC" class="stat-number text-green-700">₹ 0 Cr</div>
-          </div>
-        </div>
-        <div class="stat-column">
-          <div class="stat-main">
-            <div class="stat-label">Hire</div>
-            <div id="countHire" class="stat-number hire">0</div>
-          </div>
-          <div class="stat-sub">
-            <div class="stat-label">EHC (₹ Cr)</div>
-            <div id="totalEHC" class="stat-number text-blue-700">₹ 0 Cr</div>
-          </div>
-        </div>
-        <div class="nc-box">
-          <div class="stat-label">NC</div>
-          <div id="countNC" class="stat-number nc">0</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Locations -->
-    <div class="locations-row">
-
-      <!-- Adabari -->
-      <div class="card">
-        <h3 class="card-title">Adabari</h3>
+    <div id="metricsContainer" class="dashboard mb-4">
+      <div class="last-update-header"><div id="lastUpdate" class="text-xs text-gray-600 font-semibold bg-white px-3 py-1 rounded-full shadow-sm inline-block border border-gray-200">Last Update: --</div></div>
+      <div class="card total-assets-card hover:shadow-lg transition-shadow">
+        <h3 class="card-title text-lg sm:text-xl lg:text-2xl text-blue-900 transition-all"><i class="fa-solid fa-truck-moving mr-2 text-blue-600"></i>Total Assets</h3>
         <div class="stats-new-layout">
-          <div class="stat-column">
-            <div class="stat-main">
-              <div class="stat-label">Own</div>
-              <div id="adabariOwn" class="stat-number own">0</div>
-            </div>
-            <div class="stat-sub">
-              <div class="stat-label">IHC (₹ Cr)</div>
-              <div id="adabariIHC" class="stat-number text-green-700">₹ 0 Cr</div>
-            </div>
+          <div class="stat-column"><div class="stat-main"><div class="stat-label">Own</div><div id="countOwn" class="stat-number own">0</div></div><div class="stat-sub"><div class="stat-label">IHC</div><div id="totalIHC" class="stat-number text-green-700">₹ 0</div></div></div>
+          <div class="stat-column"><div class="stat-main"><div class="stat-label">Hire</div><div id="countHire" class="stat-number hire">0</div></div><div class="stat-sub"><div class="stat-label">EHC</div><div id="totalEHC" class="stat-number text-blue-700">₹ 0</div></div></div>
+          <div class="nc-box"><div class="stat-label">NC</div><div id="countNC" class="stat-number nc">0</div></div>
+        </div>
+      </div>
+      <div class="locations-row">
+        <div class="card hover:shadow-lg transition-shadow border-t-4 border-t-indigo-500">
+          <h3 class="card-title text-lg sm:text-xl lg:text-2xl transition-all">Adabari</h3>
+          <div class="stats-new-layout">
+            <div class="stat-column"><div class="stat-main"><div class="stat-label">Own</div><div id="adabariOwn" class="stat-number own">0</div></div><div class="stat-sub"><div class="stat-label">IHC</div><div id="adabariIHC" class="stat-number text-green-700">₹ 0</div></div></div>
+            <div class="stat-column"><div class="stat-main"><div class="stat-label">Hire</div><div id="adabariHire" class="stat-number hire">0</div></div><div class="stat-sub"><div class="stat-label">EHC</div><div id="adabariEHC" class="stat-number text-blue-700">₹ 0</div></div></div>
+            <div class="nc-box"><div class="stat-label">NC</div><div id="adabariNC" class="stat-number nc">0</div></div>
           </div>
-          <div class="stat-column">
-            <div class="stat-main">
-              <div class="stat-label">Hire</div>
-              <div id="adabariHire" class="stat-number hire">0</div>
-            </div>
-            <div class="stat-sub">
-              <div class="stat-label">EHC (₹ Cr)</div>
-              <div id="adabariEHC" class="stat-number text-blue-700">₹ 0 Cr</div>
-            </div>
+        </div>
+        <div class="card hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
+          <h3 class="card-title text-lg sm:text-xl lg:text-2xl transition-all">Birsing</h3>
+          <div class="stats-new-layout">
+            <div class="stat-column"><div class="stat-main"><div class="stat-label">Own</div><div id="birsingOwn" class="stat-number own">0</div></div><div class="stat-sub"><div class="stat-label">IHC</div><div id="birsingIHC" class="stat-number text-green-700">₹ 0</div></div></div>
+            <div class="stat-column"><div class="stat-main"><div class="stat-label">Hire</div><div id="birsingHire" class="stat-number hire">0</div></div><div class="stat-sub"><div class="stat-label">EHC</div><div id="birsingEHC" class="stat-number text-blue-700">₹ 0</div></div></div>
+            <div class="nc-box"><div class="stat-label">NC</div><div id="birsingNC" class="stat-number nc">0</div></div>
           </div>
-          <div class="nc-box">
-            <div class="stat-label">NC</div>
-            <div id="adabariNC" class="stat-number nc">0</div>
+        </div>
+        <div class="card hover:shadow-lg transition-shadow border-t-4 border-t-amber-500">
+          <h3 class="card-title text-lg sm:text-xl lg:text-2xl transition-all">Phulbari</h3>
+          <div class="stats-new-layout">
+            <div class="stat-column"><div class="stat-main"><div class="stat-label">Own</div><div id="phulbariOwn" class="stat-number own">0</div></div><div class="stat-sub"><div class="stat-label">IHC</div><div id="phulbariIHC" class="stat-number text-green-700">₹ 0</div></div></div>
+            <div class="stat-column"><div class="stat-main"><div class="stat-label">Hire</div><div id="phulbariHire" class="stat-number hire">0</div></div><div class="stat-sub"><div class="stat-label">EHC</div><div id="phulbariEHC" class="stat-number text-blue-700">₹ 0</div></div></div>
+            <div class="nc-box"><div class="stat-label">NC</div><div id="phulbariNC" class="stat-number nc">0</div></div>
           </div>
         </div>
       </div>
+    </div>
+    
+    <div class="flex flex-col sm:flex-row items-center gap-3 mb-4 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+      <div class="flex items-center gap-2"><input type="radio" id="searchAssetCode" name="searchMode" value="asset_code" checked class="text-blue-600 focus:ring-blue-500 cursor-pointer w-4 h-4"><label for="searchAssetCode" class="text-sm font-bold text-gray-700 cursor-pointer">By Asset Code</label></div>
+      <div class="flex items-center gap-2"><input type="radio" id="searchRegNo" name="searchMode" value="reg_no" class="text-blue-600 focus:ring-blue-500 cursor-pointer w-4 h-4"><label for="searchRegNo" class="text-sm font-bold text-gray-700 cursor-pointer">By Reg. No.</label></div>
+      <input id="globalSearchInput" placeholder="🔍 Type to search Active Assets..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 font-medium" />
+      <button id="clearSearchBtn" class="px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 font-bold hover:bg-gray-100 transition-colors"><i class="fa-solid fa-xmark mr-1"></i> Clear</button>
+    </div>
 
-      <!-- Birsing -->
-      <div class="card">
-        <h3 class="card-title">Birsing</h3>
-        <div class="stats-new-layout">
-          <div class="stat-column">
-            <div class="stat-main">
-              <div class="stat-label">Own</div>
-              <div id="birsingOwn" class="stat-number own">0</div>
-            </div>
-            <div class="stat-sub">
-              <div class="stat-label">IHC (₹ Cr)</div>
-              <div id="birsingIHC" class="stat-number text-green-700">₹ 0 Cr</div>
-            </div>
-          </div>
-          <div class="stat-column">
-            <div class="stat-main">
-              <div class="stat-label">Hire</div>
-              <div id="birsingHire" class="stat-number hire">0</div>
-            </div>
-            <div class="stat-sub">
-              <div class="stat-label">EHC (₹ Cr)</div>
-              <div id="birsingEHC" class="stat-number text-blue-700">₹ 0 Cr</div>
-            </div>
-          </div>
-          <div class="nc-box">
-            <div class="stat-label">NC</div>
-            <div id="birsingNC" class="stat-number nc">0</div>
-          </div>
+    <div class="w-full relative">
+      <div id="scrollTop" class="overflow-x-auto mb-1"><div style="height:1px"></div></div>
+      <div id="asset-table" class="w-full filters-visible"></div>
+      <div id="scrollBottom" class="overflow-x-auto mt-1"><div style="height:1px"></div></div>
+    </div>
+
+    <div class="bg-white shadow-md rounded-xl p-5 mb-6 mt-6 border border-gray-200">
+      <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-gear mr-2 text-gray-600"></i>Manage Dropdown Lists</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-bold mb-1 text-gray-700">Select List</label>
+          <select id="listSelector" class="form-select border border-gray-300 rounded-md w-full p-2.5 focus:ring-2 focus:ring-blue-400 focus:outline-none font-medium text-gray-700 bg-white">
+            <option value="asset_category">Asset Category</option>
+            <option value="asset_description">Asset Description</option>
+            <option value="package">Package</option>
+            <option value="activity">Activity</option>
+            <option value="location">Location</option> 
+            <option value="asset_incharge">Asset Incharge</option>
+            <option value="asset_user">Asset User</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1 text-gray-700">Value</label>
+          <input id="newListValue" placeholder="Enter value..." class="border border-gray-300 rounded-md w-full p-2.5 focus:ring-2 focus:ring-blue-400 focus:outline-none font-medium" />
+        </div>
+        <div class="flex items-end gap-2">
+          <button id="addListValueBtn" class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-md font-bold shadow transition flex-1"><i class="fa-solid fa-plus mr-1"></i> Add</button>
+          <button id="removeListValueBtn" class="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-md font-bold shadow transition flex-1"><i class="fa-solid fa-trash mr-1"></i> Remove</button>
         </div>
       </div>
-
-      <!-- Phulbari -->
-      <div class="card">
-        <h3 class="card-title">Phulbari</h3>
-        <div class="stats-new-layout">
-          <div class="stat-column">
-            <div class="stat-main">
-              <div class="stat-label">Own</div>
-              <div id="phulbariOwn" class="stat-number own">0</div>
-            </div>
-            <div class="stat-sub">
-              <div class="stat-label">IHC (₹ Cr)</div>
-              <div id="phulbariIHC" class="stat-number text-green-700">₹ 0 Cr</div>
-            </div>
-          </div>
-          <div class="stat-column">
-            <div class="stat-main">
-              <div class="stat-label">Hire</div>
-              <div id="phulbariHire" class="stat-number hire">0</div>
-            </div>
-            <div class="stat-sub">
-              <div class="stat-label">EHC (₹ Cr)</div>
-              <div id="phulbariEHC" class="stat-number text-blue-700">₹ 0 Cr</div>
-            </div>
-          </div>
-          <div class="nc-box">
-            <div class="stat-label">NC</div>
-            <div id="phulbariNC" class="stat-number nc">0</div>
-          </div>
-        </div>
+      <div class="mt-4 text-sm font-medium text-gray-500 bg-blue-50 p-2.5 rounded border border-dashed border-blue-200 inline-block">
+        <i class="fa-solid fa-circle-info mr-1 text-blue-500"></i> Changes apply instantly — reflected in both Admin & User Asset Masters.
       </div>
+    </div>
 
+    <div class="bg-white p-4 sm:p-6 rounded-xl shadow-md border border-gray-200 border-t-4 border-t-teal-500 mb-8 w-full overflow-hidden">
+      <h3 class="text-lg sm:text-xl font-black text-gray-800 mb-4"><i class="fa-solid fa-chart-pie mr-2 text-teal-500"></i>Advanced Analysis Dashboard</h3>
+      <div class="flex flex-col md:flex-row gap-3 mb-4">
+        <select id="analysis_scope" onchange="renderAnalysis()" class="p-2.5 border border-gray-300 rounded-lg shadow-sm flex-1 focus:ring-2 focus:ring-teal-500 outline-none font-medium text-gray-700">
+          <option value="Total Project">Total Project (All Packages)</option>
+          <option value="Adabari">Adabari</option>
+          <option value="Birsing">Birsing</option>
+          <option value="Phulbari">Phulbari</option>
+        </select>
+        <button onclick="downloadFullAnalysis()" class="bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"><i class="fa-solid fa-file-excel"></i> Export Analytics</button>
+      </div>
+      <div id="analysis_results" class="mt-2 max-h-[600px] overflow-y-auto pr-2 rounded-lg border border-gray-100 bg-gray-50 p-2"></div>
+    </div>
+
+    <div class="bg-white p-4 sm:p-6 rounded-xl shadow-md border border-gray-200 border-t-4 border-t-blue-500 mb-8 w-full overflow-hidden">
+        <h3 class="text-lg sm:text-xl font-black text-gray-800 mb-2"><i class="fa-solid fa-table mr-2 text-blue-500"></i>Asset Detail Pivot View</h3>
+        <p class="text-sm font-semibold text-gray-500 mb-4">Live Total Project Breakdown (Vendors vs Equipments)</p>
+        <div class="overflow-auto max-h-[500px] border border-gray-300 rounded-lg shadow-inner relative custom-scrollbar">
+            <table id="pivotTable" class="w-full text-sm text-left whitespace-nowrap"></table>
+        </div>
     </div>
   </div>
-  <!-- Search -->
-  <div class="flex flex-col sm:flex-row items-center gap-2 mb-3">
-    <div class="flex items-center gap-2"><input type="radio" id="searchAssetCode" name="searchMode" value="asset_code" checked><label for="searchAssetCode" class="text-sm">By Asset Code</label></div>
-    <div class="flex items-center gap-2"><input type="radio" id="searchRegNo" name="searchMode" value="reg_no"><label for="searchRegNo" class="text-sm">By Reg. No.</label></div>
-    <input id="globalSearchInput" placeholder="Type to search..." class="flex-1 px-3 py-2 border rounded" />
-    <button id="clearSearchBtn" class="px-3 py-2 rounded border">Clear</button>
-  </div>
 
-  <!-- Top Scrollbar -->
-  <div id="scrollTop" class="overflow-x-auto mb-1"><div style="height:1px"></div></div>
-  <div id="asset-table" class="overflow-x-auto"></div>
-  <div id="scrollBottom" class="overflow-x-auto mt-1"><div style="height:1px"></div></div>
-</div>
+  <div id="tab-activity" class="order-5 flex flex-col hidden transition-opacity duration-300">
+    
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-gradient-to-br from-indigo-50 to-white border border-indigo-200 p-4 rounded-xl shadow-sm text-center">
+        <h4 class="text-xs font-black text-indigo-800 tracking-wider uppercase mb-2">🏗️ Total Project</h4>
+        <div class="flex justify-center gap-4 text-sm font-bold"><div class="text-green-700">Own: <span id="kw-total-own" class="text-lg">0</span></div><div class="text-orange-700">Hire: <span id="kw-total-hire" class="text-lg">0</span></div></div>
+      </div>
+      <div class="bg-gradient-to-br from-blue-50 to-white border border-blue-200 p-4 rounded-xl shadow-sm text-center">
+        <h4 class="text-xs font-black text-blue-800 tracking-wider uppercase mb-2">📦 Adabari</h4>
+        <div class="flex justify-center gap-4 text-sm font-bold"><div class="text-green-700">Own: <span id="kw-adabari-own" class="text-lg">0</span></div><div class="text-orange-700">Hire: <span id="kw-adabari-hire" class="text-lg">0</span></div></div>
+      </div>
+      <div class="bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 p-4 rounded-xl shadow-sm text-center">
+        <h4 class="text-xs font-black text-emerald-800 tracking-wider uppercase mb-2">📦 Birsing</h4>
+        <div class="flex justify-center gap-4 text-sm font-bold"><div class="text-green-700">Own: <span id="kw-birsing-own" class="text-lg">0</span></div><div class="text-orange-700">Hire: <span id="kw-birsing-hire" class="text-lg">0</span></div></div>
+      </div>
+      <div class="bg-gradient-to-br from-amber-50 to-white border border-amber-200 p-4 rounded-xl shadow-sm text-center">
+        <h4 class="text-xs font-black text-amber-800 tracking-wider uppercase mb-2">📦 Phulbari</h4>
+        <div class="flex justify-center gap-4 text-sm font-bold"><div class="text-green-700">Own: <span id="kw-phulbari-own" class="text-lg">0</span></div><div class="text-orange-700">Hire: <span id="kw-phulbari-hire" class="text-lg">0</span></div></div>
+      </div>
+    </div>
 
-<!-- 🔧 Dropdown Config Management Panel -->
-<div class="bg-white shadow rounded-lg p-4 mb-6 border border-gray-200">
-  <h2 class="text-lg font-bold text-gray-800 mb-3">⚙️ Manage Dropdown Lists</h2>
-
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-    <div>
-      <label class="block text-sm font-semibold mb-1 text-gray-700">Select List</label>
-      <select id="listSelector" class="border rounded w-full p-2">
-        <option value="asset_category">Asset Category</option>
-        <option value="package">Package</option>
-        <option value="activity">Activity</option>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex items-center gap-4">
+      <label class="font-bold text-gray-700 whitespace-nowrap"><i class="fa-solid fa-filter text-purple-500 mr-2"></i>Filter Package:</label>
+      <select id="kanbanPackageSelect" onchange="renderActivityKanban()" class="w-full md:w-64 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-purple-400 outline-none font-medium text-gray-700">
+        <option value="All">All Packages</option><option value="Adabari">Adabari</option><option value="Birsing">Birsing</option><option value="Phulbari">Phulbari</option>
       </select>
     </div>
 
-    <div>
-      <label class="block text-sm font-semibold mb-1 text-gray-700">Value</label>
-      <input id="newListValue" placeholder="Enter value..." class="border rounded w-full p-2" />
-    </div>
-
-    <div class="flex items-end gap-2">
-      <button id="addListValueBtn" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded">Add</button>
-      <button id="removeListValueBtn" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded">Remove</button>
-    </div>
+    <div id="activity-cards-container" class="space-y-8 pb-10"></div>
   </div>
 
-  <div class="mt-3 text-sm text-gray-500">
-    Changes apply instantly — reflected in both Admin & User Asset Masters.
-  </div>
-</div>
-
-<!-- Error Popup -->
-<div id="errorPopup" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
-  <div class="bg-white rounded shadow-lg w-96 max-h-96 overflow-y-auto p-4">
-    <h3 class="text-lg font-bold text-red-600 mb-2">Upload Errors</h3>
-    <ul id="errorList" class="list-disc pl-5 text-sm text-gray-700"></ul>
-    <div class="text-right mt-4 space-x-2">
-      <button id="downloadErrorCsv" class="px-3 py-1 bg-gray-600 text-white rounded">Download Errors</button>
-      <button id="closeErrorPopup" class="px-3 py-1 bg-red-500 text-white rounded">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- ⚙️ Dropdown Config Modal -->
-<div id="dropdownConfigModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-  <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-    <h2 class="text-lg font-bold text-gray-800 mb-3">Manage Dropdown Lists</h2>
-
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+  <div id="tab-dehired" class="order-6 flex flex-col hidden transition-opacity duration-300">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-5 rounded-xl shadow-sm border border-gray-200 mb-4 gap-4">
       <div>
-        <label class="block text-sm font-semibold mb-1 text-gray-700">Select List</label>
-        <select id="listSelector" class="border rounded w-full p-2">
-          <option value="asset_category">Asset Category</option>
-          <option value="package">Package</option>
-          <option value="activity">Activity</option>
-        </select>
+        <h2 class="text-xl font-black text-gray-800"><i class="fa-solid fa-box-archive mr-2 text-orange-500"></i> De-Hired Assets Archive</h2>
+        <p class="text-sm font-medium text-gray-500 mt-1">Read-only view of all historically de-hired assets.</p>
       </div>
-
-      <div>
-        <label class="block text-sm font-semibold mb-1 text-gray-700">Value</label>
-        <input id="newListValue" placeholder="Enter value..." class="border rounded w-full p-2" />
-      </div>
-
-      <div class="flex items-end gap-2">
-        <button id="addListValueBtn" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded">Add</button>
-        <button id="removeListValueBtn" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded">Remove</button>
-      </div>
+      <button onclick="dehiredTable.download('xlsx', 'dehired_assets.xlsx')" class="px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold shadow hover:shadow-md transition"><i class="fa-solid fa-file-excel mr-1.5"></i> Export Data</button>
     </div>
-
-    <div class="max-h-40 overflow-y-auto border-t pt-2 mt-2">
-      <h3 class="font-semibold text-sm mb-1 text-gray-700">Current Values</h3>
-      <ul id="dropdownValuesList" class="text-sm text-gray-600 space-y-1"></ul>
+    
+    <div class="flex flex-col sm:flex-row items-center gap-3 mb-4 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+      <input id="searchDehiredInput" placeholder="🔍 Search De-hired Assets by Code..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium" />
+      <button id="clearSearchDehiredBtn" class="px-5 py-2 rounded-lg border border-gray-300 bg-gray-50 font-bold hover:bg-gray-100 transition-colors"><i class="fa-solid fa-xmark mr-1"></i> Clear</button>
     </div>
-
-    <div class="flex justify-end mt-4">
-      <button id="closeDropdownModal" class="px-4 py-2 rounded border bg-gray-200 hover:bg-gray-300">Close</button>
+    
+    <div class="w-full relative min-h-[500px]">
+        <div id="dehired-table" class="w-full border border-gray-200 shadow-sm rounded-xl overflow-hidden"></div>
     </div>
   </div>
 </div>
 
-<!-- ✅ Toast Notification Box -->
-<div id="toast" class="fixed bottom-5 right-5 hidden z-50 rounded-lg px-4 py-3 text-white shadow-lg transition-all duration-500 transform">
-  <span id="toastMsg" class="text-sm"></span>
-</div>
-
-<!-- ✅ Loading Overlay (animated gear) -->
-<div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40 flex items-center justify-center">
-  <div class="flex flex-col items-center space-y-3">
-    <svg xmlns="http://www.w3.org/2000/svg" class="animate-spin h-12 w-12 text-yellow-400" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor"
-        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"></path>
-    </svg>
-    <p class="text-white font-semibold text-lg animate-pulse">Uploading...</p>
+<div id="dehireModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[150] transition-opacity backdrop-blur-sm">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative flex flex-col">
+    <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3"><h2 id="dehireModalTitle" class="text-xl font-black text-gray-800"><i class="fa-solid fa-box-archive text-orange-500 mr-2"></i> De-Hire Asset</h2><button onclick="closeDehireModal()" class="text-gray-400 hover:text-red-500 transition-colors font-bold text-2xl leading-none">&times;</button></div>
+    <div class="bg-gray-50 p-4 rounded-lg mb-5 border border-gray-200"><p class="text-sm font-bold text-gray-700">Code: <span id="dh_asset_code" class="text-blue-600"></span></p><p class="text-sm font-bold text-gray-700 mt-1">Desc: <span id="dh_asset_desc" class="text-gray-900 font-medium"></span></p></div>
+    <form id="dehireForm" class="space-y-4">
+      <input type="hidden" id="dh_asset_id">
+      <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Date of De-Hire <span class="text-red-500">*</span></label><input type="date" id="dh_date" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-orange-400 outline-none font-medium" required></div>
+      <div><label class="block text-sm font-bold text-gray-700 mb-1.5">End Reading</label><input type="number" step="any" id="dh_reading" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-medium focus:ring-2 focus:ring-orange-400"></div>
+      <div><label class="block text-sm font-bold text-gray-700 mb-1.5">HSD Available at De-Hire</label><input type="number" step="any" id="dh_hsd" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-medium focus:ring-2 focus:ring-orange-400"></div>
+      <div><label class="block text-sm font-bold text-gray-700 mb-1.5">Reason for De-Hire</label><textarea id="dh_reason" rows="3" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-medium focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
+    </form>
+    <div class="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-5"><button type="button" onclick="closeDehireModal()" class="px-5 py-2 bg-gray-100 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-200 transition">Cancel</button><button type="button" id="dehireModalSubmitBtn" onclick="submitDehire()" class="px-5 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-bold shadow hover:shadow-md transition">Confirm De-Hire</button></div>
   </div>
 </div>
 
-<!-- Tabulator -->
-<link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+<div id="errorPopup" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[160] backdrop-blur-sm"><div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col p-5"><h3 class="text-lg font-black text-red-600 mb-3 flex items-center"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Upload Errors</h3><div class="overflow-y-auto custom-scrollbar flex-1 bg-red-50 p-3 rounded border border-red-100 mb-4"><ul id="errorList" class="list-disc pl-5 text-sm text-gray-800 space-y-1 font-medium"></ul></div><div class="flex justify-end gap-3"><button id="downloadErrorCsv" class="px-4 py-2 bg-gray-800 hover:bg-gray-900 transition text-white rounded-lg font-bold shadow"><i class="fa-solid fa-download mr-1"></i> CSV</button><button id="closeErrorPopup" class="px-4 py-2 bg-red-500 hover:bg-red-600 transition text-white rounded-lg font-bold shadow">Close</button></div></div></div>
+
+<div id="validationPopup" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[160] backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform border-t-4 border-red-500"><div class="p-6 text-center"><div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 mb-4"><i class="fa-solid fa-triangle-exclamation text-red-600 text-2xl"></i></div><h3 class="text-lg font-black text-gray-900 mb-2">Validation Errors</h3><p class="text-xs font-semibold text-gray-500 mb-4">Please correct the following fields:</p><div class="mt-2 text-sm text-gray-700 text-left bg-red-50 p-4 rounded-lg border border-red-100 max-h-48 overflow-y-auto custom-scrollbar"><ul id="validationErrorList" class="list-disc pl-5 space-y-1 font-medium"></ul></div></div><div class="bg-gray-50 px-6 py-4 flex justify-center border-t border-gray-200"><button onclick="closeValidationPopup()" class="w-full justify-center rounded-lg px-4 py-2.5 bg-red-600 text-sm font-bold text-white shadow hover:bg-red-700 transition">Got it</button></div></div></div>
+
+<div id="qrModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-[150] backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"><div class="bg-slate-800 p-4 flex justify-between items-center"><h2 class="text-lg font-black text-white flex items-center"><i class="fa-solid fa-qrcode text-yellow-400 mr-2"></i> Asset QR</h2><button onclick="closeQrModal()" class="text-gray-400 hover:text-white transition text-2xl leading-none">&times;</button></div><div class="p-6 flex flex-col items-center flex-1"><p id="qrAssetTitle" class="font-black text-gray-800 text-xl mb-1"></p><p id="qrAssetSubtitle" class="text-sm font-semibold text-gray-500 mb-5 text-center"></p><div id="qrcodeBox" class="p-4 bg-white border-2 border-gray-100 rounded-xl shadow-sm"></div></div><div class="bg-gray-50 p-5 border-t border-gray-200"><label class="block text-sm font-bold text-gray-700 mb-2">Select Print Size:</label><select id="qrPrintSize" class="form-select w-full border border-gray-300 rounded-lg px-3 py-2.5 mb-5 bg-white font-medium outline-none focus:ring-2 focus:ring-blue-400"><option value="100">Small Sticker (100x100px)</option><option value="200" selected>Medium Tag (200x200px)</option><option value="400">Large Sign (400x400px)</option></select><div class="flex gap-3"><button onclick="downloadQrCode()" class="flex-1 px-4 py-2.5 bg-gray-200 hover:bg-gray-300 transition text-gray-800 font-bold rounded-lg flex justify-center items-center shadow-sm"><i class="fa-solid fa-download mr-1.5"></i> Save</button><button onclick="printQrCode()" class="flex-1 px-4 py-2.5 bg-yellow-400 hover:bg-yellow-500 transition text-black font-bold rounded-lg flex justify-center items-center shadow-sm"><i class="fa-solid fa-print mr-1.5"></i> Print</button></div></div></div></div>
+
+<div id="assetModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[140] backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl p-6 relative max-h-[90vh] flex flex-col"><div class="flex justify-between items-center mb-5 border-b border-gray-100 pb-3"><h2 id="assetModalTitle" class="text-2xl font-black text-gray-800">Add Asset</h2><button onclick="closeAssetModal()" class="text-gray-400 hover:text-red-500 transition text-3xl leading-none">&times;</button></div><div class="overflow-y-auto flex-1 p-2 custom-scrollbar"><form id="assetForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></form></div><div class="mt-5 flex justify-between items-center border-t border-gray-100 pt-5"><div class="text-xs text-gray-500 font-semibold bg-gray-100 px-3 py-1.5 rounded"><span class="text-red-500 text-sm font-black mr-1">*</span> Mandatory fields</div><div class="flex gap-3"><button type="button" onclick="closeAssetModal()" class="px-6 py-2.5 bg-gray-100 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-200 transition">Cancel</button><button type="button" id="saveAssetBtn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 transition text-white rounded-lg font-bold shadow-md">Save Asset</button></div></div></div></div>
+
+<div id="toast" class="fixed bottom-5 right-5 hidden z-[999] rounded-xl px-5 py-3.5 text-white shadow-2xl font-bold transition-all"><span id="toastMsg" class="text-sm flex items-center"><i class="fa-solid fa-circle-info mr-2 text-lg"></i><span></span></span></div>
+<div id="loadingOverlay" class="fixed inset-0 bg-black/60 hidden z-[999] flex items-center justify-center backdrop-blur-sm"><div class="flex flex-col items-center space-y-4 bg-white p-8 rounded-2xl shadow-2xl"><svg class="animate-spin h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"></path></svg><p class="text-gray-800 font-black text-lg tracking-wide animate-pulse">Processing...</p></div></div>
+
+<link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
 <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
-
-<!-- ✅ Add XLSX dependency for Excel download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-  #asset-table .tabulator .tabulator-header .tabulator-col .tabulator-header-filter { display: none; }
-  #asset-table.filters-visible .tabulator .tabulator-header .tabulator-col .tabulator-header-filter { display: block !important; }
-  #uploadProgress { text-align: center; font-size: 10px; color: white; }
+  body { box-sizing: border-box; font-family: 'Inter', sans-serif; background: #f8f9fa; min-height: 100%; }
+  .form-select { appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right .75rem center; background-size: 16px 12px; padding-right: 2.5rem; }
+  #asset-table, #dehired-table { border-radius: 0.75rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); background: white; min-height: 400px; }
+  .tabulator-header { background-color: #f8fafc !important; border-bottom: 2px solid #cbd5e1 !important; color: #334155 !important; font-weight: 700 !important; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .tabulator-row { border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s ease; }
+  .tabulator-row:nth-child(even) { background-color: #fcfcfc; }
+  .tabulator-row:hover { background-color: #f1f5f9 !important; }
+  .tabulator-cell { padding: 0.75rem 1rem !important; font-size: 0.9rem; color: #475569; border-right: 1px solid #f1f5f9; }
+  .tabulator .tabulator-header .tabulator-col .tabulator-header-filter { display: block !important; margin-top: 0.5rem; }
+  .dashboard { max-width: 1200px; margin: 0 auto; padding: 1rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
+  .last-update-header { text-align: right; margin-bottom: 0.5rem; }
+  .total-assets-card { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 2px solid #3b82f6; border-radius: 12px; padding: 1rem; }
+  .card-title { font-weight: 800; color: #1e293b; text-align: center; margin-bottom: 0.75rem; }
+  .locations-row { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; flex: 1; min-width: 320px; }
+  .stats-new-layout { display: flex; align-items: flex-start; justify-content: space-around; gap: 0.75rem; }
+  .stat-column { display: flex; flex-direction: column; gap: 0.5rem; min-width: 100px; flex: 1; }
+  .stat-main { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem; text-align: center; }
+  .stat-sub { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.4rem; text-align: center; }
+  .nc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem; min-width: 70px; text-align: center; }
+  .stat-label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.25rem; text-transform: uppercase; }
+  .stat-number { font-size: clamp(1rem, 2vw, 1.25rem); font-weight: 800; }
+  .stat-number.own { color: #ef4444; } .stat-number.hire { color: #f97316; } .stat-number.nc { color: #8b5cf6; }
+  #pivotTable th { position: sticky; top: 0; background-color: #f8fafc; z-index: 10; border-bottom: 2px solid #cbd5e1; }
+  #pivotTable td:first-child, #pivotTable th:first-child { position: sticky; left: 0; background-color: #f8fafc; z-index: 20; border-right: 2px solid #cbd5e1; font-weight: bold; }
+  #pivotTable th:first-child { z-index: 30; } 
+  .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  #toast.success { background-color: #10b981; border-color: #059669; } #toast.error { background-color: #ef4444; border-color: #dc2626; }
 </style>
 
-<style>
-  /* ---------------- Base Layout ---------------- */
-  body {
-    box-sizing: border-box;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f8f9fa;
-    background-image: 
-      radial-gradient(circle at 25px 25px, #e9ecef 2px, transparent 2px),
-      radial-gradient(circle at 75px 75px, #dee2e6 1px, transparent 1px);
-    background-size: 100px 100px;
-    min-height: 100%;
-  }
-
-  html, body {
-    height: 100%;
-  }
-
-  /* ---------------- Dashboard Layout ---------------- */
-  .dashboard {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .last-update-header {
-    text-align: right;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Top Total Assets Box */
-  .total-assets-card {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    border: 2px solid #3b82f6;
-    border-radius: 10px;
-    padding: 1rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  }
-
-  .card-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #1f2937;
-    text-align: center;
-    margin-bottom: 0.75rem;
-  }
-
-  /* Horizontal Location Row */
-  .locations-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  /* Card Base Style */
-  .card {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    padding: 0.75rem;
-    flex: 1;
-    min-width: 320px;
-  }
-
-  .card h3 {
-    font-size: 0.9rem;
-    font-weight: 700;
-    text-align: center;
-    color: #1f2937;
-    margin-bottom: 0.5rem;
-  }
-
-  /* ---------------- Stat Box Layout ---------------- */
-  .stats-new-layout {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-around;
-    gap: 0.75rem;
-    flex-wrap: nowrap;
-  }
-
-  .stat-column {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-width: 100px;
-    flex: 1;
-  }
-
-  .stat-main {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 0.5rem;
-    text-align: center;
-  }
-
-  .stat-sub {
-    background: #f3f4f6;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    padding: 0.4rem;
-    text-align: center;
-  }
-
-  .nc-box {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 0.5rem;
-    min-width: 70px;
-    text-align: center;
-    align-self: flex-start;
-  }
-
-  .stat-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #6b7280;
-    margin-bottom: 0.25rem;
-  }
-
-  .stat-number {
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  /* ---------------- Colors ---------------- */
-  .stat-number.own {
-    color: #dc2626; /* red */
-  }
-
-  .stat-number.hire {
-    color: #ea580c; /* orange */
-  }
-
-  .stat-number.nc {
-    color: #7c3aed; /* violet */
-  }
-
-  .text-blue-700 {
-    color: #1d4ed8;
-  }
-
-  .text-green-700 {
-    color: #15803d;
-  }
-
-  /* ---------------- Responsive Design ---------------- */
-  @media (max-width: 1024px) {
-    .locations-row {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.75rem;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .dashboard {
-      padding: 0.75rem;
-    }
-
-    .card {
-      min-width: 100%;
-    }
-
-    .stats-new-layout {
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .stat-column {
-      min-width: 45%;
-    }
-
-    .nc-box {
-      min-width: 60px;
-    }
-
-    .card-title {
-      font-size: 0.85rem;
-    }
-
-    .stat-label {
-      font-size: 0.7rem;
-    }
-
-    .stat-number {
-      font-size: 0.9rem;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .locations-row {
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .card {
-      min-width: 100%;
-    }
-
-    .stat-column {
-      min-width: 100%;
-    }
-
-    .stats-new-layout {
-      flex-wrap: wrap;
-    }
-  }
-
-  /* ---------------- Toast Notification ---------------- */
-  #toast.success {
-    background-color: #16a34a; /* green */
-  }
-
-  #toast.error {
-    background-color: #dc2626; /* red */
-  }
-
-  #toast.show {
-    display: block;
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  #toast.hide {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-</style>
-
- 
 <script>
-
-  /* ------------------ Helpers (one copy only) ------------------ */
+  /* ========================================== */
+  /* BLOCK: UTILS & FORMATTERS */
+  /* ========================================== */
   function showToast(message, type = "success", duration = 3000) {
     const toast = document.getElementById("toast");
-    const msg = document.getElementById("toastMsg");
+    const msg = document.querySelector("#toastMsg span");
     if (!toast || !msg) return;
-
-    // Set classes
-    toast.classList.remove("success", "error");
-    toast.classList.add(type);
+    toast.className = `fixed bottom-5 right-5 z-[999] rounded-xl px-5 py-3.5 text-white shadow-2xl font-bold transition-all duration-500 transform border border-transparent ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
     msg.textContent = message;
-
-    // Show
     toast.style.display = "block";
-    toast.style.opacity = "1";
-    toast.style.transform = "translateY(0)";
-
-    // Auto-hide
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateY(20px)";
-      setTimeout(() => {
-        toast.style.display = "none";
-      }, 500);
-    }, duration);
+    setTimeout(() => toast.style.display = "none", duration);
   }
 
   function showLoading(show = true) {
-    const overlay = document.getElementById("loadingOverlay");
-    if (!overlay) return;
-    if (show) overlay.classList.remove("hidden");
-    else overlay.classList.add("hidden");
+    document.getElementById("loadingOverlay").classList.toggle("hidden", !show);
   }
 
   function formatLocalDate(dateStr) {
     if (!dateStr) return "--";
     const date = new Date(dateStr);
-    if (isNaN(date)) return "--";
-    const opts = {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true
-    };
-    return date.toLocaleString("en-IN", opts).replace(",", "");
+    return isNaN(date) ? "--" : date.toLocaleString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
   }
-  /* ---------------- end helpers ---------------- */
 
+ function formatDateOnly(dateStr) {
+    if (!dateStr) return "--";
+    const date = new Date(dateStr);
+    if (isNaN(date)) return "--";
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+  
+  const formatAmt = val => {
+    if (!val || isNaN(val)) return "0.00";
+    let num = parseFloat(val);
+    if (num >= 10000000) return "₹ " + (num / 10000000).toFixed(2) + " Cr";
+    if (num >= 100000) return "₹ " + (num / 100000).toFixed(2) + " Lac";
+    return "₹ " + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  };
 
-  const columns = [
-    {formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:50, cellClick:function(e, cell){ cell.getRow().toggleSelect(); }},
-    {title:"ID", field:"id", width:70, hozAlign:"left"},
-    {title:"Sl. No.", formatter:"rownum", hozAlign:"center", width:80},
-    {title:"Asset Code", field:"asset_code", editor:"input", headerFilter:"input", frozen:true},
-    {title:"Asset Description", field:"asset_description", editor:"input", headerFilter:"input"},
-    {
-        title: "Asset Category",
-        field: "asset_category",
-        editor: "list",
-        editorParams: {
-            values: [
-                "Concreting Eqpt",
-                "Cranes",
-                "Marine Eqpt",
-                "Earthmoving Eqpt",
-                "Material Handling Eqpt",
-                "Power Generators",
-                "Utility Eqpt",
-                "Vehicles - Cargo",
-                "Vehicles - Passenger"
-            ]
-        },
-        headerFilter: "select",
-        headerFilterParams: {
-            values: {
-                "": "All",
-                "Concreting Eqpt": "Concreting Eqpt",
-                "Cranes": "Cranes",
-                "Marine Eqpt": "Marine Eqpt",
-                "Earthmoving Eqpt": "Earthmoving Eqpt",
-                "Material Handling Eqpt": "Material Handling Eqpt",
-                "Power Generators": "Power Generators",
-                "Utility Eqpt": "Utility Eqpt",
-                "Vehicles - Cargo": "Vehicles - Cargo",
-                "Vehicles - Passenger": "Vehicles - Passenger"
-            }
-        }
-    },
-    {
-        title: "Reg. No.",
-        field: "reg_no",
-        editor: "input",
-        headerFilter: "input"
-    },
-    {
-        title: "Package",
-        field: "package",
-        editor: "list",
-        editorParams: {
-            values: ["Adabari", "Birsing", "Phulbari"]
-        },
-        headerFilter: "select",
-        headerFilterParams: {
-            values: {
-                "": "All",
-                "Adabari": "Adabari",
-                "Birsing": "Birsing",
-                "Phulbari": "Phulbari"
-            }
-        }
-    },
-    {
-        title: "Activity",
-        field: "activity",
-        editor: "list",
-        editorParams: {
-            values: [
-                "Batching Plant",
-                "LG",
-                "Fabrication",
-                "Civil Works",
-                "Bridge Builders",
-                "Pire Table",
-                "Upper Pylon",
-                "Marine",
-                "Well Works",
-                "Office / Accommodation / Admin",
-                "Enabling",
-                "Other Works"
-            ]
-        },
-        headerFilter: "select",
-        headerFilterParams: {
-            values: {
-                "": "All",
-                "Batching Plant": "Batching Plant",
-                "LG": "LG",
-                "Upper Pylon": "Upper Pylon",
-                "Fabrication": "Fabrication",
-                "Civil Works": "Civil Works",
-                "Bridge Builders": "Bridge Builders",
-                "Pire Table": "Pire Table",
-                "Marine": "Marine",
-                "Well Works": "Well Works",
-                "Office / Accommodation / Admin": "Office / Accommodation / Admin",
-                "Enabling": "Enabling",
-                "Other Works": "Other Works"
-            }
-        }
-    },
-    {
-        title: "Activity Works",
-        field: "activity_works", 
-        editor: "input",  
-        headerFilter: "input", 
-        hozAlign: "center"
-    },
-    {
-        title: "Location",
-        field: "location",
-        editor: "input",
-        headerFilter: "input"
-    },
-    {
-        title: "Meter Type",
-        field: "meter_type",
-        editor: "list",
-        editorParams: {
-            values: ["HMR", "KMR", "HMR/KMR"]
-        },
-        headerFilter: "select",
-        headerFilterParams: {
-            values: {
-                "": "All",
-                "HMR": "HMR",
-                "KMR": "KMR",
-                "HMR/KMR": "HMR/KMR"
-            }
-        }
-    },
-    {
-        title: "UoM",
-        field: "uom",
-        editor: "list",
-        editorParams: {
-            values: ["KMPL", "LPH", "LPH/KMPL"]
-        },
-        headerFilter: "select",
-        headerFilterParams: {
-            values: {
-                "": "All",
-                "KMPL": "KMPL",
-                "LPH": "LPH",
-                "LPH/KMPL": "LPH/KMPL"
-            }
-        }
-    },
-    {
-        title: "Fuel Norms",
-        field: "fuel_norms",
-        editor: "input",
-        headerFilter: "input"
-    },
-    {
-        title: "Owner",
-        field: "owner",
-        editor: "list",
-        editorParams: {
-            values: ["Own", "Hire", "NC"]
-        },
-        headerFilter: "select",
-        headerFilterParams: {
-            values: {
-                "": "All",
-                "Own": "Own",
-                "Hire": "Hire",
-                "NC": "NC"
-            }
-        }
-    },
-    {title:"Vendor Code", field:"vendor_code", editor:"input", headerFilter:"input"},
-    {title:"Agency", field:"agency", editor:"input", headerFilter:"input"},
-    {title:"WOD Number", field:"wod_number", editor:"input", headerFilter:"input"},
-    {title:"Vendor Mail Id", field:"vendor_mail_id", editor:"input", headerFilter:"input"},
-    {title:"Date of Commission", field:"date_of_commission", editor:"input", headerFilter:"input"},
-    {title:"Starting Reading", field:"starting_reading", editor:"number", headerFilter:"input"},
-    {title:"Tank Capacity", field:"tank_capacity", editor:"number", headerFilter:"input"},
-    {title:"HSD Available", field:"hsd_available", editor:"number", headerFilter:"input"},
-    {title:"Make", field:"make", editor:"input", headerFilter:"input"},
-    {title:"Model", field:"model", editor:"input", headerFilter:"input"},
-    {title:"PM Make", field:"pm_make", editor:"input", headerFilter:"input"},
-    {title:"PM Model", field:"pm_model", editor:"input", headerFilter:"input"},
-    {title:"EHC", field:"ehc", editor:"number", headerFilter:"input"},
-    {title:"IHC", field:"ihc", editor:"number", headerFilter:"input"},
-    {title:"Shift Hours", field:"shift_hours", editor:"number", headerFilter:"input"},
-    {title:"Operators Avail", field:"operator_available", editor:"number", headerFilter:"input"},
-    {title:"Helpers Avail", field:"helper_available", editor:"number", headerFilter:"input"},
-    {title:"Supervisor/Owner Name", field:"supervisor_owner_name", editor:"input", headerFilter:"input"},
-    {title:"Supervisor/Owner Phone", field:"supervisor_owner_phone", editor:"input", headerFilter:"input"},
-    {title:"Operator 1", field:"operator1", editor:"input", headerFilter:"input"},
-    {title:"Op1 Phone", field:"operator1_phone", editor:"input", headerFilter:"input"},
-    {title:"Op1 Shift", field:"operator1_shift", editor:"input", headerFilter:"input"},
-    {title:"Operator 2", field:"operator2", editor:"input", headerFilter:"input"},
-    {title:"Op2 Phone", field:"operator2_phone", editor:"input", headerFilter:"input"},
-    {title:"Op2 Shift", field:"operator2_shift", editor:"input", headerFilter:"input"},
-    {title:"Last Updated By", field:"last_updated_by"},
-    {title:"Last Updated At", field:"last_updated_at"},
-      {
-        title: "Actions",
-        width: 160,
-        hozAlign: "center",
-        formatter: (cell) => {
-          const id = cell.getRow().getData().id;
-          return `
-            <a href="/admin/admin_edit_asset/${id}" class="editRowLink px-2 py-1 bg-blue-500 text-white rounded text-xs">Edit</a>
-            <button class="deleteRowBtn px-2 py-1 bg-red-500 text-white rounded text-xs">Delete</button>
-          `;
-        },
-        cellClick: (e, cell) => {
-          const target = e.target;
-          const id = cell.getRow().getData().id;
-
-          // 🟥 Handle Delete
-          if (target.classList.contains("deleteRowBtn")) {
-            e.preventDefault();
-            if (confirm("Delete this asset?")) {
-              fetch(`/admin/delete_asset/${id}`, { method: "DELETE" })
-                .then((r) => r.json())
-                .then((resp) => {
-                  if (resp.success) {
-                    cell.getRow().delete();
-                    updateOwnerCounts();
-                    showToast("Deleted successfully", "success");
-                  } else {
-                    showToast("Delete failed: " + (resp.error || "Unknown"), "error");
-                  }
-                })
-                .catch((err) => showToast("Delete error: " + err, "error"));
-            }
-          }
-          // 🟩 Edit link will work normally → no preventDefault
-        },
-      }
-  ];
-
-
-
-    const table = new Tabulator("#asset-table", {
-    height: "500px",
-    layout: "fitDataStretch",
-    columns: columns,
-    ajaxURL: "/admin/get_assets",
-    index: "id",
-    placeholder: "No Data",
-    selectable: true,
-
-    // ✅ Natural order sort by asset_code (01, 1, 02, 2, etc.)
-    initialSort: [{ column: "asset_code", dir: "asc" }],
-    sortMode: "local",
-    columnDefaults: { headerSort: false },  // optional - disable header re-sorting
-
-    // ✅ Custom sorter to mix numeric + text properly
-    sorters: {
-      asset_code: function(a, b, aRow, bRow, column, dir, sorterParams) {
-        // Remove non-digits just in case
-        const valA = String(a || "").trim();
-        const valB = String(b || "").trim();
-
-        // Try to parse numeric part
-        const numA = parseInt(valA.replace(/\D/g, "")) || 0;
-        const numB = parseInt(valB.replace(/\D/g, "")) || 0;
-
-        // If numeric parts differ, sort by number
-        if (numA !== numB) return numA - numB;
-
-        // Otherwise, fallback to lexicographic (to handle 01 vs 1)
-        return valA.localeCompare(valB, undefined, { numeric: true });
-      }
-    }
-  });
-
-
- 
-
-  table.on("cellEdited", function(cell) {
-    console.log(">>> cellEdited fired for ID:", cell.getRow().getData().id);
-
-    const data = cell.getRow().getData();
-    const allowed = [
-      "asset_code","asset_description","asset_category","reg_no","package","activity",
-      "location","meter_type","uom","fuel_norms","owner","vendor_code","agency",
-      "wod_number","vendor_mail_id","date_of_commission","starting_reading","tank_capacity",
-      "hsd_available","make","model","pm_make","pm_model","ehc",
-      "ihc","shift_hours","operator_available","helper_available",
-      "supervisor_owner_name","supervisor_owner_phone","operator1","operator1_phone",
-      "operator1_shift","operator2","operator2_phone","operator2_shift"
-    ];
-
-    const payload = {};
-    allowed.forEach(k => {
-      if (data.hasOwnProperty(k)) payload[k] = data[k];
+  /* ========================================== */
+  /* BLOCK: PREMIUM TAB LOGIC */
+  /* ========================================== */
+  function switchTab(tabId) {
+    ['active', 'activity', 'dehired'].forEach(id => {
+      document.getElementById(`tab-${id}`).classList.add('hidden');
+      let btn = document.getElementById(`tabBtn-${id}`);
+      // Reset to inactive state (Premium Segmented Style)
+      btn.className = "flex-1 sm:flex-none whitespace-nowrap px-6 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ease-out text-gray-500 hover:text-gray-900 hover:bg-gray-100/50 border border-transparent";
     });
 
-    payload.last_updated_by = "{{ session.get('name','') }}";
-    payload.last_updated_at = new Date().toISOString();
+    document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+    const activeBtn = document.getElementById(`tabBtn-${tabId}`);
 
-    fetch(`/admin/update_asset/${data.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    })
-    .then(async r => {
-        const text = await r.text();
-        let resp;
-        try { 
-            resp = JSON.parse(text); 
-        } catch {
-            console.error("Non-JSON response:", text);
-            alert("⚠️ Server returned HTML or unexpected data. Try logging in again.");
-            return;
+    // Wait slightly so the browser visually renders the hidden div before Tabulator redraws
+    setTimeout(() => {
+        if(tabId === 'active') { 
+            activeBtn.className = "flex-1 sm:flex-none whitespace-nowrap px-6 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ease-out bg-white text-blue-700 shadow-sm border border-gray-200/50";
+            if(table) table.redraw(true); 
+        } 
+        else if(tabId === 'activity') {
+            activeBtn.className = "flex-1 sm:flex-none whitespace-nowrap px-6 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ease-out bg-white text-purple-700 shadow-sm border border-gray-200/50";
+            renderActivityKanban();
         }
-
-        if (resp.success) {
-            showToast("Saved Successfully ✅", "success");
-        } else {
-            showToast("Update failed: " + (resp.error || "Unknown error"), "error");
+        else if (tabId === 'dehired') {
+            activeBtn.className = "flex-1 sm:flex-none whitespace-nowrap px-6 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ease-out bg-white text-orange-700 shadow-sm border border-gray-200/50";
+            if(!dehiredTable) {
+                initDehiredTable();
+            } else { 
+                // Force fetch and redraw to prevent blank table bug
+                dehiredTable.replaceData("/admin/get_dehired_assets").then(() => {
+                    dehiredTable.redraw(true); 
+                });
+            }
         }
-    })
-    .catch(err => showToast("Error while saving: " + err, "error"));
-  });  // ✅ Properly closed here
-
-
-  // Load Data
-  function loadData(){
-    table.replaceData("/admin/get_assets").then(updateOwnerCounts);
+    }, 150);
   }
 
-  // 💰 Update counts + EHC/IHC totals + last update
-    function updateOwnerCounts() {
-    const data = table.getData() || [];
-    let own = 0, hire = 0, nc = 0;
-    let totalEHC = 0, totalIHC = 0;
+  /* ========================================== */
+  /* BLOCK: ACTIVITY WISE KANBAN (HIERARCHY L1 to L4) */
+  /* ========================================== */
+  function renderActivityKanban() {
+    let data = [];
+    try { data = table.getData("active"); } catch(e) { return; }
+    const selectedPackage = document.getElementById("kanbanPackageSelect").value;
+    const container = document.getElementById("activity-cards-container");
+    container.innerHTML = "";
 
-    // Lowercase package keys to handle inconsistent data
-    const packages = {
-      adabari: { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 },
-      birsing:  { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 },
-      phulbari: { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 }
-    };
+    let totals = { own: 0, hire: 0 };
+    let pkgCounts = { "Adabari": { own: 0, hire: 0 }, "Birsing": { own: 0, hire: 0 }, "Phulbari": { own: 0, hire: 0 } };
 
     data.forEach(r => {
-      const o = (r.owner || "").toString().trim().toLowerCase();
-      const pkg = (r.package || "").toString().trim().toLowerCase();
-      const ehc = parseFloat(r.ehc) || 0;
-      const ihc = parseFloat(r.ihc) || 0;
+        let owner = (r.owner || "").toLowerCase();
+        let pkg = (r.package || "").trim();
+        let isOwn = owner === "own", isHire = owner === "hire";
+        if(isOwn) totals.own++; if(isHire) totals.hire++;
+        let pKey = ["Birsing", "Phulbari"].includes(pkg) ? pkg : "Adabari";
+        if(isOwn) pkgCounts[pKey].own++; if(isHire) pkgCounts[pKey].hire++;
+    });
 
-      if (o === "own") own++;
-      else if (o === "hire") hire++;
-      else if (o === "nc") nc++;
+    document.getElementById("kw-total-own").innerText = totals.own; document.getElementById("kw-total-hire").innerText = totals.hire;
+    document.getElementById("kw-adabari-own").innerText = pkgCounts["Adabari"].own; document.getElementById("kw-adabari-hire").innerText = pkgCounts["Adabari"].hire;
+    document.getElementById("kw-birsing-own").innerText = pkgCounts["Birsing"].own; document.getElementById("kw-birsing-hire").innerText = pkgCounts["Birsing"].hire;
+    document.getElementById("kw-phulbari-own").innerText = pkgCounts["Phulbari"].own; document.getElementById("kw-phulbari-hire").innerText = pkgCounts["Phulbari"].hire;
 
-      totalEHC += ehc;
-      totalIHC += ihc;
+    let filteredData = data;
+    if (selectedPackage !== "All") {
+        if(selectedPackage === "Adabari") filteredData = data.filter(r => { let p = (r.package || "").trim(); return p !== "Birsing" && p !== "Phulbari"; });
+        else filteredData = data.filter(r => (r.package || "").trim() === selectedPackage);
+    }
 
-      if (packages[pkg]) {
-        if (o === "own") packages[pkg].own++;
-        else if (o === "hire") packages[pkg].hire++;
-        else if (o === "nc") packages[pkg].nc++;
-        packages[pkg].ehc += ehc;
-        packages[pkg].ihc += ihc;
+    // Step 1: Group strictly by Activity -> Category -> Description
+    let grouped = {};
+    filteredData.forEach(row => { 
+        let act = row.activity || "Unassigned Activity"; 
+        let cat = row.asset_category || "Uncategorized";
+        let desc = row.asset_description || "Unknown Equipment";
+
+        if(!grouped[act]) grouped[act] = { own: 0, hire: 0, categories: {} };
+        if(!grouped[act].categories[cat]) grouped[act].categories[cat] = { own: 0, hire: 0, descriptions: {} };
+        if(!grouped[act].categories[cat].descriptions[desc]) grouped[act].categories[cat].descriptions[desc] = { own: 0, hire: 0, items: [] };
+
+        let owner = (row.owner || '').toLowerCase();
+        let isOwn = owner === 'own', isHire = owner === 'hire';
+
+        if(isOwn) { grouped[act].own++; grouped[act].categories[cat].own++; grouped[act].categories[cat].descriptions[desc].own++; } 
+        else if (isHire) { grouped[act].hire++; grouped[act].categories[cat].hire++; grouped[act].categories[cat].descriptions[desc].hire++; }
+
+        grouped[act].categories[cat].descriptions[desc].items.push({ incharge: row.asset_incharge || 'Unassigned', user: row.asset_user || 'Unassigned', owner: owner });
+    });
+
+    if (Object.keys(grouped).length === 0) { container.innerHTML = `<div class="p-8 text-center text-gray-500 font-medium italic bg-white rounded-xl shadow-sm border border-gray-200">No activity data found.</div>`; return; }
+
+    // Step 2: Render deep hierarchical HTML
+    let html = ''; let actId = 0;
+    for (let act in grouped) {
+        actId++; let gAct = grouped[act];
+        
+        // LEVEL 1: Main Activity Card
+        html += `
+        <div class="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
+            <div class="bg-slate-800 p-4 md:p-5 flex flex-col sm:flex-row justify-between sm:items-center text-white gap-3 border-b-4 border-blue-500">
+                <h2 class="text-xl font-black uppercase tracking-wider"><i class="fa-solid fa-clipboard-list mr-2 text-blue-400"></i>${act}</h2>
+                <div class="flex gap-2 text-sm font-bold shrink-0">
+                    <span class="bg-green-500/20 text-green-300 px-3 py-1.5 rounded-full border border-green-500/30 shadow-inner">OWN: ${gAct.own}</span>
+                    <span class="bg-orange-500/20 text-orange-300 px-3 py-1.5 rounded-full border border-orange-500/30 shadow-inner">HIRE: ${gAct.hire}</span>
+                </div>
+            </div>
+            <div class="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/50">`;
+        
+        let catId = 0;
+        for (let cat in gAct.categories) {
+            catId++; let gCat = gAct.categories[cat];
+
+            // LEVEL 2: Asset Category Inner Card
+            html += `
+            <div class="bg-white border-l-4 border-l-indigo-500 rounded-xl shadow-sm border border-gray-200 flex flex-col h-full hover:shadow-md transition-shadow">
+                <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+                    <h3 class="font-bold text-gray-800 text-lg leading-tight"><i class="fa-solid fa-layer-group text-indigo-500 mr-2"></i>${cat}</h3>
+                    <div class="text-[10px] font-black flex flex-col items-end gap-0.5 shrink-0 ml-2">
+                        <span class="text-green-800 bg-green-100 px-1.5 py-0.5 rounded border border-green-200">O: ${gCat.own}</span>
+                        <span class="text-orange-800 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200">H: ${gCat.hire}</span>
+                    </div>
+                </div>
+                <div class="p-3 space-y-3 flex-1">`;
+            
+            let descId = 0;
+            for (let desc in gCat.descriptions) {
+                descId++; let gDesc = gCat.descriptions[desc]; let accId = `acc_${actId}_${catId}_${descId}`;
+
+                // LEVEL 3 & 4: Asset Description Dropdown containing the Details
+                html += `
+                <div class="border border-gray-200 rounded-lg overflow-hidden bg-white transition-all hover:border-blue-300 shadow-sm">
+                    <button onclick="document.getElementById('${accId}').classList.toggle('hidden')" class="w-full flex justify-between items-center p-3 bg-white hover:bg-blue-50/50 transition-colors text-left outline-none">
+                        <span class="font-bold text-gray-700 text-sm truncate flex-1"><i class="fa-solid fa-cube text-blue-500 mr-2"></i>${desc}</span>
+                        <div class="flex items-center gap-2 shrink-0 ml-2">
+                            <span class="text-[10px] font-black bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded text-gray-600">O: ${gDesc.own} | H: ${gDesc.hire}</span>
+                            <i class="fa-solid fa-chevron-down text-gray-400 text-xs"></i>
+                        </div>
+                    </button>
+                    
+                    <div id="${accId}" class="hidden bg-slate-50 p-2.5 space-y-2 max-h-48 overflow-y-auto custom-scrollbar border-t border-gray-100 shadow-inner">`;
+                
+                gDesc.items.forEach(item => {
+                    let badge = item.owner === 'own' ? '<span class="bg-green-100 text-green-800 text-[10px] px-1.5 py-0.5 font-bold rounded border border-green-200">OWN</span>' : (item.owner === 'hire' ? '<span class="bg-orange-100 text-orange-800 text-[10px] px-1.5 py-0.5 font-bold rounded border border-orange-200">HIRE</span>' : '');
+                    
+                    html += `
+                        <div class="p-2.5 rounded-md bg-white border border-gray-200 hover:border-blue-200 transition-colors flex flex-col gap-1.5 shadow-sm">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-bold text-gray-800 truncate pr-2"><i class="fa-solid fa-user-tie text-gray-400 mr-1.5"></i>${item.incharge}</span>
+                                ${badge}
+                            </div>
+                            <span class="text-[11px] font-medium text-gray-500 truncate"><i class="fa-solid fa-user-gear text-gray-400 mr-1.5"></i>${item.user}</span>
+                        </div>`;
+                });
+
+                html += `</div></div>`;
+            }
+            html += `</div></div>`;
+        }
+        html += `</div></div>`;
+    }
+    container.innerHTML = html;
+  }
+
+  /* ========================================== */
+  /* BLOCK: ACTIVE TABLE COLUMNS & INIT */
+  /* ========================================== */
+  const columns = [
+    {formatter:"rowSelection", titleFormatter:"rowSelection", hozAlign:"center", headerSort:false, width:50},
+    {title:"ID", field:"id", visible:false},
+    {title:"Sl. No.", formatter:"rownum", hozAlign:"center", width:80},
+    {title:"Asset Code", field:"asset_code", headerFilter:"input", frozen:true},
+    {title:"Asset Description", field:"asset_description", headerFilter:"select", headerFilterParams: { values: {"": "All"} }},
+    {title: "Asset Category", field: "asset_category", headerFilter: "select", headerFilterParams: { values: {"": "All","Concreting Eqpt": "Concreting Eqpt","Cranes": "Cranes","Marine Eqpt": "Marine Eqpt","Earthmoving Eqpt": "Earthmoving Eqpt","Material Handling Eqpt": "Material Handling Eqpt","Power Generators": "Power Generators","Utility Eqpt": "Utility Eqpt","Vehicles - Cargo": "Vehicles - Cargo","Vehicles - Passenger": "Vehicles - Passenger"} }},
+    {title: "Reg. No.", field: "reg_no", headerFilter: "input"},
+    {title: "Package", field: "package", headerFilter: "select", headerFilterParams: { values: { "": "All", "Adabari": "Adabari", "Birsing": "Birsing", "Phulbari": "Phulbari" } }},
+    {title: "Activity", field: "activity", headerFilter: "select", headerFilterParams: { values: {"": "All","Batching Plant": "Batching Plant","LG": "LG","Upper Pylon": "Upper Pylon","Fabrication": "Fabrication","Civil Works": "Civil Works","Bridge Builders": "Bridge Builders","Pire Table": "Pire Table","Marine": "Marine","Well Works": "Well Works","Office / Accommodation / Admin": "Office / Accommodation / Admin","Enabling": "Enabling","Other Works": "Other Works"} }},
+    {title: "Activity Works", field: "activity_works", headerFilter: "input"},
+    {title: "Location", field: "location", headerFilter: "select", headerFilterParams: { values: {"": "All"} }},
+    {title: "Asset Incharge", field: "asset_incharge", headerFilter: "select", headerFilterParams: { values: { "": "All" } }},
+    {title: "Asset User", field: "asset_user", headerFilter: "select", headerFilterParams: { values: { "": "All" } }},
+    {title: "Meter Type", field: "meter_type", headerFilter: "select", headerFilterParams: { values: { "": "All", "HMR": "HMR", "KMR": "KMR", "HMR/KMR": "HMR/KMR" } }},
+    {title: "UoM", field: "uom", headerFilter: "select", headerFilterParams: { values: { "": "All", "KMPL": "KMPL", "LPH": "LPH", "LPH/KMPL": "LPH/KMPL" } }},
+    {title: "Fuel Norms", field: "fuel_norms", headerFilter: "input"},
+    {title: "Owner", field: "owner", headerFilter: "select", headerFilterParams: { values: { "": "All", "Own": "Own", "Hire": "Hire", "NC": "NC" } }},
+    {title:"Vendor Code", field:"vendor_code", headerFilter:"input"},
+    {title:"Agency", field:"agency", headerFilter:"input"},
+    {title:"WOD Number", field:"wod_number", headerFilter:"input"},
+    {title:"Vendor Mail Id", field:"vendor_mail_id", headerFilter:"input"},
+    {title:"Date of Commission", field:"date_of_commission", formatter: cell => formatDateOnly(cell.getValue()), headerFilter:"input"},
+    {title:"Starting Reading", field:"starting_reading", headerFilter:"input"},
+    {title:"Tank Capacity", field:"tank_capacity", headerFilter:"input"},
+    {title:"HSD Available", field:"hsd_available", headerFilter:"input"},
+    {title:"Make", field:"make", headerFilter:"input"},
+    {title:"Model", field:"model", headerFilter:"input"},
+    {title:"PM Make", field:"pm_make", headerFilter:"input"},
+    {title:"PM Model", field:"pm_model", headerFilter:"input"},
+    {title:"EHC", field:"ehc", headerFilter:"input"},
+    {title:"IHC", field:"ihc", headerFilter:"input"},
+    {title:"Shift Hours", field:"shift_hours", headerFilter:"input"},
+    {title:"Operators Avail", field:"operator_available", headerFilter:"input"},
+    {title:"Helpers Avail", field:"helper_available", headerFilter:"input"},
+    {title:"Supervisor/Owner Name", field:"supervisor_owner_name", headerFilter:"input"},
+    {title:"Supervisor/Owner Phone", field:"supervisor_owner_phone", headerFilter:"input"},
+    {title:"Operator 1 Name", field:"operator1", headerFilter:"input"},
+    {title:"Operator 1 Phone Number", field:"operator1_phone", headerFilter:"input"},
+    {title:"Operator 1 Shift", field:"operator1_shift", headerFilter:"select", headerFilterParams: { values: {"": "All", "Day": "Day", "Night": "Night"} }},
+    {title:"Operator 2 Name", field:"operator2", headerFilter:"input"},
+    {title:"Operator 2 Phone Number", field:"operator2_phone", headerFilter:"input"},
+    {title:"Operator 2 Shift", field:"operator2_shift", headerFilter:"select", headerFilterParams: { values: {"": "All", "Day": "Day", "Night": "Night"} }},
+    {title:"Last Updated By", field:"last_updated_by"},
+    {title:"Last Updated At", field:"last_updated_at", formatter: cell => formatLocalDate(cell.getValue())},
+    {
+      title: "Actions", width: 140, hozAlign: "center", frozen: true,
+      formatter: () => `<button class="generateQrBtn px-2 py-1 bg-gray-800 text-white rounded text-xs mr-1"><i class="fa-solid fa-qrcode"></i></button><button class="editRowBtn px-2 py-1 bg-blue-600 text-white rounded text-xs mr-1"><i class="fa-solid fa-pen"></i></button>`,
+      cellClick: (e, cell) => {
+        const t = e.target.closest('button');
+        if(!t) return;
+        const data = cell.getRow().getData();
+        if(t.classList.contains("generateQrBtn")) generateQR(data);
+        if(t.classList.contains("editRowBtn")) openAssetModal(data);
+      }
+    }
+  ];
+
+  const table = new Tabulator("#asset-table", {
+    height: "500px", layout: "fitDataStretch", columns: columns, ajaxURL: "/admin/get_assets",
+    index: "id", placeholder: "No Data", selectable: true,
+    initialSort: [{ column: "asset_code", dir: "asc" }], sortMode: "local", columnDefaults: { headerSort: false }
+  });
+
+  table.on("dataProcessed", function() { updateOwnerCounts(); });
+
+  /* ========================================== */
+  /* BLOCK: DEHIRED TABLE */
+  /* ========================================== */
+  let dehiredTable;
+  function initDehiredTable() {
+    const dhCols = [
+      {title:"ID", field:"id", visible:false},
+      {title:"Sl. No.", formatter:"rownum", hozAlign:"center", width:60},
+      {title:"Asset Code", field:"asset_code", headerFilter:"input", frozen:true},
+      {title:"Asset Description", field:"asset_description", headerFilter:"input"},
+      {title:"Asset Category", field:"asset_category", headerFilter:"input"},
+      {title:"Reg. No.", field:"reg_no", headerFilter:"input"},
+      {title:"Meter Type", field:"meter_type", headerFilter:"input"},
+      {title:"UoM", field:"uom", headerFilter:"input"},
+      {title:"Fuel Norms", field:"fuel_norms", headerFilter:"input"},
+      {title:"Owner", field:"owner", headerFilter:"input"},
+      {title:"Vendor Code", field:"vendor_code", headerFilter:"input"},
+      {title:"Agency", field:"agency", headerFilter:"input"},
+      {title:"WOD Number", field:"wod_number", headerFilter:"input"},
+      {title:"Vendor Mail", field:"vendor_mail_id", headerFilter:"input"},
+      {title:"Commission Date", field:"date_of_commission", headerFilter:"input"},
+      {title:"Start Reading", field:"starting_reading", headerFilter:"input"},
+      {title:"Tank Cap", field:"tank_capacity", headerFilter:"input"},
+      {title:"HSD Avail", field:"hsd_available", headerFilter:"input"},
+      {title:"De-Hire Date", field:"date_of_dehire", formatter: cell => formatDateOnly(cell.getValue()), headerFilter:"input"},
+      {title:"End Reading", field:"end_reading", headerFilter:"input"},
+      {title:"HSD at De-Hire", field:"hsd_at_dehire", headerFilter:"input"},
+      {title:"Reason", field:"reason", headerFilter:"input"},
+      {title:"Make", field:"make", headerFilter:"input"},
+      {title:"Model", field:"model", headerFilter:"input"},
+      {title:"PM Make", field:"pm_make", headerFilter:"input"},
+      {title:"PM Model", field:"pm_model", headerFilter:"input"},
+      {title:"EHC", field:"ehc", headerFilter:"input"},
+      {title:"IHC", field:"ihc", headerFilter:"input"},
+      {title:"Shift Hours", field:"shift_hours", headerFilter:"input"},
+      {title:"Last Updated By", field:"last_updated_by", headerFilter:"input"},
+      {title:"Last Updated At", field:"last_updated_at", formatter: cell => formatLocalDate(cell.getValue())},
+      {
+        title: "Actions", width: 80, hozAlign: "center", frozen: true,
+        formatter: () => `<button class="editDehiredBtn px-3 py-1.5 bg-blue-600 text-white font-bold rounded text-xs shadow hover:bg-blue-700"><i class="fa-solid fa-pen"></i></button>`,
+        cellClick: (e, cell) => { if (e.target.closest('.editDehiredBtn')) openEditDehiredModal(cell.getRow().getData()); }
+      }
+    ];
+
+    dehiredTable = new Tabulator("#dehired-table", {
+      height: "600px", layout: "fitDataStretch", columns: dhCols, ajaxURL: "/admin/get_dehired_assets",
+      placeholder: "No De-Hired Assets Found", selectable: false, initialSort: [{ column: "date_of_dehire", dir: "desc" }]
+    });
+
+    // BUG FIX: Strictly enforce redraw when data arrives or table builds
+    dehiredTable.on("tableBuilt", function() {
+        setTimeout(() => { if(dehiredTable) dehiredTable.redraw(true); }, 200);
+    });
+
+    dehiredTable.on("dataLoaded", function() {
+        setTimeout(() => { if(dehiredTable) dehiredTable.redraw(true); }, 200);
+    });
+
+    document.getElementById("searchDehiredInput").addEventListener("input", e => {
+      const q = e.target.value.toLowerCase();
+      if(!q) dehiredTable.clearFilter(); else dehiredTable.setFilter("asset_code", "like", q);
+    });
+    
+    document.getElementById("clearSearchDehiredBtn").addEventListener("click",()=>{
+      document.getElementById("searchDehiredInput").value="";
+      dehiredTable.clearFilter();
+    });
+  }
+
+  /* ========================================== */
+  /* BLOCK: MODALS (DEHIRE, ASSET, QR) */
+  /* ========================================== */
+  let isEditingDehired = false;
+  document.getElementById("dehireSelectedBtn").addEventListener("click", () => {
+    const selected = table.getSelectedData();
+    if (selected.length !== 1) return showToast("Please select EXACTLY ONE asset to de-hire.", "error");
+    isEditingDehired = false;
+    const asset = selected[0];
+    document.getElementById("dehireModalTitle").innerHTML = `<i class="fa-solid fa-box-archive text-orange-500 mr-2"></i> De-Hire Asset`;
+    document.getElementById("dehireModalSubmitBtn").innerText = "Confirm De-Hire";
+    document.getElementById("dh_asset_id").value = asset.id;
+    document.getElementById("dh_asset_code").innerText = asset.asset_code || 'N/A';
+    document.getElementById("dh_asset_desc").innerText = asset.asset_description || 'N/A';
+    document.getElementById("dh_date").value = ""; document.getElementById("dh_reading").value = "";
+    document.getElementById("dh_hsd").value = ""; document.getElementById("dh_reason").value = "";
+    document.getElementById("dehireModal").classList.remove("hidden"); document.getElementById("dehireModal").classList.add("flex");
+  });
+
+  function openEditDehiredModal(asset) {
+    isEditingDehired = true;
+    document.getElementById("dehireModalTitle").innerHTML = `<i class="fa-solid fa-pen text-blue-500 mr-2"></i> Edit De-Hired Details`;
+    document.getElementById("dehireModalSubmitBtn").innerText = "Update Details";
+    document.getElementById("dh_asset_id").value = asset.id;
+    document.getElementById("dh_asset_code").innerText = asset.asset_code || 'N/A';
+    document.getElementById("dh_asset_desc").innerText = asset.asset_description || 'N/A';
+    document.getElementById("dh_date").value = asset.date_of_dehire || "";
+    document.getElementById("dh_reading").value = asset.end_reading || "";
+    document.getElementById("dh_hsd").value = asset.hsd_at_dehire || "";
+    document.getElementById("dh_reason").value = asset.reason || "";
+    document.getElementById("dehireModal").classList.remove("hidden"); document.getElementById("dehireModal").classList.add("flex");
+  }
+
+  function closeDehireModal() { document.getElementById("dehireModal").classList.add("hidden"); document.getElementById("dehireModal").classList.remove("flex"); }
+
+  function submitDehire() {
+    const id = document.getElementById("dh_asset_id").value;
+    const date = document.getElementById("dh_date").value;
+    if(!date) return showToast("Date of De-Hire is mandatory.", "error");
+
+    const payload = {
+        date_of_dehire: date,
+        end_reading: parseFloat(document.getElementById("dh_reading").value) || null,
+        hsd_at_dehire: parseFloat(document.getElementById("dh_hsd").value) || null,
+        reason: document.getElementById("dh_reason").value.trim()
+    };
+
+    showLoading(true);
+    const endpoint = isEditingDehired ? `/admin/update_dehired_asset/${id}` : `/admin/dehire_asset/${id}`;
+
+    fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+    .then(r => r.json()).then(resp => {
+        showLoading(false);
+        if(resp.success) {
+            showToast(isEditingDehired ? "De-Hired details updated!" : "Asset successfully de-hired!", "success");
+            closeDehireModal();
+            if(!isEditingDehired) table.replaceData("/admin/get_assets");
+            if(dehiredTable) dehiredTable.replaceData("/admin/get_dehired_assets");
+        } else showToast("Failed: " + resp.error, "error");
+    }).catch(err => { showLoading(false); showToast("Error: " + err, "error"); });
+  }
+
+  const assetFormFields = [
+    { name: "asset_code", label: "Asset Code", type: "text", required: true, placeholder: "e.g., AST-001" },
+    { name: "asset_category", label: "Asset Category", type: "select", listName: "asset_category" },
+    { name: "asset_description", label: "Asset Description", type: "select", listName: "asset_description" },
+    { name: "reg_no", label: "Reg. No.", type: "text" },
+    { name: "package", label: "Package", type: "select", listName: "package" },
+    { name: "activity", label: "Activity", type: "select", listName: "activity" },
+    { name: "activity_works", label: "Activity Works", type: "text" },
+    { name: "location", label: "Location", type: "select", listName: "location" }, 
+    { name: "asset_incharge", label: "Asset Incharge", type: "select", listName: "asset_incharge" },
+    { name: "asset_user", label: "Asset User", type: "select", listName: "asset_user" },
+    { name: "meter_type", label: "Meter Type", type: "select", options: ["HMR", "KMR", "HMR/KMR"] },
+    { name: "uom", label: "UoM", type: "select", options: ["KMPL", "LPH", "LPH/KMPL"] },
+    { name: "fuel_norms", label: "Fuel Norms", type: "text" },
+    { name: "owner", label: "Owner", type: "select", options: ["Own", "Hire", "NC"] },
+    { name: "vendor_code", label: "Vendor Code", type: "text" },
+    { name: "agency", label: "Agency", type: "text" },
+    { name: "wod_number", label: "WOD Number", type: "text" },
+    { name: "vendor_mail_id", label: "Vendor Mail Id", type: "email" },
+    { name: "date_of_commission", label: "Date of Commission", type: "date" },
+    { name: "starting_reading", label: "Starting Reading", type: "number", step: "any" },
+    { name: "tank_capacity", label: "Tank Capacity", type: "number", step: "any" },
+    { name: "hsd_available", label: "HSD Available", type: "number", step: "any" },
+    { name: "make", label: "Make", type: "text" },
+    { name: "model", label: "Model", type: "text" },
+    { name: "pm_make", label: "PM Make", type: "text" },
+    { name: "pm_model", label: "PM Model", type: "text" },
+    { name: "ehc", label: "EHC", type: "number", step: "any" },
+    { name: "ihc", label: "IHC", type: "number", step: "any" },
+    { name: "shift_hours", label: "Shift Hours", type: "number", step: "any" },
+    { name: "operator_available", label: "Operators Avail", type: "number" },
+    { name: "helper_available", label: "Helpers Avail", type: "number" },
+    { name: "supervisor_owner_name", label: "Supervisor/Owner Name", type: "text" },
+    { name: "supervisor_owner_phone", label: "Supervisor/Owner Phone", type: "text", pattern: "\\d{10}", title: "10 digits" },
+    { name: "operator1", label: "Operator 1 Name", type: "text" },
+    { name: "operator1_phone", label: "Operator 1 Phone", type: "text", pattern: "\\d{10}" },
+    { name: "operator1_shift", label: "Operator 1 Shift", type: "select", options: ["Day", "Night"] },
+    { name: "operator2", label: "Operator 2 Name", type: "text" },
+    { name: "operator2_phone", label: "Operator 2 Phone", type: "text", pattern: "\\d{10}" },
+    { name: "operator2_shift", label: "Operator 2 Shift", type: "select", options: ["Day", "Night"] }
+  ];
+
+  function openAssetModal(data = null) {
+    const form = document.getElementById("assetForm");
+    form.innerHTML = "";
+    assetFormFields.forEach(field => {
+      const div = document.createElement("div");
+      let inputHtml = ""; let value = data ? (data[field.name] || "") : "";
+      const reqLabel = field.required ? '<span class="text-red-500 ml-1 text-lg">*</span>' : '';
+      if (field.type === "select") {
+        let optionsHtml = `<option value="">Select</option>`;
+        let optionsList = field.options || (dropdownData[field.listName] ? dropdownData[field.listName].map(v => v.value || v) : []);
+        optionsList.forEach(opt => { optionsHtml += `<option value="${opt}" ${opt === value ? "selected" : ""}>${opt}</option>`; });
+        inputHtml = `<select id="modal_${field.name}" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-medium focus:ring-2 focus:ring-blue-400 bg-white">${optionsHtml}</select>`;
+      } else {
+        inputHtml = `<input type="${field.type}" id="modal_${field.name}" value="${value}" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-medium focus:ring-2 focus:ring-blue-400">`;
+      }
+      div.innerHTML = `<label class="block text-sm font-bold text-gray-700 mb-1">${field.label} ${reqLabel}</label>${inputHtml}`;
+      form.appendChild(div);
+    });
+    document.getElementById("assetModalTitle").innerText = data ? "Edit Asset Details" : "Register New Asset";
+    document.getElementById("saveAssetBtn").onclick = () => saveAsset(data ? data.id : null);
+    document.getElementById("assetModal").classList.remove("hidden"); document.getElementById("assetModal").classList.add("flex");
+  }
+
+  function closeAssetModal() { document.getElementById("assetModal").classList.add("hidden"); document.getElementById("assetModal").classList.remove("flex"); }
+
+  function showCustomValidationPopup(errors) {
+    const list = document.getElementById("validationErrorList");
+    list.innerHTML = errors.map(err => `<li>${err}</li>`).join("");
+    document.getElementById("validationPopup").classList.remove("hidden"); document.getElementById("validationPopup").classList.add("flex");
+  }
+  function closeValidationPopup() { document.getElementById("validationPopup").classList.add("hidden"); document.getElementById("validationPopup").classList.remove("flex"); }
+
+  function saveAsset(id) {
+    let errors = []; const payload = {};
+    assetFormFields.forEach(field => {
+      let val = document.getElementById(`modal_${field.name}`).value.trim();
+      if (field.required && val === "") errors.push(`${field.label} is missing.`);
+      if (val !== "" && field.type === "number" && isNaN(val)) errors.push(`${field.label} must be a valid number.`);
+      payload[field.name] = val === "" ? null : (field.type === "number" ? parseFloat(val) : val);
+    });
+    if (errors.length > 0) return showCustomValidationPopup(errors);
+    payload.last_updated_by = "{{ session.get('name','') }}";
+    payload.last_updated_at = new Date().toISOString();
+    
+    fetch(id ? `/admin/update_asset/${id}` : `/admin/add_asset`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+    .then(r => r.json()).then(resp => {
+      if(resp.success) { showToast("Asset saved successfully", "success"); closeAssetModal(); table.replaceData("/admin/get_assets"); } 
+      else showToast(resp.error, "error");
+    });
+  }
+
+  /* ========================================== */
+  /* BLOCK: UTILITIES & DROPDOWNS */
+  /* ========================================== */
+  function loadData(){ table.replaceData("/admin/get_assets"); }
+
+  function updateOwnerCounts() {
+    if (!table) return;
+    let data = [];
+    try { data = table.getData("active"); } catch(e) { return; }
+    if (!data || !Array.isArray(data)) return;
+
+    let own = 0, hire = 0, nc = 0, totalEHC = 0, totalIHC = 0;
+    const packages = { adabari: { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 }, birsing: { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 }, phulbari: { own: 0, hire: 0, nc: 0, ehc: 0, ihc: 0 } };
+    const parseAmt = val => val ? (parseFloat(val.toString().replace(/[^0-9.-]/g, '')) || 0) : 0;
+
+    data.forEach(r => {
+      const rawOwner = r.owner ? String(r.owner).trim().toLowerCase() : "";
+      const rawPkg = r.package ? String(r.package).trim().toLowerCase() : "";
+      const ehc = parseAmt(r.ehc); const ihc = parseAmt(r.ihc);
+
+      if (rawOwner === "own") own++; else if (rawOwner === "hire") hire++; else if (rawOwner === "nc") nc++;
+      totalEHC += ehc; totalIHC += ihc;
+
+      if (packages[rawPkg]) {
+        if (rawOwner === "own") packages[rawPkg].own++; else if (rawOwner === "hire") packages[rawPkg].hire++; else if (rawOwner === "nc") packages[rawPkg].nc++;
+        packages[rawPkg].ehc += ehc; packages[rawPkg].ihc += ihc;
       }
     });
 
-    const toCrore = val => {
-      if (!val || isNaN(val)) return "₹ 0 Cr";
-      const crore = val / 10000000;
-      return "₹ " + crore.toFixed(2) + " Cr";
-    };
+    const safeSetText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
-    // ✅ Update totals
-    document.getElementById("countOwn").innerText = own;
-    document.getElementById("countHire").innerText = hire;
-    document.getElementById("countNC").innerText = nc;
-    document.getElementById("totalEHC").innerText = toCrore(totalEHC);
-    document.getElementById("totalIHC").innerText = toCrore(totalIHC);
+    try {
+        safeSetText("countOwn", own); safeSetText("countHire", hire); safeSetText("countNC", nc);
+        safeSetText("totalEHC", formatAmt(totalEHC)); safeSetText("totalIHC", formatAmt(totalIHC));
+        safeSetText("adabariOwn", packages.adabari.own); safeSetText("adabariHire", packages.adabari.hire); safeSetText("adabariNC", packages.adabari.nc); safeSetText("adabariEHC", formatAmt(packages.adabari.ehc)); safeSetText("adabariIHC", formatAmt(packages.adabari.ihc));
+        safeSetText("birsingOwn", packages.birsing.own); safeSetText("birsingHire", packages.birsing.hire); safeSetText("birsingNC", packages.birsing.nc); safeSetText("birsingEHC", formatAmt(packages.birsing.ehc)); safeSetText("birsingIHC", formatAmt(packages.birsing.ihc));
+        safeSetText("phulbariOwn", packages.phulbari.own); safeSetText("phulbariHire", packages.phulbari.hire); safeSetText("phulbariNC", packages.phulbari.nc); safeSetText("phulbariEHC", formatAmt(packages.phulbari.ehc)); safeSetText("phulbariIHC", formatAmt(packages.phulbari.ihc));
 
-    // ✅ Update package cards
-    document.getElementById("adabariOwn").innerText = packages.adabari.own;
-    document.getElementById("adabariHire").innerText = packages.adabari.hire;
-    document.getElementById("adabariNC").innerText = packages.adabari.nc;
-    document.getElementById("adabariEHC").innerText = toCrore(packages.adabari.ehc);
-    document.getElementById("adabariIHC").innerText = toCrore(packages.adabari.ihc);
-
-    document.getElementById("birsingOwn").innerText = packages.birsing.own;
-    document.getElementById("birsingHire").innerText = packages.birsing.hire;
-    document.getElementById("birsingNC").innerText = packages.birsing.nc;
-    document.getElementById("birsingEHC").innerText = toCrore(packages.birsing.ehc);
-    document.getElementById("birsingIHC").innerText = toCrore(packages.birsing.ihc);
-
-    document.getElementById("phulbariOwn").innerText = packages.phulbari.own;
-    document.getElementById("phulbariHire").innerText = packages.phulbari.hire;
-    document.getElementById("phulbariNC").innerText = packages.phulbari.nc;
-    document.getElementById("phulbariEHC").innerText = toCrore(packages.phulbari.ehc);
-    document.getElementById("phulbariIHC").innerText = toCrore(packages.phulbari.ihc);
-
-    // 🕓 Update Last Updated timestamp
-    const latest = data.reduce((acc, r) => {
-      if (r.last_updated_at && (!acc || new Date(r.last_updated_at) > new Date(acc))) {
-        return r.last_updated_at;
-      }
-      return acc;
-    }, null);
-
-    document.getElementById("lastUpdate").innerText = latest ? formatLocalDate(latest) : "--";
+        const latest = data.reduce((acc, r) => { return (r.last_updated_at && (!acc || new Date(r.last_updated_at) > new Date(acc))) ? r.last_updated_at : acc; }, null);
+        safeSetText("lastUpdate", latest ? "Last Update: " + formatLocalDate(latest) : "Last Update: --");
+        
+        if (typeof renderAnalysis === "function") renderAnalysis();
+        if (typeof renderPivotTable === "function") renderPivotTable();
+    } catch (err) { console.error("DOM Update Error:", err); }
   }
 
-
-  // Toggle Filters
-  let filtersVisible = false;
-  document.getElementById("toggleFiltersBtn").addEventListener("click", () => {
-    filtersVisible = !filtersVisible;
-    const container = document.getElementById("asset-table");
-    if (filtersVisible) container.classList.add("filters-visible");
-    else container.classList.remove("filters-visible");
-  });
-
-  // Search
   document.getElementById("globalSearchInput").addEventListener("input", e=>{
-    const mode=document.querySelector("input[name='searchMode']:checked").value,q=e.target.value.toLowerCase();
+    const mode=document.querySelector("input[name='searchMode']:checked").value;
+    const q=e.target.value.toLowerCase();
     if(!q) table.clearFilter(); else table.setFilter(mode,"like",q);
-    updateOwnerCounts();
   });
-  document.getElementById("clearSearchBtn").addEventListener("click",()=>{
-    document.getElementById("globalSearchInput").value="";
-    table.clearFilter();
-    updateOwnerCounts();
-  });
-
-  // Refresh
+  
+  document.getElementById("clearSearchBtn").addEventListener("click",()=>{ document.getElementById("globalSearchInput").value=""; table.clearFilter(); });
   document.getElementById("refreshBtn").addEventListener("click", loadData);
 
-  // Bulk Delete
   document.getElementById("deleteSelectedBtn").addEventListener("click", () => {
     const selected = table.getSelectedData();
-    if (!selected.length) { alert("No rows selected!"); return; }
+    if (!selected.length) return alert("No rows selected!");
     if (!confirm(`Delete ${selected.length} selected asset(s)?`)) return;
-    const ids = selected.map(r => r.id);
-    fetch("/admin/delete_assets_bulk", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ids})
-    }).then(r=>r.json()).then(resp=>{
-      if(resp.success){
-        loadData();
-        showToast(`Deleted ${ids.length} assets`, "success");;
-      } else {
-        showToast("Bulk delete failed: " + (resp.error || "Unknown"), "error");
-      }
-          
-    }).catch(err => showToast("Bulk delete error: " + err, "error"));
+    fetch("/admin/delete_assets_bulk", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ids: selected.map(r => r.id)}) })
+    .then(r=>r.json()).then(resp=>{
+      if(resp.success){ loadData(); showToast(`Deleted assets successfully`, "success"); } 
+      else showToast("Bulk delete failed", "error");
+    });
   });
 
-  // CSV Upload with progress + loading overlay + toasts
   document.getElementById("csvUploadInput").addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
+    const wrapper = document.getElementById("uploadWrapper"), bar = document.getElementById("uploadProgress"), status = document.getElementById("uploadStatus");
+    wrapper.classList.remove("hidden"); e.target.disabled = true; bar.style.width = "0%"; status.innerText = "Starting upload...";
+    const xhr = new XMLHttpRequest(); xhr.open("POST", "/admin/upload_assets_csv"); showLoading(true);
 
-    const wrapper = document.getElementById("uploadWrapper");
-    const bar = document.getElementById("uploadProgress");
-    const status = document.getElementById("uploadStatus");
-    const input = e.target;
-
-    wrapper.classList.remove("hidden");
-    input.disabled = true;
-    bar.style.width = "0%";
-    bar.innerText = "";
-    status.innerText = "Starting upload...";
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/admin/upload_assets_csv");
-
-    showLoading(true);
-
-    xhr.upload.onprogress = function (ev) {
-      if (ev.lengthComputable) {
-        const percent = (ev.loaded / ev.total) * 100;
-        const uploaded = ev.loaded < 1024 ? `${ev.loaded} B` : `${(ev.loaded / 1024).toFixed(1)} KB`;
-        const total = ev.total < 1024 ? `${ev.total} B` : `${(ev.total / 1024).toFixed(1)} KB`;
-        bar.style.width = percent + "%";
-        bar.innerText = `${Math.round(percent)}%`;
-        status.innerText = `Uploading ${uploaded} / ${total}`;
-      }
-    };
-
-    xhr.onload = function () {
+    xhr.upload.onprogress = ev => { if (ev.lengthComputable) { const p = (ev.loaded / ev.total) * 100; bar.style.width = p + "%"; bar.innerText = `${Math.round(p)}%`; } };
+    xhr.onload = () => {
       showLoading(false);
       try {
         const resp = JSON.parse(xhr.responseText || "{}");
-        if (xhr.status === 200 && resp.success) {
-          bar.style.width = "100%";
-          bar.innerText = "100%";
-          status.innerText = "✅ Upload completed";
-          showToast(resp.message || "CSV uploaded successfully", "success");
-          loadData();
-        } else {
-          status.innerText = "❌ " + (resp.error || "Upload failed");
-          showToast("Upload failed: " + (resp.error || "Unknown"), "error");
-          if (resp.details && resp.details.length) showErrorPopup(resp.details);
-        }
-      } catch (err) {
-        status.innerText = "❌ Upload failed (invalid response)";
-        showToast("Upload failed (invalid response)", "error");
-      }
-
-      setTimeout(() => {
-        wrapper.classList.add("hidden");
-        bar.innerText = "";
-        input.disabled = false;
-      }, 2500);
+        if (xhr.status === 200 && resp.success) { showToast(resp.message || "CSV uploaded successfully", "success"); loadData(); } 
+        else { showToast("Upload failed", "error"); if (resp.details) showErrorPopup(resp.details); }
+      } catch (err) { showToast("Upload failed", "error"); }
+      setTimeout(() => { wrapper.classList.add("hidden"); e.target.disabled = false; }, 2500);
     };
-
-    xhr.onerror = function () {
-      showLoading(false);
-      status.innerText = "❌ Upload error";
-      showToast("Upload error — network or server problem", "error");
-      setTimeout(() => {
-        wrapper.classList.add("hidden");
-        bar.innerText = "";
-        input.disabled = false;
-      }, 2500);
-    };
-
-    const fd = new FormData();
-    fd.append("csv_file", file);
-    xhr.send(fd);
-    e.target.value = "";
+    xhr.onerror = () => { showLoading(false); showToast("Upload error", "error"); setTimeout(() => { wrapper.classList.add("hidden"); e.target.disabled = false; }, 2500); };
+    const fd = new FormData(); fd.append("csv_file", file); xhr.send(fd); e.target.value = "";
   });
 
   function showErrorPopup(errors){
-    const popup=document.getElementById("errorPopup"),list=document.getElementById("errorList");
-    list.innerHTML="";
-    errors.forEach(err=>{
-      const li=document.createElement("li");
-      li.textContent=err;
-      list.appendChild(li);
-    });
-    popup.classList.remove("hidden");
+    const list=document.getElementById("errorList"); list.innerHTML="";
+    errors.forEach(err=>{ const li=document.createElement("li"); li.textContent=err; list.appendChild(li); });
+    document.getElementById("errorPopup").classList.remove("hidden"); document.getElementById("errorPopup").classList.add("flex");
     document.getElementById("downloadErrorCsv").onclick=()=>{
-      const csvContent="data:text/csv;charset=utf-8,"+errors.map(e=>`"${e}"`).join("\n");
-      const link=document.createElement("a");
-      link.setAttribute("href",encodeURI(csvContent));
-      link.setAttribute("download","upload_errors.csv");
-      link.click();
+      const link=document.createElement("a"); link.setAttribute("href",encodeURI("data:text/csv;charset=utf-8,"+errors.map(e=>`"${e}"`).join("\n"))); link.setAttribute("download","upload_errors.csv"); link.click();
     };
   }
-  document.getElementById("closeErrorPopup").addEventListener("click",()=>{
-    document.getElementById("errorPopup").classList.add("hidden");
-  });
+  document.getElementById("closeErrorPopup").addEventListener("click",()=>{ document.getElementById("errorPopup").classList.add("hidden"); document.getElementById("errorPopup").classList.remove("flex"); });
+  document.getElementById("downloadExcelBtn").addEventListener("click",()=>{ table.download("xlsx","asset_master.xlsx",{sheetName:"Assets"}); });
 
-  // Excel
-  document.getElementById("downloadExcelBtn").addEventListener("click",()=>{
-    table.download("xlsx","asset_master.xlsx",{sheetName:"Assets"});
-  });
+  const topScroll=document.getElementById("scrollTop"); const bottomScroll=document.getElementById("scrollBottom");
+  function syncScroll(e){ if(e.target===topScroll) bottomScroll.scrollLeft=topScroll.scrollLeft; else topScroll.scrollLeft=bottomScroll.scrollLeft; }
+  topScroll.addEventListener("scroll", syncScroll); bottomScroll.addEventListener("scroll", syncScroll);
 
-  // Sync scroll
-  const topScroll=document.getElementById("scrollTop"), bottomScroll=document.getElementById("scrollBottom");
-  function syncScroll(e){
-    if(e.target===topScroll) bottomScroll.scrollLeft=topScroll.scrollLeft;
-    else topScroll.scrollLeft=bottomScroll.scrollLeft;
-  }
-  topScroll.addEventListener("scroll", syncScroll);
-  bottomScroll.addEventListener("scroll", syncScroll);
+  let dropdownData = {};
+  async function loadDropdownConfig() { const res = await fetch("/admin/dropdown_config"); dropdownData = await res.json(); }
 
-  
-
-  
-    function openEditModal(rowData) {
-    // ✅ Fill hidden ID field
-    document.getElementById("edit_id").value = rowData.id || "";
-
-    // ✅ All editable fields
-    const fields = [
-      "asset_code","asset_description","reg_no","package","activity","location","meter_type","uom",
-      "fuel_norms","owner","vendor_code","agency","wod_number","vendor_mail_id","date_of_commission",
-      "starting_reading","tank_capacity","hsd_available","make","model","pm_make","pm_model",
-      "ehc","ihc","shift_hours","operator_available","helper_available",
-      "supervisor_owner_name","supervisor_owner_phone","operator1","operator1_phone","operator1_shift",
-      "operator2","operator2_phone","operator2_shift"
-    ];
-
-    fields.forEach((f) => {
-      const el = document.getElementById("edit_" + f);
-      if (el) el.value = rowData[f] ?? "";
-    });
-
-    document.getElementById("editModal").classList.remove("hidden");
-  }
-  
-
-  // --- Render values inside modal
-  function renderDropdownList() {
-    const selected = document.getElementById("listSelector").value;
-    const values = dropdownData[selected] || [];
-    valuesList.innerHTML = "";
-    values.forEach(item => {
-      const li = document.createElement("li");
-      li.textContent = "• " + (item.value || item);
-      valuesList.appendChild(li);
-    });
-  }
-
-  // --- Change list refresh
-  document.getElementById("listSelector").addEventListener("change", renderDropdownList);
-
-  // --- Add Value
   document.getElementById("addListValueBtn").addEventListener("click", async () => {
-    const list_name = document.getElementById("listSelector").value;
-    const value = document.getElementById("newListValue").value.trim();
+    const list_name = document.getElementById("listSelector").value; const value = document.getElementById("newListValue").value.trim();
     if (!value) return alert("Enter a value to add!");
-
-    await fetch("/admin/update_dropdown", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "add", list_name, value })
-    });
-
-    showToast(`Added "${value}" to ${list_name}`, "success");
-    dropdownChannel.postMessage("updated");   // 🟢 broadcast to all open tabs
-    await loadDropdownConfig();
-    renderDropdownList();
-    reloadEditors();
-    showDropdownStatus();
+    await fetch("/admin/update_dropdown", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add", list_name, value }) });
+    showToast(`Added "${value}" to ${list_name}`, "success"); await loadDropdownConfig(); reloadEditors(); document.getElementById("newListValue").value = "";
   });
 
-  // --- Remove Value
   document.getElementById("removeListValueBtn").addEventListener("click", async () => {
-    const list_name = document.getElementById("listSelector").value;
-    const value = document.getElementById("newListValue").value.trim();
+    const list_name = document.getElementById("listSelector").value; const value = document.getElementById("newListValue").value.trim();
     if (!value) return alert("Enter a value to remove!");
-    await fetch("/admin/update_dropdown", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "remove", list_name, value })
-    });
-    showToast(`Removed "${value}" from ${list_name}`, "error");
-    await loadDropdownConfig();
-    renderDropdownList();
-    reloadEditors();
+    await fetch("/admin/update_dropdown", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "remove", list_name, value }) });
+    showToast(`Removed "${value}" from ${list_name}`, "error"); await loadDropdownConfig(); reloadEditors(); document.getElementById("newListValue").value = "";
   });
 
-  // 🔁 Refresh Tabulator dropdown editors instantly
   async function reloadEditors() {
     if (!dropdownData || !table) return;
-
-    // extract pure value arrays from Supabase response
     const packages = dropdownData.package?.map(v => v.value) || [];
     const activities = dropdownData.activity?.map(v => v.value) || [];
     const categories = dropdownData.asset_category?.map(v => v.value) || [];
+    const incharge = dropdownData.asset_incharge?.map(v => v.value) || [];
+    const users = dropdownData.asset_user?.map(v => v.value) || [];
+    const locations = dropdownData.location?.map(v => v.value) || [];
+    const descriptions = dropdownData.asset_description?.map(v => v.value) || [];
 
-    table.updateColumnDefinition("package", {
-      editor: "list",
-      editorParams: { values: packages },
-      headerFilter: "select",
-      headerFilterParams: { values: { "": "All", ...Object.fromEntries(packages.map(v => [v, v])) } }
-    });
-
-    table.updateColumnDefinition("activity", {
-      editor: "list",
-      editorParams: { values: activities },
-      headerFilter: "select",
-      headerFilterParams: { values: { "": "All", ...Object.fromEntries(activities.map(v => [v, v])) } }
-    });
-
-    table.updateColumnDefinition("asset_category", {
-      editor: "list",
-      editorParams: { values: categories },
-      headerFilter: "select",
-      headerFilterParams: { values: { "": "All", ...Object.fromEntries(categories.map(v => [v, v])) } }
-    });
+    table.updateColumnDefinition("package", { headerFilter: "select", headerFilterParams: { values: { "": "All", ...Object.fromEntries(packages.map(v => [v, v])) } } });
+    table.updateColumnDefinition("activity", { headerFilter: "select", headerFilterParams: { values: { "": "All", ...Object.fromEntries(activities.map(v => [v, v])) } } });
+    table.updateColumnDefinition("asset_category", { headerFilter: "select", headerFilterParams: { values: { "": "All", ...Object.fromEntries(categories.map(v => [v, v])) } } });
+    table.updateColumnDefinition("asset_incharge", { headerFilter: "select", headerFilterParams: { values: { "": "All", ...Object.fromEntries(incharge.map(v => [v, v])) } } });
+    table.updateColumnDefinition("asset_user", { headerFilter: "select", headerFilterParams: { values: { "": "All", ...Object.fromEntries(users.map(v => [v, v])) } } });
+    table.updateColumnDefinition("location", { headerFilter: "select", headerFilterParams: { values: { "": "All", ...Object.fromEntries(locations.map(v => [v, v])) } } });
+    table.updateColumnDefinition("asset_description", { headerFilter: "select", headerFilterParams: { values: { "": "All", ...Object.fromEntries(descriptions.map(v => [v, v])) } } });
 
     table.redraw(true);
-    console.log("✅ Tabulator dropdowns reloaded live");
-  }
-  
-  function showDropdownStatus() {
-    const el = document.getElementById("dropdownStatus");
-    if (!el) return;
-    el.classList.remove("hidden");
-    el.textContent = "🟢 Dropdowns Updated Just Now";
-    setTimeout(() => {
-      el.classList.add("hidden");
-    }, 4000);
   }
 
-  // ⚙️ GLOBAL DROPDOWN CONFIG POPUP LOGIC WITH LIVE REFRESH (FIXED)
-  const dropdownModal = document.getElementById("dropdownConfigModal");
-  const openDropdownBtn = document.getElementById("openDropdownConfigBtn");
-  const closeDropdownBtn = document.getElementById("closeDropdownModal");
-  const valuesList = document.getElementById("dropdownValuesList");
-  const removeListBtn = document.getElementById("removeListValueBtn");
-
-  // Create <select> dynamically for remove dropdown
-  const removeSelect = document.createElement("select");
-  removeSelect.id = "removeDropdownValue";
-  removeSelect.className = "border rounded w-full p-2 mt-2 mb-2";
-  removeListBtn.before(removeSelect);
-
-  let dropdownData = {};
-  const dropdownChannel = new BroadcastChannel("dropdown_updates");
-
-  // 🔁 Listen for updates from any tab or page
-  dropdownChannel.onmessage = async () => {
-    await loadDropdownConfig();
-    reloadEditors();
-    renderDropdownList();       // ✅ keep modal list fresh
-  };
-
-  // --- Open Modal
-  openDropdownBtn.addEventListener("click", async () => {
-    await loadDropdownConfig();
-    renderDropdownList();
-    dropdownModal.classList.remove("hidden");
-    dropdownModal.classList.add("flex");
-  });
-
-  // --- Close Modal
-  closeDropdownBtn.addEventListener("click", () => {
-    dropdownModal.classList.add("hidden");
-    dropdownModal.classList.remove("flex");
-  });
-
-  // --- Fetch dropdowns from backend
-  async function loadDropdownConfig() {
-    const res = await fetch("/admin/dropdown_config");
-    dropdownData = await res.json();
+  function generateQR(row) {
+    const qrBox = document.getElementById("qrcodeBox"); qrBox.innerHTML = "";
+    const qrText = `ASSET DETAILS\n---------------------\nCode: ${row.asset_code || 'N/A'}\nDesc: ${row.asset_description || 'N/A'}\nReg No: ${row.reg_no || 'N/A'}\nLocation: ${row.location || 'N/A'}\nIncharge: ${row.asset_incharge || 'N/A'}\nUser: ${row.asset_user || 'N/A'}\nFuel Norms: ${row.fuel_norms || 'N/A'}\nOwner: ${row.owner || 'N/A'}\nAgency: ${row.agency || 'N/A'}\nVendor: ${row.vendor_code || 'N/A'}\n---------------------\nOp1: ${row.operator1 || 'N/A'} (Ph: ${row.operator1_phone || 'N/A'})\nOp2: ${row.operator2 || 'N/A'} (Ph: ${row.operator2_phone || 'N/A'})`;
+    document.getElementById("qrAssetTitle").innerText = row.asset_code || "Asset"; document.getElementById("qrAssetSubtitle").innerText = row.asset_description || "Scan for Details";
+    new QRCode(qrBox, { text: qrText, width: 200, height: 200, colorDark: "#1e293b", colorLight: "#ffffff" });
+    document.getElementById("qrModal").classList.remove("hidden"); document.getElementById("qrModal").classList.add("flex");
   }
 
-  // --- Render both visible list and remove-select list
-  function renderDropdownList() {
-    const selected = document.getElementById("listSelector").value;
-    const values = dropdownData[selected] || [];
-
-    valuesList.innerHTML = "";
-    removeSelect.innerHTML = "";
-
-    if (values.length === 0) {
-      valuesList.innerHTML = "<li class='text-gray-500'>No values found</li>";
-      const opt = document.createElement("option");
-      opt.value = "";
-      opt.textContent = "No values";
-      removeSelect.appendChild(opt);
-      removeSelect.disabled = true;
-      return;
-    }
-
-    removeSelect.disabled = false;
-
-    values.forEach(item => {
-      const value = item.value || item;
-      const li = document.createElement("li");
-      li.textContent = "• " + value;
-      valuesList.appendChild(li);
-
-      const opt = document.createElement("option");
-      opt.value = value;
-      opt.textContent = value;
-      removeSelect.appendChild(opt);
-    });
+  function closeQrModal() { document.getElementById("qrModal").classList.add("hidden"); document.getElementById("qrModal").classList.remove("flex"); }
+  function downloadQrCode() { const qrImg = document.querySelector('#qrcodeBox img'); if (qrImg) { const link = document.createElement('a'); link.href = qrImg.src; link.download = `QR_${document.getElementById("qrAssetTitle").innerText}.png`; link.click(); } }
+  function printQrCode() {
+    const size = document.getElementById('qrPrintSize').value; const qrImg = document.querySelector('#qrcodeBox img'); if (!qrImg) return alert("QR Code not ready.");
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`<html><head><title>Print QR</title><style>body { font-family: Arial; display: flex; flex-direction: column; align-items: center; padding: 20px; } .tag { border: 2px dashed #333; padding: 20px; text-align: center; border-radius: 10px; } img { width: ${size}px; height: ${size}px; margin-bottom: 10px; }</style></head><body><div class="tag"><div style="font-size: 24px; font-weight: bold;">${document.getElementById("qrAssetTitle").innerText}</div><div style="font-size: 14px; color: #555; margin-bottom: 15px;">${document.getElementById("qrAssetSubtitle").innerText}</div><img src="${qrImg.src}" /><div style="font-size: 12px; font-weight: bold;">Scan to view Asset Details</div></div><script>setTimeout(() => { window.print(); window.close(); }, 500);<\/script></body></html>`);
+    printWin.document.close();
   }
 
-  // --- Refresh list when dropdown type changes
-  document.getElementById("listSelector").addEventListener("change", renderDropdownList);
+  document.addEventListener("DOMContentLoaded", async () => { await loadDropdownConfig(); reloadEditors(); });  
 
-  // --- Add Value
-  document.getElementById("addListValueBtn").addEventListener("click", async () => {
-    const list_name = document.getElementById("listSelector").value;
-    const value = document.getElementById("newListValue").value.trim();
-    if (!value) return alert("Enter a value to add!");
+  /* ========================================== */
+  /* BLOCK: HIERARCHICAL ANALYTICS ENGINE & PIVOT */
+  /* ========================================== */
+  function getAnalyzedData() {
+      const rawData = table.getData("active"); 
+      const analysis = { "Total Project": {}, "Adabari": {}, "Birsing": {}, "Phulbari": {} };
 
-    await fetch("/admin/update_dropdown", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "add", list_name, value })
-    });
+      rawData.forEach(row => {
+          let pkg = (row.package || "").trim().toLowerCase(); 
+          if (pkg !== "birsing" && pkg !== "phulbari") pkg = "Adabari"; 
+          else pkg = pkg.charAt(0).toUpperCase() + pkg.slice(1);
+          
+          const cat = row.asset_category || "Uncategorized";
+          const desc = row.asset_description || "Unknown Equipment";
+          const vendor = row.agency || "Unknown Vendor";
+          const rawOwner = (row.owner || "").toLowerCase(), isHire = rawOwner.includes("hire"), isOwn = rawOwner.includes("own");
+          const ihc = parseFloat((row.ihc || "0").toString().replace(/[^0-9.-]/g, '')) || 0;
+          const ehc = parseFloat((row.ehc || "0").toString().replace(/[^0-9.-]/g, '')) || 0;
+          
+          const targets = ["Total Project", pkg];
+          targets.forEach(scope => {
+              if (!analysis[scope][cat]) analysis[scope][cat] = { total: 0, own: 0, hire: 0, ihc: 0, ehc: 0, descriptions: {} };
+              const catData = analysis[scope][cat];
+              catData.total++; catData.ihc += ihc; catData.ehc += ehc;
+              if (isOwn) catData.own++; else if (isHire) catData.hire++;
 
-    showToast(`Added "${value}" to ${list_name}`, "success");
-    dropdownChannel.postMessage("updated");
-    await loadDropdownConfig();
-    renderDropdownList();
-    reloadEditors();
-    showDropdownStatus();
-  });
-
-  // --- Remove Value (use selected option)
-  removeListBtn.addEventListener("click", async () => {
-    const list_name = document.getElementById("listSelector").value;
-    const value = removeSelect.value;
-    if (!value) return alert("Select a value to remove!");
-
-    await fetch("/admin/update_dropdown", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "remove", list_name, value })
-    });
-
-    showToast(`Removed "${value}" from ${list_name}`, "error");
-    dropdownChannel.postMessage("updated");
-    await loadDropdownConfig();
-    renderDropdownList();
-    reloadEditors();
-    showDropdownStatus();
-  });
-
-  // --- Refresh Tabulator dropdowns immediately
-  async function reloadEditors() {
-    if (!dropdownData || !table) return;
-    table.updateColumnDefinition("package", {
-      editorParams: { values: dropdownData.package.map(v => v.value || v) }
-    });
-    table.updateColumnDefinition("activity", {
-      editorParams: { values: dropdownData.activity.map(v => v.value || v) }
-    });
-    table.updateColumnDefinition("asset_category", {
-      editorParams: { values: dropdownData.asset_category.map(v => v.value || v) }
-    });
-    table.redraw(true);
+              if (!catData.descriptions[desc]) catData.descriptions[desc] = { total: 0, own: 0, hire: 0, ihc: 0, ehc: 0, vendors: {} };
+              const descData = catData.descriptions[desc];
+              descData.total++; descData.ihc += ihc; descData.ehc += ehc;
+              if (isOwn) descData.own++;
+              else if (isHire) { 
+                  descData.hire++; 
+                  if (!descData.vendors[vendor]) descData.vendors[vendor] = { count: 0, cost: 0 }; 
+                  descData.vendors[vendor].count++; descData.vendors[vendor].cost += (ehc + ihc); 
+              } 
+          });
+      });
+      return analysis;
   }
 
-  // --- Small success indicator
-  function showDropdownStatus() {
-    const el = document.getElementById("dropdownStatus");
-    if (!el) return;
-    el.classList.remove("hidden");
-    el.textContent = "🟢 Dropdowns Updated Just Now";
-    setTimeout(() => {
-      el.classList.add("hidden");
-    }, 4000);
+  function renderAnalysis() {
+      const scope = document.getElementById("analysis_scope").value;
+      const container = document.getElementById("analysis_results");
+      if (!scope) return;
+      
+      const data = getAnalyzedData()[scope];
+      let html = `<div class="space-y-5">`, hasData = false, idCounter = 0;
+
+      for (const [catName, catData] of Object.entries(data)) {
+          if (catData.total === 0) continue;
+          hasData = true; idCounter++; const bodyId = `acc_cat_${idCounter}`;
+
+          html += `
+          <div class="bg-white border border-teal-100 rounded-xl shadow-sm overflow-hidden">
+              <div class="px-5 py-4 cursor-pointer bg-gradient-to-r from-teal-50 to-white hover:from-teal-100 transition-colors flex justify-between items-center" onclick="document.getElementById('${bodyId}').classList.toggle('hidden')">
+                  <div class="flex items-center gap-3">
+                      <i class="fa-solid fa-folder-tree text-teal-600 text-lg"></i>
+                      <span class="font-black text-gray-800 text-lg uppercase tracking-wide">${catName}</span>
+                      <span class="bg-teal-600 text-white text-xs px-3 py-1 rounded-full font-bold shadow-sm">Total: ${catData.total}</span>
+                  </div>
+                  <div class="text-right flex items-center gap-4">
+                      <div class="hidden sm:block text-xs font-bold text-teal-800 bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-200">
+                          IHC: ${formatAmt(catData.ihc)} | EHC: ${formatAmt(catData.ehc)}
+                      </div>
+                      <i class="fa-solid fa-chevron-down text-teal-600 bg-white p-2 rounded-full shadow-sm"></i>
+                  </div>
+              </div>
+              <div id="${bodyId}" class="hidden border-t-2 border-teal-50 bg-gray-50/50 p-5 space-y-4">`;
+
+          for (const [descName, descData] of Object.entries(catData.descriptions)) {
+              if(descData.total === 0) continue;
+              html += `
+                  <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                      <div class="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
+                          <h4 class="font-black text-gray-800 text-base uppercase tracking-wide"><i class="fa-solid fa-cube text-gray-400 mr-2"></i>${descName}</h4>
+                          <span class="text-xs font-black text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">Qty: ${descData.total}</span>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div class="bg-gradient-to-b from-green-50 to-white border border-green-200 rounded-lg p-4">
+                              <h5 class="text-green-800 font-bold text-xs mb-3 uppercase tracking-wider"><i class="fa-solid fa-building mr-1"></i> Internal (OWN)</h5>
+                              <div class="flex justify-between text-sm font-semibold text-gray-700">
+                                  <span>Count: <span class="text-green-600 font-black">${descData.own}</span></span>
+                                  <span>IHC: <span class="text-green-600">${formatAmt(descData.ihc)}</span></span>
+                              </div>
+                          </div>
+                          <div class="bg-gradient-to-b from-orange-50 to-white border border-orange-200 rounded-lg p-4">
+                              <h5 class="text-orange-800 font-bold text-xs mb-3 uppercase tracking-wider"><i class="fa-solid fa-handshake mr-1"></i> External (HIRE)</h5>
+                              <div class="flex justify-between text-sm font-semibold text-gray-700 mb-3">
+                                  <span>Count: <span class="text-orange-600 font-black">${descData.hire}</span></span>
+                                  <span>EHC: <span class="text-orange-600">${formatAmt(descData.ehc)}</span></span>
+                              </div>
+                              ${descData.hire > 0 ? `
+                              <div class="bg-white rounded-lg p-3 text-xs border border-orange-100 shadow-inner">
+                                  <span class="font-bold text-orange-900 uppercase block mb-2">Vendors:</span>
+                                  <ul class="space-y-1.5">
+                                      ${Object.entries(descData.vendors).map(([v, d]) => `<li class="flex justify-between border-b border-orange-50 pb-1.5 last:border-0 last:pb-0"><span class="font-semibold text-gray-600">${v || 'Unknown'}</span><span class="font-black text-orange-600">${d.count} <span class="text-[10px] text-gray-400 font-normal">(${formatAmt(d.cost)})</span></span></li>`).join('')}
+                                  </ul>
+                              </div>` : '<span class="text-xs text-gray-400 italic font-medium">No external assets.</span>'}
+                          </div>
+                      </div>
+                  </div>`;
+          }
+          html += `</div></div>`;
+      }
+      container.innerHTML = hasData ? html + `</div>` : `<div class="p-8 text-center bg-white rounded-xl border border-gray-200"><i class="fa-solid fa-folder-open text-gray-300 text-4xl mb-3"></i><p class="text-gray-500 font-medium">No data available for this selection.</p></div>`;
   }
-  
-  table.on("dataLoaded", updateOwnerCounts);
-  document.addEventListener("DOMContentLoaded", async () => {
-    await loadDropdownConfig();
-    reloadEditors();
-  });  
+
+  function renderPivotTable() {
+      const container = document.getElementById("pivotTable"); if (!container) return;
+      const projData = getAnalyzedData()["Total Project"], vendors = new Set();
+      let descriptions = [];
+      
+      for (const cat of Object.values(projData)) {
+          for (const [desc, descData] of Object.entries(cat.descriptions)) {
+              if (descData.total > 0) {
+                  descriptions.push(desc);
+                  if (descData.own > 0) vendors.add("Internal (OWN)");
+                  Object.keys(descData.vendors).forEach(v => vendors.add(v || 'Unknown'));
+              }
+          }
+      }
+      descriptions.sort();
+      const vendorList = Array.from(vendors).sort();
+      if (descriptions.length === 0) return container.innerHTML = `<tr><td class="p-4 text-center text-gray-500">No data</td></tr>`;
+
+      let thead = `<thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-20 shadow-sm"><tr><th rowspan="2" class="px-4 py-3 align-middle border-b border-r sticky left-0 top-0 bg-gray-200 z-30">Vendor / Entity</th>`;
+      descriptions.forEach(desc => thead += `<th colspan="2" class="px-4 py-2 text-center border-b border-r bg-gray-100">${desc}</th>`);
+      thead += `<th colspan="2" class="px-4 py-2 text-center border-b bg-blue-200 text-blue-900">Grand Total</th></tr><tr>`;
+      descriptions.forEach(() => { thead += `<th class="px-2 py-2 text-center border-b border-r bg-gray-50 text-[10px] text-gray-500">Qun</th><th class="px-2 py-2 text-center border-b border-r bg-gray-50 text-[10px] text-gray-500">Charges/Mo</th>`; });
+      thead += `<th class="px-2 py-2 text-center border-b border-r bg-blue-100 text-[10px] text-blue-800">Qun</th><th class="px-2 py-2 text-center border-b bg-blue-100 text-[10px] text-blue-800">Charges/Mo</th></tr></thead>`;
+      
+      let tbody = `<tbody>`; const colQtyTotals = new Array(descriptions.length).fill(0), colCostTotals = new Array(descriptions.length).fill(0); let grandTotalQty = 0, grandTotalCost = 0;
+      
+      vendorList.forEach(v => {
+          let rowQty = 0, rowCost = 0; tbody += `<tr class="bg-white border-b hover:bg-gray-50"><td class="px-4 py-3 font-semibold text-gray-800 sticky left-0 bg-white border-r z-10">${v}</td>`;
+          descriptions.forEach((desc, idx) => {
+              let qty = 0, cost = 0;
+              for (const cat of Object.values(projData)) {
+                  const descData = cat.descriptions[desc];
+                  if (descData) {
+                      if (v === "Internal (OWN)") { qty += descData.own; cost += descData.ihc; } 
+                      else if (descData.vendors[v]) { qty += descData.vendors[v].count; cost += descData.vendors[v].cost; }
+                  }
+              }
+              tbody += `<td class="px-2 py-2 text-center border-r">${qty || "-"}</td><td class="px-2 py-2 text-center border-r font-medium">${cost ? formatAmt(cost) : "-"}</td>`;
+              rowQty += qty; rowCost += cost; colQtyTotals[idx] += qty; colCostTotals[idx] += cost;
+          });
+          grandTotalQty += rowQty; grandTotalCost += rowCost;
+          tbody += `<td class="px-2 py-2 text-center border-r bg-blue-50 font-bold text-blue-800">${rowQty}</td><td class="px-2 py-2 text-center bg-blue-50 font-bold text-blue-800">${formatAmt(rowCost)}</td></tr>`;
+      });
+      
+      tbody += `<tr class="bg-gray-200 font-bold text-gray-900"><td class="px-4 py-3 sticky left-0 bg-gray-200 border-r z-10">GRAND TOTAL</td>`;
+      colQtyTotals.forEach((qty, idx) => { tbody += `<td class="px-2 py-3 text-center border-r">${qty || "-"}</td><td class="px-2 py-3 text-center border-r">${formatAmt(colCostTotals[idx])}</td>`; });
+      tbody += `<td class="px-2 py-3 text-center border-r bg-blue-300 text-blue-900 text-base">${grandTotalQty}</td><td class="px-2 py-3 text-center bg-blue-300 text-blue-900 text-base">${formatAmt(grandTotalCost)}</td></tr></tbody>`;
+      container.innerHTML = thead + tbody;
+  }
+
+  function downloadFullAnalysis() {
+      const fullData = getAnalyzedData(), wb = XLSX.utils.book_new();
+      function createStandardSheet() {
+          const rows = [["Scope", "Asset Category", "Asset Description", "Total Qty", "Own Qty", "Hire Qty", "IHC", "EHC", "Hire Vendors"]];
+          ["Total Project", "Adabari", "Birsing", "Phulbari"].forEach(scope => {
+              for (const [catName, catData] of Object.entries(fullData[scope])) {
+                  for (const [descName, descData] of Object.entries(catData.descriptions)) {
+                      if (descData.total === 0) continue;
+                      const vendorStr = Object.entries(descData.vendors).map(([v, d]) => `${v||'Unknown'}(${d.count})`).join(", ");
+                      rows.push([ scope, catName, descName, descData.total, descData.own, descData.hire, formatAmt(descData.ihc), formatAmt(descData.ehc), vendorStr ]);
+                  }
+              }
+          });
+          return XLSX.utils.aoa_to_sheet(rows);
+      }
+      function createPivotSheet() {
+          const projData = fullData["Total Project"], vendors = new Set();
+          let descriptions = [];
+          for (const cat of Object.values(projData)) {
+              for (const [desc, descData] of Object.entries(cat.descriptions)) {
+                  if (descData.total > 0) { descriptions.push(desc); if (descData.own > 0) vendors.add("Internal (OWN)"); Object.keys(descData.vendors).forEach(v => vendors.add(v || 'Unknown')); }
+              }
+          }
+          descriptions.sort(); const vendorList = Array.from(vendors).sort();
+          const headerRow1 = ["Vendor / Entity"], headerRow2 = [""]; 
+          descriptions.forEach(desc => { headerRow1.push(desc, ""); headerRow2.push("Qun", "Charges/Mo"); });
+          headerRow1.push("GRAND TOTAL", ""); headerRow2.push("Qun", "Charges/Mo");
+          const rows = [headerRow1, headerRow2];
+          
+          vendorList.forEach(v => {
+              const row = [v]; let rowQty = 0, rowCost = 0;
+              descriptions.forEach(desc => {
+                  let qty = 0, cost = 0;
+                  for (const cat of Object.values(projData)) {
+                      const descData = cat.descriptions[desc];
+                      if (descData) { if (v === "Internal (OWN)") { qty += descData.own; cost += descData.ihc; } else if (descData.vendors[v]) { qty += descData.vendors[v].count; cost += descData.vendors[v].cost; } }
+                  }
+                  row.push(qty || "-", cost ? formatAmt(cost) : "-"); rowQty += qty; rowCost += cost;
+              });
+              row.push(rowQty, formatAmt(rowCost)); rows.push(row);
+          });
+          return XLSX.utils.aoa_to_sheet(rows);
+      }
+      XLSX.utils.book_append_sheet(wb, createStandardSheet(), "Category & Description Analysis");
+      XLSX.utils.book_append_sheet(wb, createPivotSheet(), "Asset Detail Pivot");
+      XLSX.writeFile(wb, "Admin_Asset_Analytics_Master.xlsx");
+  }
 </script>
 {% endblock %}

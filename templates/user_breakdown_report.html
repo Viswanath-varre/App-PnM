@@ -18,7 +18,51 @@
     const ASSET_MASTER = {{ asset_master | tojson }};
   </script>
 
-  <div class="space-y-8 px-2 sm:px-4 lg:px-6 bg-gray-50 dark:bg-gray-900 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+  <style>
+    .breakdown-shell {
+      display: grid;
+      gap: 22px;
+    }
+
+    .breakdown-hero {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 24px;
+      padding: 20px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 245, 236, 0.9));
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .breakdown-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: rgba(255, 255, 255, 0.86);
+      color: #111827;
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 600;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+    }
+
+    .breakdown-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px rgba(15, 23, 42, 0.08);
+      border-color: rgba(247, 201, 74, 0.3);
+    }
+
+    .breakdown-btn-primary {
+      background: linear-gradient(135deg, #f7c94a, #e39d26);
+      border-color: rgba(227, 157, 38, 0.45);
+    }
+  </style>
+
+  <div class="breakdown-shell space-y-8 px-2 sm:px-4 lg:px-6 bg-gray-50 dark:bg-gray-900 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
 
     <!-- session user for client-side defaulting -->
     <div id="session_user"
@@ -26,7 +70,7 @@
         style="display:none"></div>
 
     <!-- HEADER -->
-    <div class="bg-white rounded-xl p-5 shadow-sm border border-yellow-200">
+    <div class="breakdown-hero">
 
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
@@ -45,9 +89,7 @@
 
                 <button
                     id="btnCreate"
-                    class="px-4 py-2 rounded-lg font-semibold
-                           bg-yellow-400 text-black
-                           hover:bg-yellow-500 transition">
+                    class="breakdown-btn breakdown-btn-primary">
                     ➕ Create Breakdown
                 </button>
 
@@ -56,18 +98,14 @@
                 <a
                     id="btnExportXlsx"
                     href="/user/breakdown_reports/export_xlsx"
-                    class="px-3 py-2 rounded-lg text-sm font-semibold
-                           border border-gray-300
-                           hover:bg-gray-100 transition">
+                    class="breakdown-btn">
                     ⬇️ Excel
                 </a>
 
                 <a
                     id="btnExportCsv"
                     href="/user/breakdown_reports/export"
-                    class="px-3 py-2 rounded-lg text-sm font-semibold
-                           border border-gray-300
-                           hover:bg-gray-100 transition">
+                    class="breakdown-btn">
                     ⬇️ CSV
                 </a>
 
