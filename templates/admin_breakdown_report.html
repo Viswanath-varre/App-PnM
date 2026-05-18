@@ -7,7 +7,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 
-<!-- Flatpickr for datetime pickers -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
 
@@ -59,15 +58,12 @@
     .btn-success:hover { background: #16a34a; }
 </style>
 
-<!-- Pass Backend Permissions to JS -->
 <script>
     const USER = {{ user | tojson }};
-    // Example: USER = { name: "John", can_update_repair: true, can_approve_closure: false }
 </script>
 
 <div class="am-shell p-4 sm:p-6 lg:p-8 space-y-6">
 
-    <!-- HEADER & GLOBAL FILTERS -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div>
             <h1 class="text-2xl font-bold text-slate-900">Breakdown Command Center</h1>
@@ -78,23 +74,19 @@
                 <label class="text-xs font-semibold text-slate-500 mb-1">Global Month Filter</label>
                 <input type="month" id="globalMonthFilter" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-yellow-400">
             </div>
-            <!-- Dynamic Report Button (Only shown if user can report) -->
             <button id="btnReportBreakdown" class="btn btn-primary mt-5" onclick="openReportModal()">
                 <i data-lucide="alert-triangle" class="w-4 h-4"></i> Report Breakdown
             </button>
         </div>
     </div>
 
-    <!-- TABS -->
     <div class="flex border-b border-slate-200">
         <button class="tab-btn active" onclick="switchTab('active')">🔴 Active & Pending</button>
         <button class="tab-btn" onclick="switchTab('closed')">🟢 Closed History</button>
         <button class="tab-btn" onclick="switchTab('analysis')">📊 Management Analysis</button>
     </div>
 
-    <!-- ================= TAB 1: ACTIVE & PENDING ================= -->
     <div id="tab-active" class="space-y-6 block">
-        <!-- KPIs -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="am-card p-5 border-l-4 border-l-red-500">
                 <div class="am-kpi-label">Currently Active</div>
@@ -113,7 +105,6 @@
                 <div class="am-kpi-value" id="kpi-bir-count">0</div>
             </div>
         </div>
-        <!-- Table -->
         <div class="am-card p-4">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="font-bold text-lg">Action Board</h2>
@@ -122,9 +113,7 @@
         </div>
     </div>
 
-    <!-- ================= TAB 2: CLOSED HISTORY ================= -->
     <div id="tab-closed" class="space-y-6 hidden">
-        <!-- KPIs -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="am-card p-5 border-l-4 border-l-green-500">
                 <div class="am-kpi-label">Total Closed (Selected Month)</div>
@@ -139,16 +128,13 @@
                 <div class="am-kpi-value" id="kpi-closed-speed">0.00</div>
             </div>
         </div>
-        <!-- Table -->
         <div class="am-card p-4">
             <div id="table-closed"></div>
         </div>
     </div>
 
-    <!-- ================= TAB 3: MANAGEMENT ANALYSIS ================= -->
     <div id="tab-analysis" class="space-y-6 hidden">
         
-        <!-- Bottleneck KPIs -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="am-card p-6 bg-gradient-to-br from-slate-800 to-slate-900 text-white">
                 <div class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">P&M Repair Bottleneck</div>
@@ -167,7 +153,6 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Root Cause Chart -->
             <div class="am-card p-5 lg:col-span-1 flex flex-col items-center justify-center">
                 <h3 class="font-bold text-slate-700 w-full mb-4">Root Cause Distribution</h3>
                 <div class="w-full max-w-[280px]">
@@ -175,7 +160,6 @@
                 </div>
             </div>
 
-            <!-- Chronic Assets -->
             <div class="am-card p-5 lg:col-span-2 overflow-auto">
                 <h3 class="font-bold text-slate-700 mb-4 text-red-600 flex items-center gap-2">
                     <i data-lucide="alert-octagon" class="w-5 h-5"></i> Frequent Breakdowns (Lemon Assets)
@@ -188,30 +172,25 @@
                         </tr>
                     </thead>
                     <tbody id="table-chronic-body" class="divide-y divide-slate-100">
-                        <!-- Populated by JS -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Agency Performance Matrix -->
         <div class="am-card p-5 overflow-auto">
             <h3 class="font-bold text-slate-700 mb-4">Agency vs Equipment Performance Matrix</h3>
             <p class="text-xs text-slate-500 mb-4">Cell format: [Active / Total Breakdowns]</p>
             <table class="w-full text-sm border-collapse border border-slate-200">
                 <thead id="matrix-head" class="bg-slate-50 text-slate-700 font-bold">
-                    <!-- Populated by JS -->
-                </thead>
+                    </thead>
                 <tbody id="matrix-body" class="divide-y divide-slate-200">
-                    <!-- Populated by JS -->
-                </tbody>
+                    </tbody>
             </table>
         </div>
     </div>
 
 </div>
 
-<!-- ================= MODAL: REPORT / UPDATE / CLOSE ================= -->
 <div id="bdModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
@@ -222,10 +201,7 @@
 
         <div class="p-6 overflow-y-auto space-y-6">
             <input type="hidden" id="modalBdId">
-            <input type="hidden" id="modalActionType"> <!-- 'report', 'update', 'close' -->
-
-            <!-- SECTION: Core Info (Always visible, editable on Report) -->
-            <div id="sec-core" class="space-y-4">
+            <input type="hidden" id="modalActionType"> <div id="sec-core" class="space-y-4">
                 <h3 class="font-semibold text-slate-700 border-b pb-2">1. Equipment & Location</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -253,7 +229,6 @@
                 </div>
             </div>
 
-            <!-- SECTION: P&M Updates (Visible to P&M on update, visible to all on View) -->
             <div id="sec-pm" class="space-y-4 hidden">
                 <h3 class="font-semibold text-amber-600 border-b border-amber-100 pb-2">2. P&M Diagnosis & Repair</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -283,7 +258,6 @@
                 </div>
             </div>
 
-            <!-- SECTION: Operations Closure (Visible to Approver on close) -->
             <div id="sec-close" class="space-y-4 hidden">
                 <h3 class="font-semibold text-green-600 border-b border-green-100 pb-2">3. Handover & Closure Approval</h3>
                 <div class="bg-green-50 p-4 rounded-lg border border-green-100">
@@ -342,12 +316,6 @@
 
     // Initial Load
     document.addEventListener("DOMContentLoaded", () => {
-        // Enforce Report Button Visibility
-        if(!USER.can_approve_closure && USER.can_update_repair) {
-            // Usually P&M doesn't report, but if logic dictates, adjust here.
-            // Assuming anyone can report based on SQL capabilities default TRUE.
-        }
-        
         initTables();
         loadData(currentMonth);
         loadAnalysis(currentMonth);
@@ -355,7 +323,6 @@
 
     // Initialize Tabulator Tables
     function initTables() {
-        // Formatter for Status
         const statusFormatter = (cell) => {
             const v = cell.getValue();
             if(v === 'Active') return `<span class="badge badge-active">🔴 Active</span>`;
@@ -364,22 +331,16 @@
             return v;
         };
 
-        // Formatter for Action Buttons (Permissions Logic Applied Here)
         const activeActionFormatter = (cell) => {
             const row = cell.getRow().getData();
             let btns = `<div class="flex gap-2">`;
             
-            // P&M Buttons
             if (USER.can_update_repair && row.status === 'Active') {
                 btns += `<button class="btn btn-action py-1 px-2 text-xs" onclick="openUpdateModal(${row.id})">🛠 Update / Fix</button>`;
             }
-            
-            // Other Dept Buttons (Approval)
             if (USER.can_approve_closure && row.status === 'Pending Approval') {
                 btns += `<button class="btn btn-success py-1 px-2 text-xs" onclick="openApproveModal(${row.id})">✅ Approve</button>`;
             }
-            
-            // View Button for everyone
             btns += `<button class="text-blue-500 text-xs font-semibold hover:underline" onclick="openViewModal(${row.id})">View</button>`;
             
             btns += `</div>`;
@@ -423,7 +384,8 @@
     // Load Main Data
     async function loadData(monthStr) {
         try {
-            const res = await fetch(`/admin/breakdowns/api/list?month=${monthStr}`);
+            // FIXED API URL HERE
+            const res = await fetch(`/admin/api/breakdowns/list?month=${monthStr}`);
             const json = await res.json();
             if(json.success) {
                 RAW_DATA = json.data;
@@ -433,13 +395,11 @@
                 activeTable.setData(activeData);
                 closedTable.setData(closedData);
 
-                // Update KPIs - Active
                 document.getElementById('kpi-active-count').innerText = activeData.filter(r => r.status === 'Active').length;
                 document.getElementById('kpi-pending-count').innerText = activeData.filter(r => r.status === 'Pending Approval').length;
                 document.getElementById('kpi-ada-count').innerText = activeData.filter(r => r.asset_package === 'Adabari').length;
                 document.getElementById('kpi-bir-count').innerText = activeData.filter(r => r.asset_package === 'Birsing').length;
 
-                // Update KPIs - Closed
                 const totClosed = closedData.length;
                 const totDown = closedData.reduce((sum, r) => sum + (r.total_downtime_hrs || 0), 0);
                 const totRepair = closedData.reduce((sum, r) => sum + (r.repair_downtime_hrs || 0), 0);
@@ -454,18 +414,14 @@
     // Load Analysis Data
     async function loadAnalysis(monthStr) {
         try {
-            const res = await fetch(`/admin/breakdowns/api/analysis?month=${monthStr}`);
+            // FIXED API URL HERE
+            const res = await fetch(`/admin/api/breakdowns/analysis?month=${monthStr}`);
             const json = await res.json();
             if(json.success) {
-                
-                // 1. Bottlenecks
                 document.getElementById('kpi-avg-repair').innerText = json.bottlenecks.avg_repair_hrs.toFixed(1);
                 document.getElementById('kpi-avg-approval').innerText = json.bottlenecks.avg_approval_delay_hrs.toFixed(1);
-
-                // 2. Root Cause Chart
                 renderChart(json.root_causes);
 
-                // 3. Chronic Assets Table
                 const tbody = document.getElementById('table-chronic-body');
                 tbody.innerHTML = '';
                 json.chronic_assets.forEach(a => {
@@ -474,8 +430,6 @@
                         <td class="py-2 px-3 text-center text-red-600 font-bold">${a.count}</td>
                     </tr>`;
                 });
-
-                // 4. Matrix
                 renderMatrix(json.agency_matrix);
             }
         } catch(e) { console.error("Error loading analysis", e); }
@@ -503,20 +457,17 @@
         const thead = document.getElementById('matrix-head');
         const tbody = document.getElementById('matrix-body');
         
-        // Extract all unique equipment types across all agencies
         const eqTypes = new Set();
         Object.values(matrix).forEach(agencyData => {
             Object.keys(agencyData).forEach(eq => eqTypes.add(eq));
         });
         const eqArray = Array.from(eqTypes).sort();
 
-        // Build Header
         let headHtml = `<tr><th class="py-2 px-3 text-left border-r">Agency</th>`;
         eqArray.forEach(eq => headHtml += `<th class="py-2 px-3 text-center border-r">${eq}</th>`);
         headHtml += `<th class="py-2 px-3 text-center bg-slate-200">Total</th></tr>`;
         thead.innerHTML = headHtml;
 
-        // Build Body
         tbody.innerHTML = '';
         Object.keys(matrix).sort().forEach(agency => {
             let rowHtml = `<tr><td class="py-2 px-3 font-semibold border-r">${agency}</td>`;
@@ -534,7 +485,6 @@
                     rowHtml += `<td class="py-2 px-3 text-center border-r text-slate-300">-</td>`;
                 }
             });
-            // Row Total
             rowHtml += `<td class="py-2 px-3 text-center font-bold bg-slate-50">
                 <span class="text-red-600">${rActive}</span> / ${rTotal}
             </td></tr>`;
@@ -559,10 +509,7 @@
         resetModal();
         document.getElementById('modalTitle').innerText = "Report New Breakdown";
         document.getElementById('modalActionType').value = 'report';
-        
-        // Auto-fill start time
         document.getElementById('inp-start-time')._flatpickr.setDate(new Date());
-        
         document.getElementById('bdModal').classList.remove('hidden');
     }
 
@@ -575,12 +522,9 @@
         document.getElementById('modalActionType').value = 'update';
         
         populateModalData(row);
-        lockSection('sec-core'); // P&M can't change original report data
+        lockSection('sec-core');
         document.getElementById('sec-pm').classList.remove('hidden');
-        
-        // Change button text
         document.getElementById('btnModalSave').innerText = "Save & Mark Repaired";
-        
         document.getElementById('bdModal').classList.remove('hidden');
     }
 
@@ -598,12 +542,9 @@
         document.getElementById('sec-pm').classList.remove('hidden');
         document.getElementById('sec-close').classList.remove('hidden');
         
-        // Auto-fill close time
         document.getElementById('inp-closed-at')._flatpickr.setDate(new Date());
-        
         document.getElementById('btnModalSave').innerText = "Confirm Approval";
         document.getElementById('btnModalSave').classList.replace('btn-primary', 'btn-success');
-        
         document.getElementById('bdModal').classList.remove('hidden');
     }
 
@@ -638,7 +579,6 @@
         if(row.expected_eta) document.getElementById('inp-eta')._flatpickr.setDate(row.expected_eta);
         if(row.repaired_at) document.getElementById('inp-repaired-at')._flatpickr.setDate(row.repaired_at);
         document.getElementById('inp-remarks').value = row.remarks || '';
-        
         if(row.closed_at) document.getElementById('inp-closed-at')._flatpickr.setDate(row.closed_at);
     }
 
@@ -654,7 +594,6 @@
         document.getElementById('bdModal').classList.add('hidden');
     }
 
-    // Universal Save Function
     async function saveModal() {
         const action = document.getElementById('modalActionType').value;
         const id = document.getElementById('modalBdId').value;
@@ -663,8 +602,9 @@
         let method = "";
         let payload = {};
 
+        // FIXED API URLS HERE
         if (action === 'report') {
-            url = "/admin/breakdowns/api/report";
+            url = "/admin/api/breakdowns/report";
             method = "POST";
             payload = {
                 asset_code: document.getElementById('inp-asset-code').value,
@@ -675,18 +615,18 @@
             };
         } 
         else if (action === 'update') {
-            url = `/admin/breakdowns/api/mark_repaired/${id}`;
+            url = `/admin/api/breakdowns/mark_repaired/${id}`;
             method = "PUT";
             payload = {
                 breakdown_type: document.getElementById('inp-type').value,
                 root_cause: document.getElementById('inp-root-cause').value,
                 expected_eta: document.getElementById('inp-eta').value,
                 remarks: document.getElementById('inp-remarks').value,
-                repaired_at: document.getElementById('inp-repaired-at').value // Optional, if empty backend uses NOW()
+                repaired_at: document.getElementById('inp-repaired-at').value 
             };
         }
         else if (action === 'close') {
-            url = `/admin/breakdowns/api/approve_close/${id}`;
+            url = `/admin/api/breakdowns/approve_close/${id}`;
             method = "PUT";
             payload = {
                 closed_at: document.getElementById('inp-closed-at').value

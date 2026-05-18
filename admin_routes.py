@@ -893,10 +893,9 @@ def admin_delete_spare(spare_id):
 
         current_app.logger.info(f"admin_delete_spare: deleted id={spare_id}, deleted_rows={deleted}")
         return jsonify({"success": True, "deleted": deleted}), 200
-    except Exception as e:
+    except Exception as 2e:
         current_app.logger.error(f"admin_delete_spare error: {e}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 # ==============================================================================
 # 9. GENERAL / DYNAMIC MODULE ROUTING
@@ -988,246 +987,154 @@ def calc_hours_diff(start_str, end_str):
         return 0.0
 
 
-# =============================================================================
-# 1. PAGE RENDERING
-# =============================================================================
-@admin_breakdowns_bp.route('/', methods=['GET'])
+
+# ==============================================================================
+# 11. ADMIN BREAKDOWN REPORTS 
+# ==============================================================================
+import pytz
+
+def calc_hours_diff(start_str, end_str):
+    """Calculates the difference in hours between two ISO 8601 datetime strings."""
+    if not start_str or not end_str:
+        return 0.0
+    try:
+        start = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
+        end = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
+        diff = end - start
+        return round(diff.total_seconds() / 3600, 2)
+    except Exception:
+        return 0.0
+
+@admin_bp.route('/admin_breakdown_report', methods=['GET'])
+@require_role('admin')
 def breakdown_dashboard():
-    """
-    Renders the main HTML dashboard.
-    Passes user permissions from the session so the frontend knows whether 
-    to show 'Mark Repaired' (P&M) or 'Approve Closure' (Other Dept).
-    """
-    # In a real app, these come from your login/session logic tied to the employee_directory
+    """Renders the main HTML dashboard."""
     user_info = {
-        "name": session.get('user_name', 'Admin'),
+        "name": session.get('name', 'Admin'),
         "department_category": session.get('department_category', 'P&M'),
-        "can_update_repair": session.get('can_update_repair', True),
-        "can_approve_closure": session.get('can_approve_closure', True)
+        "can_update_repair": True, 
+        "can_approve_closure": True
     }
-    
-    return render_template('admin_breakdowns.html', user=user_info)
+    return render_template('admin_breakdown_report.html', user=user_info)
 
-
-# =============================================================================
-# 2. FETCH BREAKDOWNS (TABLE DATA)
-# =============================================================================
-@admin_breakdowns_bp.route('/api/list', methods=['GET'])
+@admin_bp.route('/api/breakdowns/list', methods=['GET'])
+@require_role('admin')
 def get_breakdowns():
-    """
-    Fetches breakdowns. Supports filtering by month and status.
-    Month filter logic: Includes breakdowns that started in the selected month 
-    OR were active/closed during that month.
-    """
-    month_filter = request.args.get('month') # Format: 'YYYY-MM'
-    
-    # Base query
-    query = supabase.table('breakdowns').select('*')
-    
+    month_filter = request.args.get('month')
+    supabase_admin = current_app.config['supabase_admin']
+    query = supabase_admin.table('breakdowns').select('*')
     if month_filter:
-        # For a specific month, we want anything where breakdown_start is <= end of month
-        # AND (closed_at is null OR closed_at >= start of month)
-        # To keep it simple for now, we use a basic string match, or you can implement 
-        # advanced date range filtering using Supabase filter methods:
         query = query.gte('breakdown_start', f"{month_filter}-01T00:00:00Z")
-    
-    # Execute query
     response = query.order('created_at', desc=True).execute()
-    
     return jsonify({"success": True, "data": response.data})
 
-
-# =============================================================================
-# 3. WORKFLOW STEP 1: REPORT BREAKDOWN (Anyone)
-# =============================================================================
-@admin_breakdowns_bp.route('/api/report', methods=['POST'])
+@admin_bp.route('/api/breakdowns/report', methods=['POST'])
+@require_role('admin')
 def report_breakdown():
-    """
-    Creates a new breakdown record.
-    Status defaults to 'Active'.
-    """
     data = request.json
-    
+    supabase_admin = current_app.config['supabase_admin']
     new_record = {
         "status": "Active",
         "asset_code": data.get("asset_code"),
-        "asset_description": data.get("asset_description"),
         "asset_package": data.get("asset_package"),
         "agency": data.get("agency"),
-        "own_hire": data.get("own_hire"),
-        "location": data.get("location"),
-        "breakdown_start": data.get("breakdown_start"), # User inputs when it actually broke
+        "breakdown_start": data.get("breakdown_start"),
         "breakdown_description": data.get("breakdown_description"),
-        "reported_by": session.get('user_name', 'Unknown')
+        "reported_by": session.get('name', 'Unknown')
     }
-    
-    response = supabase.table('breakdowns').insert(new_record).execute()
+    response = supabase_admin.table('breakdowns').insert(new_record).execute()
     return jsonify({"success": True, "data": response.data})
 
-
-# =============================================================================
-# 4. WORKFLOW STEP 2: P&M UPDATE DETAILS
-# =============================================================================
-@admin_breakdowns_bp.route('/api/update/<int:bd_id>', methods=['PUT'])
+@admin_bp.route('/api/breakdowns/update/<int:bd_id>', methods=['PUT'])
+@require_role('admin')
 def update_breakdown(bd_id):
-    """
-    P&M adds their initial assessment (ETA, Fault Type, Root Cause).
-    Does NOT change the status.
-    """
     data = request.json
-    
+    supabase_admin = current_app.config['supabase_admin']
     update_data = {
         "expected_eta": data.get("expected_eta"),
         "breakdown_type": data.get("breakdown_type"),
         "root_cause": data.get("root_cause"),
         "remarks": data.get("remarks"),
-        "updated_by": session.get('user_name', 'Unknown'),
+        "updated_by": session.get('name', 'Unknown'),
         "updated_at": datetime.now(pytz.utc).isoformat()
     }
-    
-    response = supabase.table('breakdowns').update(update_data).eq('id', bd_id).execute()
+    response = supabase_admin.table('breakdowns').update(update_data).eq('id', bd_id).execute()
     return jsonify({"success": True, "data": response.data})
 
-
-# =============================================================================
-# 5. WORKFLOW STEP 3: P&M MARKS AS REPAIRED
-# =============================================================================
-@admin_breakdowns_bp.route('/api/mark_repaired/<int:bd_id>', methods=['PUT'])
+@admin_bp.route('/api/breakdowns/mark_repaired/<int:bd_id>', methods=['PUT'])
+@require_role('admin')
 def mark_repaired(bd_id):
-    """
-    P&M marks the physical work as done.
-    Status changes to 'Pending Approval'.
-    Calculates P&M's Repair Downtime.
-    """
     data = request.json
+    supabase_admin = current_app.config['supabase_admin']
     repaired_at = data.get("repaired_at") or datetime.now(pytz.utc).isoformat()
-    
-    # We need the original breakdown_start to calculate hours
-    existing = supabase.table('breakdowns').select('breakdown_start').eq('id', bd_id).execute().data[0]
-    
+    existing = supabase_admin.table('breakdowns').select('breakdown_start').eq('id', bd_id).execute().data[0]
     repair_hrs = calc_hours_diff(existing['breakdown_start'], repaired_at)
-    
     update_data = {
         "status": "Pending Approval",
         "repaired_at": repaired_at,
         "repair_downtime_hrs": repair_hrs,
-        "repaired_by": session.get('user_name', 'Unknown')
+        "repaired_by": session.get('name', 'Unknown')
     }
-    
-    response = supabase.table('breakdowns').update(update_data).eq('id', bd_id).execute()
+    response = supabase_admin.table('breakdowns').update(update_data).eq('id', bd_id).execute()
     return jsonify({"success": True, "data": response.data})
 
-
-# =============================================================================
-# 6. WORKFLOW STEP 4: OTHER DEPT APPROVES CLOSURE
-# =============================================================================
-@admin_breakdowns_bp.route('/api/approve_close/<int:bd_id>', methods=['PUT'])
+@admin_bp.route('/api/breakdowns/approve_close/<int:bd_id>', methods=['PUT'])
+@require_role('admin')
 def approve_closure(bd_id):
-    """
-    The reporting department verifies the machine is working and closes the ticket.
-    Status changes to 'Closed'.
-    Calculates Approval Delay and Total Downtime.
-    """
     data = request.json
+    supabase_admin = current_app.config['supabase_admin']
     closed_at = data.get("closed_at") or datetime.now(pytz.utc).isoformat()
-    
-    # Fetch existing timestamps
-    existing = supabase.table('breakdowns').select('breakdown_start, repaired_at').eq('id', bd_id).execute().data[0]
-    
+    existing = supabase_admin.table('breakdowns').select('breakdown_start, repaired_at').eq('id', bd_id).execute().data[0]
     approval_delay = calc_hours_diff(existing['repaired_at'], closed_at)
     total_downtime = calc_hours_diff(existing['breakdown_start'], closed_at)
-    
     update_data = {
         "status": "Closed",
         "closed_at": closed_at,
         "approval_delay_hrs": approval_delay,
         "total_downtime_hrs": total_downtime,
-        "approved_by": session.get('user_name', 'Unknown')
+        "approved_by": session.get('name', 'Unknown')
     }
-    
-    response = supabase.table('breakdowns').update(update_data).eq('id', bd_id).execute()
+    response = supabase_admin.table('breakdowns').update(update_data).eq('id', bd_id).execute()
     return jsonify({"success": True, "data": response.data})
 
-
-# =============================================================================
-# 7. DELETE (ADMIN ONLY)
-# =============================================================================
-@admin_breakdowns_bp.route('/api/delete/<int:bd_id>', methods=['DELETE'])
-def delete_breakdown(bd_id):
-    """Deletes a breakdown record completely."""
-    response = supabase.table('breakdowns').delete().eq('id', bd_id).execute()
-    return jsonify({"success": True, "data": response.data})
-
-
-# =============================================================================
-# 8. ANALYSIS / TAB 3 DATA ENDPOINT
-# =============================================================================
-@admin_breakdowns_bp.route('/api/analysis', methods=['GET'])
+@admin_bp.route('/api/breakdowns/analysis', methods=['GET'])
+@require_role('admin')
 def get_analysis_data():
-    """
-    Aggregates data for Tab 3 (Management Analysis).
-    - Agency/Equipment Matrix
-    - Chronic Breakdowns
-    - Delay Bottlenecks (Repair vs Approval)
-    """
     month_filter = request.args.get('month')
-    
-    # Fetch all records for the month (Active and Closed)
-    query = supabase.table('breakdowns').select('*')
+    supabase_admin = current_app.config['supabase_admin']
+    query = supabase_admin.table('breakdowns').select('*')
     if month_filter:
         query = query.gte('breakdown_start', f"{month_filter}-01T00:00:00Z")
-        
     records = query.execute().data
     
-    # 1. Agency Performance Matrix
     agency_matrix = {}
-    
-    # 2. Chronic Assets Tracker
     asset_counts = {}
-    
-    # 3. Root Cause Distribution
     root_causes = {}
-    
-    # 4. Bottleneck Averages
     total_repair_hrs = 0
     total_approval_hrs = 0
     closed_count = 0
 
-    # Process records in Python
     for r in records:
         agency = r.get('agency') or 'Unknown'
-        # Extract base equipment type (e.g., 'Crane' from 'Tower Crane 50T')
-        eq_type = r.get('asset_description', 'Unknown').split()[0] 
+        eq_type = r.get('asset_description', 'Unknown').split()[0] if r.get('asset_description') else 'Unknown'
         
-        # Build Agency Matrix
-        if agency not in agency_matrix:
-            agency_matrix[agency] = {}
-        if eq_type not in agency_matrix[agency]:
-            agency_matrix[agency][eq_type] = {"active": 0, "total": 0}
+        if agency not in agency_matrix: agency_matrix[agency] = {}
+        if eq_type not in agency_matrix[agency]: agency_matrix[agency][eq_type] = {"active": 0, "total": 0}
             
         agency_matrix[agency][eq_type]["total"] += 1
-        if r.get('status') != 'Closed':
-            agency_matrix[agency][eq_type]["active"] += 1
+        if r.get('status') != 'Closed': agency_matrix[agency][eq_type]["active"] += 1
             
-        # Build Chronic Assets
         code = r.get('asset_code')
-        if code:
-            asset_counts[code] = asset_counts.get(code, 0) + 1
+        if code: asset_counts[code] = asset_counts.get(code, 0) + 1
             
-        # Build Root Causes
         rtype = r.get('breakdown_type')
-        if rtype:
-            root_causes[rtype] = root_causes.get(rtype, 0) + 1
+        if rtype: root_causes[rtype] = root_causes.get(rtype, 0) + 1
             
-        # Build Bottlenecks (Only for Closed/Pending Approval items)
-        if r.get('repair_downtime_hrs'):
-            total_repair_hrs += r.get('repair_downtime_hrs')
-            
+        if r.get('repair_downtime_hrs'): total_repair_hrs += r.get('repair_downtime_hrs')
         if r.get('status') == 'Closed' and r.get('approval_delay_hrs') is not None:
             total_approval_hrs += r.get('approval_delay_hrs')
             closed_count += 1
 
-    # Sort top 10 chronic assets
     chronic_assets = sorted([{"asset_code": k, "count": v} for k, v in asset_counts.items()], key=lambda x: x['count'], reverse=True)[:10]
 
     return jsonify({
